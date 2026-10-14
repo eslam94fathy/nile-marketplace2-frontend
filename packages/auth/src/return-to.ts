@@ -30,6 +30,9 @@ export function safeReturnTo(value: string | null | undefined, options: ReturnTo
     return null;
   }
   if (url.origin !== PLACEHOLDER_ORIGIN) return null;
+  // Check the normalised path as well: dot segments can turn a harmless input into a protocol-relative
+  // address (`/.//evil.test` and `/a/..//evil.test` both normalise to `//evil.test`).
+  if (url.pathname.startsWith('//') || url.pathname.includes('\\')) return null;
   if (isUnder(url.pathname, '/api')) return null;
   if ((options.exclude ?? []).some((path) => isUnder(url.pathname, path))) return null;
   return `${url.pathname}${url.search}${url.hash}`;

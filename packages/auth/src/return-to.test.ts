@@ -28,7 +28,13 @@ describe('safeReturnTo', () => {
     '/account\n/x',
     '/account\t',
     '',
+    // Normalise to a protocol-relative address (security review, 2026-10-14).
+    '/.//evil.test',
+    '/a/..//evil.test',
+    '/%2e//evil.test',
+    '/./%2e//evil.test/x',
     '/api/bff/me',
+    '/./api/bff/me',
     '/api',
     `/${'a'.repeat(2100)}`,
   ])('refuses %j', (value) => {
