@@ -1,0 +1,21 @@
+{
+  "name": "@nile/domain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Domain utilities: money, dates, enum labels, display-only status helpers, shared Zod field schemas",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@nile/api": "*",
+    "@nile/config": "*"
+  }
+}

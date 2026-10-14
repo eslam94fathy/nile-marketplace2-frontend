@@ -179,6 +179,9 @@ Spec 03 admin v1.0 approved with every recommendation (AD-Q-1…AD-Q-9): dashboa
 Spec 04 agent v1.0 approved with every recommendation (AG-Q-1…AG-Q-6): "handed back" shown by inference from attempts (no refused attempt and < 3 attempts), refusal handled gracefully, backend asked later for `sellerOrderCancelledAt` · COD confirmed by tick box with the API amount · "Open in maps" on tap · no offline/installable app · tabs To pick up / To deliver / Returns · mobile layout centred on desktop.
 Design 01 and 02 v1.0 approved with every recommendation (DQ-1…DQ-9): packages consumed as source via `transpilePackages` · shadcn/ui dependencies approved · `SESSION_COOKIE_SECURE=false` in development only · no Server Actions for data mutations · own `@nile/logger` · CI pulls the backend with a read-only `BACKEND_REPO_TOKEN`, pinned in `backend.lock.json` · scope `@nile/*` · BFF timeout 15 s, body 64 KB, refresh skew 60 s · async-balance note on finance screens.
 
+### 14.1c Decided (2026-10-14, T-B6)
+`UserStatus` labels: Email not verified / Invited / Active / Suspended · admin neutral wording: seller order Awaiting payment / Placed (awaiting seller) / Accepted / Ready for pickup / Picked up / Out for delivery / Delivery attempt failed / Returning to seller / Returned to seller / Delivered / Cancelled; order as spec 01 §7.1 except Completed / Partially completed; payment as spec 01 §7.3 · domain enums checked against generated types by type-only test files (`@nile/api` devDependency, design 01 R-15) · error-code message map deferred to phase d.
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -188,6 +191,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 |---|---|---|
 | OQ-1 | Backend sees the BFF's IP for every web user (shared rate limits) | Rec: trusted client-IP header + shared secret, honoured by the backend only for rate-limit keys (api-inventory §10.4). Backend change; **blocks production** |
 | OQ-2 | Kashier return URL | Rec: `<storefront>/checkout/payment-return` (env value in the backend) |
+| OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |

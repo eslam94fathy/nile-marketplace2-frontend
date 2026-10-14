@@ -84,6 +84,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B6 Domain utilities
+- **Status (2026-10-14):** implemented and verified in `packages/domain`: enum value lists checked against the generated API types in both directions, money (`parseMoney`, `addMoney`, `formatMoney`, `formatMoneyRange`, `rateToPercent`, `percentToRate`), dates (`formatDateTime`, `countdown`), exhaustive label maps per view (customer/seller/admin/agent), Zod `fields`, `sellerOrderActions` and `agentShipmentActions`; 172 tests plus compile-time checks (a missing, extra or new enum value fails type-check). Labels without spec wording decided 2026-10-14 (CLAUDE.md §14.1c). Refinement: design 01 R-15.
 - **Scope:** money (parse/format/add with decimal library), dates (format in display zone, countdown from server timestamps), exhaustive enum label maps (api-inventory §8), shared Zod field schemas mirroring backend rules (email ≤ 254 lower-cased, Egyptian phone, money pattern, password 8 chars..72 UTF-8 bytes untrimmed, OTP 6 digits, slug), display-only status→actions helpers.
 - **Exclusions:** UI components; localisation of labels beyond the default language until FQ-4.
 - **Dependencies:** T-B1 (FQ-4 decided: English, `Africa/Cairo`).
