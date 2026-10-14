@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@nile/api": "*",
+    "@nile/auth": "*",
     "@nile/config": "*",
+    "@nile/logger": "*",
     "@nile/query": "*",
     "@nile/ui": "*",
     "lucide-react": "1.49.0",

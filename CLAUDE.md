@@ -196,6 +196,9 @@ Toasts on Radix Toast (no `sonner`) · Select now, searchable Combobox deferred 
 ### 14.1g Decided (2026-10-14, T-C3)
 One placeholder page per navigation destination (`PlaceholderScreen` naming the task that builds it), so links stay type-checked · static stand-ins for data-driven header parts (categories drawer, signed-out account links, seller business name/status, disabled agent shift switch) until their phases.
 
+### 14.1h Decided (2026-10-14, T-D1)
+Auth and BFF routes answer in the backend envelope (`WRONG_APP` role in `details[0].value`) · backend unreachable → `502 NETWORK_ERROR` · non-JSON body → `415 VALIDATION_FAILED` · T-D1 ships `login`/`refresh`/`logout` only; `verify-email`, `invite`, `password-change` come with T-D4/T-D6/T-D7 (design 01 R-20).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

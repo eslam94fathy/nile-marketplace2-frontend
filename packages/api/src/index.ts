@@ -26,4 +26,14 @@ export {
   type ServerTransportOptions,
   type Transport,
 } from './transports';
+export {
+  BFF_ALLOW_LISTS,
+  BFF_APPS,
+  BFF_METHODS,
+  type AllowedOperation,
+  type BffApp,
+  type BffMethod,
+  type OperationPath,
+} from './allow-lists';
+export { fetchWithTimeout, forwardToBackend, upstreamTimeout, type ForwardOptions } from './upstream';
 export type { Schema } from './types';

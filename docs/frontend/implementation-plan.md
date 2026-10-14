@@ -138,6 +138,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase d — Authentication
 
 ### T-D1 BFF session and route handlers
+- **Status (2026-10-14):** implemented and verified locally (604 tests; lint, format, type-check, API drift check, build of 4 apps, audit gate green; no session or token code in any client bundle). Not yet run against the real backend (needs the local stack); E2E sign-in coverage arrives with the screens (T-D4+). Decisions and refinements: design 01 R-20.
 - **Scope:** encrypted session cookie (architecture §5.2), `POST /api/auth/{login,refresh,logout}` route handlers, per-app role check at login (wrong role → session discarded, explanatory error), BFF proxy `/api/bff/[...path]` with per-app path/method allow-list, Origin + custom-header CSRF checks, `no-store` headers, correlation id forwarding.
 - **Exclusions:** UI screens (T-D4+), client refresh coordination (T-D2), production client-IP forwarding (blocked by OQ-1).
 - **Dependencies:** T-B2, T-B4, FQ-1, FQ-8; **OQ-1 must be resolved before production**, not before local development.

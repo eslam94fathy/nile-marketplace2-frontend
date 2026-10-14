@@ -1,0 +1,16 @@
+{
+  "name": "@nile/logger",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Structured JSON-line logger with redaction for the apps' server code (design 01 §11)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@nile/config": "*"
+  }
+}

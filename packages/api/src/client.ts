@@ -1,5 +1,5 @@
 import createClient, { type Client } from 'openapi-fetch';
-import { apiErrorFromResponse, networkError } from './errors';
+import { ApiError, apiErrorFromResponse, networkError } from './errors';
 import type { paths } from './generated/schema';
 import { serializeQuery } from './query';
 import type { Transport } from './transports';
@@ -55,6 +55,8 @@ export async function unwrap<T>(call: Promise<CallResult<T>>): Promise<Unwrapped
     result = await call;
   } catch (cause) {
     if (isAbort(cause)) throw cause;
+    // Already classified by the transport (e.g. UPSTREAM_TIMEOUT from fetchWithTimeout).
+    if (cause instanceof ApiError) throw cause;
     throw networkError(cause);
   }
   const { response } = result;
