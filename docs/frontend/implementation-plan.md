@@ -54,6 +54,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B3 OpenAPI snapshot, correction script and type generation
+- **Status (2026-10-14):** implemented and verified: snapshot pinned to backend `4ad89a6` (`backend.lock.json`), corrections report 84 nullable response fields, 11 nullable request fields, 10 phantom properties removed, `idOrSlug`, governorate fee and `attr.*` fixed; 24 rule tests + compile-time checks on the generated types; drift check fails on stale types and on a hand-edited snapshot; clean CI sequence green. Refinement: design 01 R-12.
 - **Scope:** `api:pull` (from `NILE_API_BASE_URL`), committed snapshot, `openapi-fix.ts` with the corrections in architecture §6.3, `openapi-typescript` generation, CI drift check.
 - **Exclusions:** runtime client, React hooks.
 - **Dependencies:** T-B1, FQ-9.

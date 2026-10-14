@@ -8,3 +8,5 @@ docs
 CLAUDE.md
 guidelines.txt
 .idea
+packages/api/openapi
+packages/api/src/generated

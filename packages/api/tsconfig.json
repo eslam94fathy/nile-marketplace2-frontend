@@ -1,0 +1,8 @@
+{
+  "extends": "@nile/config/tsconfig/library.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["scripts/**/*.ts", "src/**/*.ts", "vitest.config.ts"]
+}

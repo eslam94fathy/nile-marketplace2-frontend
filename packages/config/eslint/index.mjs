@@ -21,6 +21,9 @@ export function createEslintConfig({ tsconfigRootDir }) {
         '**/next-env.d.ts',
         'playwright-report/**',
         'test-results/**',
+        // Byte-exact artefacts of `npm run api:gen` / `api:pull` (checked by `npm run api:check`).
+        'packages/api/src/generated/**',
+        'packages/api/openapi/**',
       ],
     },
     js.configs.recommended,

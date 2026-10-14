@@ -7,7 +7,7 @@ Backend: `nile-marketplace2` @ `4ad89a6` (`main`, clean working tree), read loca
 
 Sources, in order of authority for this document:
 
-1. **The running API.** The OpenAPI 3.1 document was fetched from `GET /api/v1/docs/openapi.json` (sha256 prefix `4b4e399d39b9b3da`, 123 operations, 150 schemas). Public endpoints were called to confirm runtime shapes (envelope, `null` values, error body, CORS preflight).
+1. **The running API.** The OpenAPI 3.1 document was fetched from `GET /api/v1/docs/openapi.json` (sha256 prefix `4b4e399d39b9b3da` of the served bytes, 123 operations, 150 schemas). Since T-B3 it is pinned as `packages/api/openapi/nile.openapi.json` (pretty-printed, sha256 in `backend.lock.json`; same content, verified). Public endpoints were called to confirm runtime shapes (envelope, `null` values, error body, CORS preflight).
 2. **Backend source** (`src/http-app.ts`, `src/app/*/routes.ts`, `src/lib/middleware/*`, `src/lib/http/openapi/*`, env schema) for things OpenAPI doesn't carry: role guards, rate-limit classes, headers, CORS.
 3. **Backend spec** (`docs/spec/00`–`13`, all APPROVED) and `CLAUDE.md` for business rules and error codes.
 

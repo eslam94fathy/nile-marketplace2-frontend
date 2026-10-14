@@ -17,6 +17,9 @@
     "dev:stop": "node scripts/dev-stop.mjs",
     "dev:env": "node scripts/dev-env.mjs",
     "build": "npm run build --workspaces --if-present",
+    "api:pull": "npm run api:pull -w @nile/api --",
+    "api:gen": "npm run api:gen -w @nile/api",
+    "api:check": "npm run api:check -w @nile/api",
     "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck --workspaces --if-present",
     "lint": "eslint --max-warnings=0 .",
     "format": "prettier --write .",
@@ -32,5 +35,10 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "vitest": "5.0.4"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   }
 }

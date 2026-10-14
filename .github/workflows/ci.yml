@@ -38,6 +38,10 @@ jobs:
       - name: Lint
         run: npm run lint && npm run format:check
 
+      # The committed generated types must match the pinned snapshot (backend.lock.json) and openapi-fix.ts.
+      - name: OpenAPI drift check
+        run: npm run api:check
+
       - name: Type-check
         run: npm run typecheck
 

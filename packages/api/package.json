@@ -1,0 +1,20 @@
+{
+  "name": "@nile/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Backend contract: OpenAPI snapshot, corrections, generated types (and from T-B4 the typed client)",
+  "type": "module",
+  "exports": {
+    "./schema": "./src/generated/schema.d.ts"
+  },
+  "scripts": {
+    "api:pull": "node scripts/pull.ts",
+    "api:gen": "node scripts/generate.ts",
+    "api:check": "node scripts/generate.ts --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@nile/config": "*",
+    "openapi-typescript": "7.13.0"
+  }
+}

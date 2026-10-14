@@ -315,6 +315,7 @@ Polling intervals and page sizes are code constants (specs fix them), not env.
 | R-9 | Cross-checks: `APP_ORIGIN` must equal the app's own `NEXT_PUBLIC_<APP>_URL`; `NEXT_PUBLIC_REFRESH_SKEW_SECONDS` ≤ `REFRESH_SKEW_SECONDS` | A larger browser skew would loop refresh calls the server answers as "still fresh" (§5.3) |
 | R-10 | Production requires `SESSION_COOKIE_SECURE=true` only; origins are not forced to https by the schema | A production build must run on http://localhost under E2E (browsers accept Secure cookies there); real deployments are https by setup |
 | R-11 | `npm run dev:env` writes git-ignored `apps/*/.env.local` (local values, a random session key per app); CI runs it before type-check and build | Mirrors the backend; `NEXT_PUBLIC_APP_NAME` differs per app, so one CI env block can't serve all apps |
+| R-12 | Contract (T-B3): snapshot stored pretty-printed; `backend.lock.json` pins `{ repo, commit, openapiSha256 }` of that file; `openapi-fix.ts` uses its own plain-JSON document types and throws when a corrected target disappears; `openapi-typescript` 7.13 declares `typescript ^5` and is pointed at TypeScript 6 through a root `overrides` entry (generation and the output were verified under TS 6); scripts run as TypeScript directly on Node 24 (no `tsx`) | Reviewable diffs, reproducible types, no silent contract drift |
 
 ## 14. Design questions (all answered 2026-10-14: the recommendation was accepted for each)
 
