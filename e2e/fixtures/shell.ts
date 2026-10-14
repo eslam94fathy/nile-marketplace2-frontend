@@ -19,6 +19,13 @@ async function attachScreenshot(page: Page, testInfo: TestInfo, name: string): P
 export function shellTests(app: E2eAppName): void {
   const { title, landing } = E2E_APPS[app];
 
+  // Portal pages need a session (T-D3); the storefront shell is checked signed out.
+  if (app !== 'storefront') {
+    test.beforeEach(async ({ signIn }) => {
+      await signIn(app);
+    });
+  }
+
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
     test(`shell at ${name} (${viewport.width} px): landmarks, skip link, accessible`, async ({
       page,

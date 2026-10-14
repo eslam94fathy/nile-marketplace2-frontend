@@ -109,7 +109,7 @@ describe('session end', () => {
     }
   });
 
-  it('signOut ends the session on the server and in every tab, without a session-ended notice', async () => {
+  it('signOut ends the session on the server and in every tab; protected tabs go to the signed-out page', async () => {
     const browser = new FakeBrowser();
     const a = browser.openTab('/account');
     const b = browser.openTab('/cart');
@@ -119,8 +119,8 @@ describe('session end', () => {
     await settle();
 
     expect(browser.logoutCalls).toBe(1);
-    expect(a.assign).toHaveBeenCalledWith('/login');
-    expect(b.assign).toHaveBeenCalledWith('/login');
+    expect(a.assign).toHaveBeenCalledWith('/');
+    expect(b.assign).toHaveBeenCalledWith('/');
     expect(a.clearPrivateData).toHaveBeenCalled();
     expect(b.clearPrivateData).toHaveBeenCalled();
   });

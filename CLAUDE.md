@@ -203,6 +203,9 @@ Auth and BFF routes answer in the backend envelope (`WRONG_APP` role in `details
 ### 14.1i Decided (2026-10-14, T-D2)
 E2E refresh test runs with the backend's `ACCESS_TOKEN_TTL_MINUTES=2` (skipped with a longer TTL) · only a 401 from `/api/auth/refresh` ends the session; network/429/5xx keep it · on sign-out or session end every tab clears private data; protected pages go to login, storefront public pages reload in place (design 01 R-21).
 
+### 14.1j Decided (2026-10-14, T-D3)
+`proxy.ts` decrypts the session cookie (no network call) and deletes an unusable one, so a stale cookie can't loop (design 01 R-22) · user sign-out goes to the storefront home / portal sign-in (conventions §2) · every protected page calls `await requireSession()` (checked by a test per app).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -216,6 +219,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
+| TB-3 | `@nile/config/env` is one module: browser bundles that read public settings also carry the server env *schema* (key names and rules, no values) | Rec: split into `env/public` and `env/server` entry points (small change) |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.

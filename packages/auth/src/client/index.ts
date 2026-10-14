@@ -14,4 +14,5 @@ export {
   type SignOutReason,
 } from './session-client';
 export { BFF_ROUTE_PREFIX } from '../config';
+export { safeReturnTo, type ReturnToOptions } from '../return-to';
 export { SessionExpiredBoundary, SessionManager, type SessionExpiredBoundaryProps } from './components';

@@ -1,6 +1,6 @@
 import { createSessionClient } from '@nile/auth/client';
 import { clearPrivateQueries, getQueryClient } from '@nile/query';
-import { isProtectedPath, LOGIN_PATH } from '@/lib/access';
+import { isProtectedPath, LOGIN_PATH, SIGNED_OUT_PATH } from '@/lib/access';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 
@@ -8,6 +8,7 @@ import { publicEnv } from '@/lib/env/public';
 export const sessionClient = createSessionClient({
   app: APP.name,
   loginPath: LOGIN_PATH,
+  signedOutPath: SIGNED_OUT_PATH,
   isProtectedPath,
   refreshSkewSeconds: publicEnv.NEXT_PUBLIC_REFRESH_SKEW_SECONDS,
   clearPrivateData: () => {

@@ -158,6 +158,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D3 Route protection
+- **Status (2026-10-14):** implemented and verified locally (lint, format, type-check, drift check, unit/component tests, build of 4 apps, audit green) and smoke-tested against the real backend on the storefront production build (register → verify → BFF login without tokens in the body → deep link → `returnTo` safe/refused → Bearer call → refresh → logout → redirect). The Playwright suite (deep link per app, portal shells now signed in) is written but **not yet run** (needs the E2E settings). Decisions: design 01 R-22.
 - **Scope:** `proxy.ts` optimistic guard per app (redirect with `returnTo`), `requireSession(role)` DAL used by every protected server entry point, role landing redirect after login.
 - **Exclusions:** business-status gating (seller approval, agent active) — in phase h.
 - **Dependencies:** T-D1.

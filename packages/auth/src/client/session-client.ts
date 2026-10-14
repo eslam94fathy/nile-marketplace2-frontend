@@ -60,6 +60,11 @@ export interface SessionClientOptions {
   app: BffApp;
   /** This app's sign-in page. */
   loginPath: string;
+  /**
+   * Where a tab on a protected page goes after the user signs out (conventions §2): the public home on the
+   * storefront, the sign-in page in the portals.
+   */
+  signedOutPath: string;
   /** Pages that need a session; a tab on one of them goes to sign-in when the session ends. */
   isProtectedPath: (pathname: string) => boolean;
   /** `NEXT_PUBLIC_REFRESH_SKEW_SECONDS`: refresh this long before the access token expires. */
@@ -170,13 +175,15 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
       location.reload();
       return;
     }
-    const params = new URLSearchParams();
-    if (reason === 'session-ended') {
-      params.set(LOGIN_PARAMS.notice, SESSION_ENDED_NOTICE);
-      params.set(LOGIN_PARAMS.returnTo, `${location.pathname}${location.search}`);
+    if (reason === 'signed-out') {
+      location.assign(options.signedOutPath);
+      return;
     }
-    const query = params.toString();
-    location.assign(query === '' ? options.loginPath : `${options.loginPath}?${query}`);
+    const params = new URLSearchParams({
+      [LOGIN_PARAMS.notice]: SESSION_ENDED_NOTICE,
+      [LOGIN_PARAMS.returnTo]: `${location.pathname}${location.search}`,
+    });
+    location.assign(`${options.loginPath}?${params.toString()}`);
   };
 
   const endSession = (reason: SignOutReason): void => {

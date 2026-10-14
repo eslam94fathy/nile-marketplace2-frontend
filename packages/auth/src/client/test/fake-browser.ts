@@ -212,6 +212,7 @@ export class FakeBrowser {
     const client = createSessionClient({
       app: APP,
       loginPath: '/login',
+      signedOutPath: '/',
       isProtectedPath: (path) =>
         ['/cart', '/checkout', '/account'].some((p) => path === p || path.startsWith(`${p}/`)),
       refreshSkewSeconds: SKEW_SECONDS,
