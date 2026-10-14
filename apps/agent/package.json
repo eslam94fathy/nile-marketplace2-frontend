@@ -10,7 +10,9 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@nile/api": "*",
     "@nile/config": "*",
+    "@nile/query": "*",
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",

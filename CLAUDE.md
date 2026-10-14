@@ -7,6 +7,7 @@ Read this whole file before every task. These rules are binding. If a rule confl
 - **Never assume.** If a requirement, business rule, UX behaviour or technical choice is ambiguous or missing, stop and ask. List the options and give a recommendation. Unresolved items go in §14.3 "Still open" until the user settles them.
 - **No code without an approved spec.** Order of work: discovery → business spec (`docs/frontend/spec/`) → system design → implementation plan → code. Don't scaffold anything ahead of its phase.
 - **The backend is the source of truth** for business rules, permissions, validation, pricing, stock, orders and payments. The backend repo (`../nile-marketplace2`, remote `github.com/eslam94fathy/nile-marketplace2`) is **read-only** from this project: never modify it. A needed backend change is raised as a question, never worked around.
+- **`@nile/*` are workspace packages only.** `.npmrc` points the scope at an unresolvable registry so nothing can be fetched from the public registry under that name (the scope is unclaimed there). Add a workspace dependency by editing `package.json` (`"@nile/x": "*"`) and running `npm install`, never `npm install @nile/x`.
 - **Never invent endpoints, fields, status values or business rules.** Every API call must exist in the committed OpenAPI snapshot; every rule must trace to the backend spec (`../nile-marketplace2/docs/spec/`) or to an approved frontend spec.
 - Label claims in docs: **[VERIFIED]** (seen in the running API/OpenAPI/backend code), **[SPEC]** (backend spec), **[PROPOSED]** (not yet approved), **[ASSUMPTION]** (to be proved), **[OPEN]** (question).
 - Keep changes small and reviewable, and stick to the task.
@@ -92,7 +93,8 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Retries: queries retry only on network errors and `5xx`; mutations never auto-retry unless idempotent with the same key.
 - Mutations update the cache from the response when the API returns the resource, otherwise invalidate precise keys.
 - Polling only where a spec says so, only while the tab is visible.
-- Clear the whole cache on logout.
+- Clear the whole cache on logout (`clearPrivateQueries` keeps only `public` keys).
+- TanStack Query 5.104+: never `prefetchQuery`/`fetchQuery`/`fetchInfiniteQuery`/`isServer` (deprecated; lint fails). Use `queryClient.query(options)` (add `.catch(noop)` for a prefetch that must not throw), `queryClient.infiniteQuery(options)`, `environmentManager.isServer()`.
 
 ## 6. Forms (React Hook Form + Zod)
 

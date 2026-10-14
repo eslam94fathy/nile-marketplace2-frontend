@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { QueryProvider } from '@nile/query';
 import { APP } from '@/lib/app';
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { readonly children: ReactNode }) {
   return (
     <html lang="en" dir="ltr">
-      <body>{children}</body>
+      <body>
+        <QueryProvider>{children}</QueryProvider>
+      </body>
     </html>
   );
 }

@@ -74,6 +74,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B5 TanStack Query foundation
+- **Status (2026-10-14):** implemented and verified in `packages/query` (design R-1 moved it out of `packages/api`): query client defaults and per-request/singleton rule, key factory, cursor-list helper, shared public queries, `QueryProvider` in every app layout; 21 tests incl. the acceptance test (server prefetch hydrates with 0 client requests; a mutation that makes the client refetch fails it); devtools absent from production bundles. Refinement: design 01 R-14.
 - **Scope:** `getQueryClient()` (per request on server, singleton in browser), providers per app, default options (architecture §6.5), query-key factory pattern, infinite-list helper for cursor pagination, `HydrationBoundary` usage example, devtools in development only.
 - **Exclusions:** feature queries.
 - **Dependencies:** T-B4.

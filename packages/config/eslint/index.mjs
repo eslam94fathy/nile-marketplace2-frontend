@@ -1,11 +1,12 @@
 import js from '@eslint/js';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import prettier from 'eslint-config-prettier/flat';
+import pluginQuery from '@tanstack/eslint-plugin-query';
 import tseslint from 'typescript-eslint';
 
 /**
  * Shared flat config (CLAUDE.md §1, §10): Next.js core-web-vitals (react, react-hooks, jsx-a11y, import,
- * @next/next) + typescript-eslint strict and stylistic type-checked rules + prettier last.
+ * @next/next) + TanStack Query rules + typescript-eslint strict and stylistic type-checked rules + prettier last.
  * ESLint stays on 9.x until eslint-config-next supports ESLint 10 (its bundled eslint-plugin-react crashes
  * on ESLint 10; CLAUDE.md §14.3 TB-1).
  * @param {{ tsconfigRootDir: string }} options
@@ -28,6 +29,7 @@ export function createEslintConfig({ tsconfigRootDir }) {
     },
     js.configs.recommended,
     ...nextVitals,
+    ...pluginQuery.configs['flat/recommended'],
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
     {

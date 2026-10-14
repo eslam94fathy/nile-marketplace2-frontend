@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   typedRoutes: true,
-  transpilePackages: ['@nile/config'],
+  transpilePackages: ['@nile/config', '@nile/api', '@nile/query'],
 };
 
 export default nextConfig;
