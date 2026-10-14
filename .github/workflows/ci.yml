@@ -1,5 +1,5 @@
 # CLAUDE.md §12: npm ci → lint → format check → type-check → unit/component tests → build → dependency audit.
-# Later tasks add the OpenAPI drift check (T-B3), contract tests (T-B7) and E2E smoke (phase d).
+# Contract tests against the real backend run in contract.yml (T-B7); E2E smoke joins in phase d.
 # A red CI blocks merge.
 name: CI
 

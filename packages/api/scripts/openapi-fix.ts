@@ -59,6 +59,14 @@ export const NULLABLE_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>
   UpdateGovernorateDto: ['deliveryFee'], // spec 11 §4.3 (also required, OA-6)
 };
 
+/**
+ * Response fields that are left out (not `null`) when empty, so the OA-1 rule must keep them optional.
+ * Found by the contract suite (T-B7) and verified in the backend code.
+ */
+export const OPTIONAL_RESPONSE_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  AdminShipmentDto: ['history'], // `toAdminShipmentDto(view, false)`: lists leave it out, detail includes it
+};
+
 const PHANTOM_PROPERTY = '__atLeastOneField';
 const PRODUCT_DETAIL_PATH = '/api/v1/products/{idOrSlug}';
 const PRODUCT_LIST_PATH = '/api/v1/products';
@@ -176,14 +184,23 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
   }
 
   // OA-1: response DTOs always emit every key and use null for "no value", but document such keys as
-  // optional. Make them required and `T | null`. [ASSUMPTION proved by the contract tests, T-B7]
+  // optional. Make them required and `T | null`, except the few fields that are really left out.
+  // [VERIFIED by the contract suite, T-B7]
+  for (const [name, fields] of Object.entries(OPTIONAL_RESPONSE_FIELDS)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      if (!(field in schema.properties)) throw new OpenApiFixError(`${name}.${field} is missing`);
+      if (schema.required?.includes(field)) throw new OpenApiFixError(`${name}.${field} is now required`);
+    }
+  }
   for (const name of responseSchemas) {
     const schema = schemas[name];
     const properties = schema?.properties;
     if (schema === undefined || properties === undefined) continue;
     const required = new Set(schema.required ?? []);
+    const optional = new Set(OPTIONAL_RESPONSE_FIELDS[name] ?? []);
     for (const [field, property] of Object.entries(properties)) {
-      if (required.has(field)) continue;
+      if (required.has(field) || optional.has(field)) continue;
       properties[field] = nullable(property);
       required.add(field);
       report.nullableResponseProperties += 1;

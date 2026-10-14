@@ -144,7 +144,8 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 ## 12. Testing and CI
 
-- Unit (Vitest): `packages/*` logic. Component (Vitest + Testing Library + MSW): every form, list and status-driven action. Contract: generated types parsed against the real backend (docker compose from the backend repo). E2E (Playwright + axe): every workflow in `docs/frontend/workflows.md` by the end of its phase.
+- Unit (Vitest): `packages/*` logic. Component (Vitest + Testing Library + MSW): every form, list and status-driven action. Contract: real backend responses parsed with strict schemas from the corrected snapshot (`npm run test:contract`, `packages/api/contract`; CI `contract.yml`). E2E (Playwright + axe, `npm run e2e` after `npm run build`): every workflow in `docs/frontend/workflows.md` by the end of its phase.
+- Mock HTTP with `mockApi(method, path, ({ reply }) => reply.ok(data))` from `@nile/test-utils` (path and data are typed by the snapshot); render with `renderWithProviders` from `@nile/test-utils/react`; DTO factories via `defineFactory<'Dto'>()`, added with the first test that needs one.
 - Every new screen: tests for happy path, validation failure, server-error mapping and authorization state. Every bug fix comes with a regression test.
 - CI on every PR: `npm ci` → lint → format check → type-check → OpenAPI drift check (from T-B3) → unit/component → build → E2E smoke (from phase d) → `npm run audit`. Red CI blocks merge.
 - `npm run audit` fails on high/critical advisories in runtime **and** dev dependencies, except entries in `audit-exceptions.json`, each with a reason and a `reviewBy` date; an expired exception fails too. Add an exception only when no fixed version exists and the code path is not reachable in production; say so in the PR.
@@ -164,6 +165,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 - Windows reserves TCP ports 2978–3077 (and others) on this machine, so the backend's port 3000 is blocked; the ranges can change after a reboot (`netsh interface ipv4 show excludedportrange protocol=tcp`). To run the backend API on another host port without changing backend files: `docker compose run -d --rm --no-deps -p 3100:3000 api` from the backend repo (Postgres, Redis, RabbitMQ and Mailpit started first).
 - Backend helpers for local and E2E work: `npm run seed:dev` (sample data), Mailpit at `http://localhost:8025` (OTP and invite emails), `PAYMENT_GATEWAY=fake` + `npm run dev:kashier-webhook` (signed Kashier webhooks).
+- Contract and E2E runs need `NILE_API_BASE_URL`, `MAILPIT_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` in the shell, and a test admin seeded once in the backend (`docker compose run --rm --no-deps api node dist/seed-admin.js --email e2e-admin@example.test`; the first run accepts its invite with `E2E_ADMIN_PASSWORD`). The backend allows about 10 sign-ups/sign-ins per 5 min per IP locally: raise `RATE_LIMIT_STRICT_AUTH_POINTS` in the backend's own `.env` for repeated runs (design 01 §12.3).
 - Backend env values the web apps rely on locally: `INVITE_URL_BASE=http://localhost:4100/invite`, `KASHIER_REDIRECT_URL=http://localhost:4100/checkout/payment-return` (to be set by the user in the backend's `.env`).
 
 ## 14. Decisions log and open items
@@ -181,6 +183,9 @@ Design 01 and 02 v1.0 approved with every recommendation (DQ-1…DQ-9): packages
 
 ### 14.1c Decided (2026-10-14, T-B6)
 `UserStatus` labels: Email not verified / Invited / Active / Suspended · admin neutral wording: seller order Awaiting payment / Placed (awaiting seller) / Accepted / Ready for pickup / Picked up / Out for delivery / Delivery attempt failed / Returning to seller / Returned to seller / Delivered / Cancelled; order as spec 01 §7.1 except Completed / Partially completed; payment as spec 01 §7.3 · domain enums checked against generated types by type-only test files (`@nile/api` devDependency, design 01 R-15) · error-code message map deferred to phase d.
+
+### 14.1d Decided (2026-10-14, T-B7)
+Contract validators from the corrected snapshot with Zod `fromJSONSchema`, objects closed (no new dependency) · test-utils delivers the mechanisms (typed `mockApi`, `defineFactory`, `renderWithProviders`), DTO factories come with their first tests · Playwright: per-role account fixtures through the backend + Mailpit and one axe smoke per app; browser-login fixtures and the CI E2E job in phase d · `contract.yml` on PRs touching `packages/api`/`packages/test-utils`/`backend.lock.json`, nightly and on demand, with the `BACKEND_REPO_TOKEN` secret.
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).

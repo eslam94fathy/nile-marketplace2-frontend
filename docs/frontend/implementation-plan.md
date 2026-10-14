@@ -94,6 +94,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B7 Test infrastructure and contract tests
+- **Status (2026-10-14):** implemented and run locally against the backend at the pinned commit: contract suite 41/41 (5 public GETs, 27 role GETs across four accounts, 4 error envelopes, coverage check) after it found one wrong OA-1 correction (`AdminShipmentDto.history` is left out of lists, now kept optional, types regenerated); checker unit tests with broken fixtures; `@nile/test-utils` (typed MSW, factories, render helper, backend/Mailpit/account helpers) with 19 tests; Playwright smoke 4/4 (production builds, axe) and the per-role fixtures check. `contract.yml` is unverified until its first run on GitHub and needs the `BACKEND_REPO_TOKEN` secret. Refinement: design 01 R-16; OA-1 marked verified in `api-inventory.md`.
 - **Scope:** MSW handlers typed from the schema, factories, render helpers; Playwright project with per-role fixtures; CI job that starts the backend from its repo (`docker compose up`, `seed:dev`, fake gateway, Mailpit), waits for `/health/ready`, runs contract tests that parse real responses with strict schemas (validates the OA-1 assumption).
 - **Exclusions:** feature E2E tests (added per phase).
 - **Dependencies:** T-B3, T-B4; access to the backend repo from CI (FQ-11).

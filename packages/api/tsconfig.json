@@ -5,5 +5,5 @@
     "erasableSyntaxOnly": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"]
   },
-  "include": ["scripts/**/*.ts", "src/**/*.ts", "vitest.config.ts"]
+  "include": ["scripts/**/*.ts", "src/**/*.ts", "contract/**/*.ts", "vitest.config.ts"]
 }

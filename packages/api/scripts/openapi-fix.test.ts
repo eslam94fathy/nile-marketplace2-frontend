@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyFixes,
   NULLABLE_REQUEST_FIELDS,
+  OPTIONAL_RESPONSE_FIELDS,
   OpenApiFixError,
   type OpenApiDocument,
   type SchemaNode,
@@ -46,6 +47,9 @@ function fixture(): OpenApiDocument {
           },
         },
       },
+      '/api/v1/admin/shipments': {
+        get: { responses: { 200: { description: 'ok', ...body(ref('AdminShipmentDto')) } } },
+      },
       '/api/v1/things': {
         patch: {
           requestBody: { required: true, content: { 'application/json': { schema: ref('PatchThingDto') } } },
@@ -77,6 +81,11 @@ function fixture(): OpenApiDocument {
           },
         },
         SellerRefDto: { type: 'object', properties: { name: { type: 'string' } } },
+        AdminShipmentDto: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string' }, history: { type: 'array' }, agentId: { type: 'string' } },
+        },
         ErrorEnvelope: {
           type: 'object',
           required: ['error'],
@@ -125,6 +134,26 @@ describe('applyFixes', () => {
     it('leaves the error envelope alone (details really is optional)', () => {
       const { document } = applyFixes(fixture());
       expect(schemaOf(document, 'ErrorEnvelope')).toEqual(schemaOf(fixture(), 'ErrorEnvelope'));
+    });
+
+    it('keeps the listed left-out fields optional and not nullable', () => {
+      const { document } = applyFixes(fixture());
+      const shipment = schemaOf(document, 'AdminShipmentDto');
+      expect(OPTIONAL_RESPONSE_FIELDS.AdminShipmentDto).toEqual(['history']);
+      expect(shipment.properties?.history).toEqual({ type: 'array' });
+      expect(shipment.required).not.toContain('history');
+      expect(shipment.required).toContain('agentId');
+    });
+
+    it('throws when a left-out field disappears or becomes required', () => {
+      const gone = fixture();
+      delete schemaOf(gone, 'AdminShipmentDto').properties?.history;
+      expect(() => applyFixes(gone)).toThrow(new OpenApiFixError('AdminShipmentDto.history is missing'));
+      const required = fixture();
+      schemaOf(required, 'AdminShipmentDto').required = ['id', 'history'];
+      expect(() => applyFixes(required)).toThrow(
+        new OpenApiFixError('AdminShipmentDto.history is now required'),
+      );
     });
 
     it('refuses a schema shared by requests and responses', () => {
@@ -209,7 +238,7 @@ describe('the pinned snapshot', () => {
 
   it('applies every rule with the expected reach', () => {
     expect(report).toEqual({
-      nullableResponseProperties: 84,
+      nullableResponseProperties: 83,
       nullableRequestProperties: 11,
       removedPhantomProperties: 10,
       fixedIdOrSlug: true,

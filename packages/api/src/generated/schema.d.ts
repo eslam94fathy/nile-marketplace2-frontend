@@ -7033,7 +7033,7 @@ export interface components {
             carriesDeliveryFee: boolean;
             codCollectedAmount: string | null;
             sellerOrderCancelledAt: string | null;
-            history: components["schemas"]["ShipmentHistoryDto"][] | null;
+            history?: components["schemas"]["ShipmentHistoryDto"][];
             createdAt: string;
             /** Format: uuid */
             id: string;
