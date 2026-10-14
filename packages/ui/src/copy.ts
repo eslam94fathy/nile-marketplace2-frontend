@@ -15,6 +15,9 @@ export const UI_COPY = {
   /** conventions §3/§4: default error message. */
   genericError: 'Something went wrong. Please try again.',
   required: '(required)',
+  showPassword: 'Show password',
+  /** Read before the 10 digits of an Egyptian mobile number (conventions §5). */
+  phonePrefix: (prefix: string) => `Country code ${prefix}`,
   skipToContent: 'Skip to main content',
   menu: 'Menu',
   signOut: 'Sign out',

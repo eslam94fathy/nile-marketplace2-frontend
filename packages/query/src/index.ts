@@ -1,6 +1,5 @@
 // Public interface of @nile/query (design 01 §2, R-1). React-only helpers live here, not in @nile/api.
-// Later tasks add useIdempotentMutation (first idempotent screen), useApiErrorHandler and applyServerErrors
-// (first forms, phase d).
+// useIdempotentMutation arrives with the first idempotent screen (phase f).
 export {
   DEFAULT_GC_TIME_MS,
   DEFAULT_STALE_TIME_MS,
@@ -31,4 +30,5 @@ export {
   PUBLIC_REFERENCE_STALE_TIME_MS,
 } from './public-queries';
 export { QueryProvider } from './provider';
+export { applyServerErrors, errorMessage, type ServerFieldMap, type SetFieldError } from './server-errors';
 export { dehydrate, HydrationBoundary } from '@tanstack/react-query';

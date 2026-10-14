@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isProtectedPath } from '../lib/access';
+import { isProtectedPath } from '@/lib/access';
 
 // Every page on a protected path checks the session itself (architecture §5.5): proxy.ts alone is not enough.
 

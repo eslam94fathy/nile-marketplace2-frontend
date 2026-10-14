@@ -282,9 +282,62 @@ describe('CSRF on auth routes', () => {
   );
 
   it('answers 404 ROUTE_NOT_FOUND for an unknown action', async () => {
-    for (const action of ['verify-email', 'invite', 'constructor', '__proto__']) {
+    for (const action of ['invite', 'password-change', 'constructor', '__proto__']) {
       const response = await setup().call(action);
       expect(response.status, action).toBe(404);
+    }
+  });
+});
+
+describe('POST /api/auth/verify-email', () => {
+  const VERIFY = { email: 'user@example.test', otp: '123456' };
+
+  it('verifies and signs in: backend called with exactly email and otp, cookies written, no token returned', async () => {
+    const tokens = tokensFor('storefront');
+    let sent: unknown;
+    server.use(
+      mockApi('post', '/auth/email/verify', async ({ request, reply }) => {
+        sent = await request.json();
+        return reply.ok(tokens);
+      }),
+    );
+    const { call, logs } = setup();
+    const response = await call('verify-email', { body: JSON.stringify(VERIFY) });
+    expect(response.status).toBe(200);
+    expect(await response.clone().json()).toEqual({ success: true, data: { user: tokens.user } });
+    expect(sent).toEqual(VERIFY);
+    expect(setCookies(response)).toHaveLength(2);
+    await expectNoSecrets(response, logs, tokens);
+    expect(logs.some((line) => line.includes('EMAIL_VERIFIED'))).toBe(true);
+  });
+
+  it('passes INVALID_OTP through without a cookie', async () => {
+    server.use(mockApi('post', '/auth/email/verify', ({ reply }) => reply.error(400, 'INVALID_OTP')));
+    const response = await setup().call('verify-email', { body: JSON.stringify(VERIFY) });
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as { error: { code: string } }).error.code).toBe('INVALID_OTP');
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it('a seller verifying on the storefront gets WRONG_APP and no session', async () => {
+    const tokens = tokensFor('seller');
+    server.use(mockApi('post', '/auth/email/verify', ({ reply }) => reply.ok(tokens)));
+    const revoked = recordLogout();
+    const response = await setup().call('verify-email', { body: JSON.stringify(VERIFY) });
+    expect(response.status).toBe(403);
+    expect(setCookies(response)).toEqual([]);
+    expect(revoked).toEqual([tokens.refreshToken]);
+  });
+
+  it('rejects unknown keys without calling the backend', async () => {
+    const response = await setup().call('verify-email', { body: JSON.stringify({ ...VERIFY, role: 'x' }) });
+    expect(response.status).toBe(400);
+  });
+
+  it('does not exist in apps without registration', async () => {
+    for (const app of ['admin', 'agent'] as const) {
+      const response = await setup(app).call('verify-email', { body: JSON.stringify(VERIFY) });
+      expect(response.status, app).toBe(404);
     }
   });
 });

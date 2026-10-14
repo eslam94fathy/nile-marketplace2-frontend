@@ -8,6 +8,7 @@ import {
   serverTransport,
   unwrap,
   type ApiClient,
+  type BffApp,
 } from '@nile/api';
 import type { Logger } from '@nile/logger';
 import type { NextRequest, NextResponse } from 'next/server';
@@ -140,26 +141,21 @@ async function parseBody<T>(request: Request, schema: z.ZodType<T>, ctx: Request
 // Only the shape is checked here; the backend validates content (format, lengths) and answers by code.
 const loginBodySchema = z.strictObject({ email: z.string(), password: z.string() });
 
-async function login(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
-  const body = await parseBody(request, loginBodySchema, ctx);
-  if (!body.ok) return body.response;
+/**
+ * Turns tokens from a sign-in style call (login, email verification) into this app's session: another role
+ * gets WRONG_APP and its new session is revoked at once with no cookie written (design 01 §4.1); a sign-in
+ * over an existing session ends the old one so its refresh token doesn't linger.
+ */
+async function startSession(
+  request: NextRequest,
+  tokens: AuthTokens,
+  event: string,
+  ctx: RequestContext,
+): Promise<NextResponse> {
   const previous = await readSession(request, ctx);
-
-  const { data: tokens } = await unwrap(
-    backendClient(ctx).POST('/api/v1/auth/login', {
-      body: {
-        email: body.value.email,
-        password: body.value.password,
-        deviceName: DEVICE_NAMES[ctx.config.app],
-      },
-    }),
-  );
-
-  const role = APP_ROLES[ctx.config.app];
-  if (tokens.user.role !== role) {
-    // Wrong app: the new session is ended at once and no cookie is written (design 01 §4.1).
+  if (tokens.user.role !== APP_ROLES[ctx.config.app]) {
     await revoke(tokens.refreshToken, ctx);
-    ctx.log.warn('LOGIN_WRONG_APP', { userId: tokens.user.id, role: tokens.user.role });
+    ctx.log.warn('LOGIN_WRONG_APP', { userId: tokens.user.id, role: tokens.user.role, event });
     return errorResponse(
       403,
       'WRONG_APP',
@@ -177,11 +173,42 @@ async function login(request: NextRequest, ctx: RequestContext): Promise<NextRes
       },
     );
   }
-
-  // A sign-in over an existing session replaces it; end the old one so its refresh token doesn't linger.
   if (previous.session !== null) await revoke(previous.session.refreshToken, ctx);
-  ctx.log.info('LOGIN_SUCCEEDED', { userId: tokens.user.id });
+  ctx.log.info(event, { userId: tokens.user.id });
   return sessionResponse(okResponse({ user: tokens.user }, ctx.correlationId), tokens, ctx);
+}
+
+async function login(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  const body = await parseBody(request, loginBodySchema, ctx);
+  if (!body.ok) return body.response;
+  const { data: tokens } = await unwrap(
+    backendClient(ctx).POST('/api/v1/auth/login', {
+      body: {
+        email: body.value.email,
+        password: body.value.password,
+        deviceName: DEVICE_NAMES[ctx.config.app],
+      },
+    }),
+  );
+  return startSession(request, tokens, 'LOGIN_SUCCEEDED', ctx);
+}
+
+const verifyEmailBodySchema = z.strictObject({ email: z.string(), otp: z.string() });
+
+/** Apps with self-registration, whose users verify their email (design 01 §4.1). */
+const VERIFY_EMAIL_APPS: readonly BffApp[] = ['storefront', 'seller'];
+
+/** Email verification signs the user in (the backend returns tokens), so it is an auth route, not proxied. */
+async function verifyEmail(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  if (!VERIFY_EMAIL_APPS.includes(ctx.config.app)) return notFound(ctx);
+  const body = await parseBody(request, verifyEmailBodySchema, ctx);
+  if (!body.ok) return body.response;
+  const { data: tokens } = await unwrap(
+    backendClient(ctx).POST('/api/v1/auth/email/verify', {
+      body: { email: body.value.email, otp: body.value.otp },
+    }),
+  );
+  return startSession(request, tokens, 'EMAIL_VERIFIED', ctx);
 }
 
 async function refresh(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
@@ -229,7 +256,7 @@ async function logout(request: NextRequest, ctx: RequestContext): Promise<NextRe
   return response;
 }
 
-const AUTH_ACTIONS = { login, refresh, logout } as const satisfies Record<
+const AUTH_ACTIONS = { login, 'verify-email': verifyEmail, refresh, logout } as const satisfies Record<
   string,
   (request: NextRequest, ctx: RequestContext) => Promise<NextResponse>
 >;

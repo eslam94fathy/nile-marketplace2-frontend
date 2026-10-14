@@ -134,6 +134,28 @@ describe('session end', () => {
   });
 });
 
+describe('no session', () => {
+  it('a visitor who never signed in: a 401 is just a 401, nothing is refreshed and nobody is navigated', async () => {
+    const browser = new FakeBrowser();
+    browser.accessExpiresAt = null;
+    await browser.openTab().client.signOut(); // clears the cookies the fake browser started with
+    browser.logoutCalls = 0;
+    const tab = browser.openTab('/');
+    expect(tab.client.hasSession()).toBe(false);
+    const error = await getCart(tab).catch((e: unknown) => e);
+    await settle();
+    expect((error as ApiError).code).toBe('UNAUTHENTICATED');
+    expect(browser.bffRefreshCalls).toBe(0);
+    expect(tab.reload).not.toHaveBeenCalled();
+    expect(tab.assign).not.toHaveBeenCalled();
+    expect(tab.clearPrivateData).not.toHaveBeenCalled();
+  });
+
+  it('reports a session while the version cookie exists', () => {
+    expect(new FakeBrowser().openTab().client.hasSession()).toBe(true);
+  });
+});
+
 describe('proactive refresh timer', () => {
   const dueIn = ACCESS_TTL_MS - SKEW_SECONDS * 1000;
 

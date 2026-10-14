@@ -168,6 +168,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D4 Customer auth screens (workflow C-2)
+- **Status (2026-10-14):** implemented and verified locally (802 tests: every form's validation, each mapped server error, rate-limit countdown, header account area; lint, format, type-check, build green). E2E `e2e/storefront/auth.spec.ts` passed against the real backend (storefront production build on a spare port): register → Mailpit code → verify → signed in → sign out → sign in with an untrimmed password; forgot → code → reset → old password refused → new password accepted; unknown email answered like a known one; axe on every sign-in screen. Decisions: design 01 R-23.
 - **Scope:** login, register customer, verify email (with resend + 60 s countdown), forgot password, reset password, logout; error mapping per api-inventory §7.2; `EMAIL_NOT_VERIFIED` → verify step.
 - **Exclusions:** social login, phone OTP (not in API).
 - **Dependencies:** T-D1…T-D3, T-C2.

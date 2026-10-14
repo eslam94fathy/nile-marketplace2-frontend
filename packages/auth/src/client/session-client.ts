@@ -85,6 +85,8 @@ export interface SessionClient {
   signOut: (reason?: SignOutReason) => Promise<void>;
   /** Proactive refresh timer and cross-tab messages; returns a stop function. */
   start: () => () => void;
+  /** True when this browser holds a session (the readable session-version cookie exists). */
+  hasSession: () => boolean;
 }
 
 /** Name of the readable session-version cookie, with or without the `__Host-` prefix (design 01 §3.1). */
@@ -103,7 +105,7 @@ export function readDocumentCookie(name: string): string | null {
 
 function browserEnvironment(): BrowserEnvironment {
   return {
-    fetch: (input, init) => globalThis.fetch(input, init),
+    fetch: (input, init) => globalThis.fetch(new URL(input, window.location.origin), init),
     locks: typeof navigator !== 'undefined' && 'locks' in navigator ? navigator.locks : null,
     openChannel: (name) => (typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(name)),
     readCookie: readDocumentCookie,
@@ -225,6 +227,9 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
   const refresh = (): Promise<RefreshOutcome> => {
     if (inFlight !== undefined) return inFlight;
     const observed = sessionVersion();
+    // Both cookies are written and cleared together: without the version cookie there is no session to
+    // refresh, and a visitor who never signed in must not be treated as "session ended" (no navigation).
+    if (observed === null) return Promise.resolve('ended');
     const { locks } = environment();
     const run = locks
       ? locks.request(lockName, () => refreshHoldingLock(observed))
@@ -292,5 +297,6 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
     onUnauthenticated: async () => (await refresh()) === 'ok',
     signOut,
     start,
+    hasSession: () => sessionVersion() !== null,
   };
 }

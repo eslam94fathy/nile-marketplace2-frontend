@@ -95,11 +95,20 @@ export function browserTransport(options: BrowserTransportOptions): Transport {
     fetch: send,
     middleware: [
       {
-        onRequest({ request, id }) {
+        async onRequest({ request, id }) {
           const url = request.url.startsWith(prefixed)
             ? `${base}${request.url.slice(prefixed.length)}`
             : request.url;
-          const rewritten = new Request(url, request);
+          // Copied field by field: `new Request(url, request)` drops the method in some runtimes (seen in
+          // Vitest's jsdom environment). Bodies are small JSON, so reading them as text is cheap.
+          const body = request.method === 'GET' || request.method === 'HEAD' ? '' : await request.text();
+          const rewritten = new Request(url, {
+            method: request.method,
+            headers: request.headers,
+            signal: request.signal,
+            credentials: request.credentials,
+            ...(body === '' ? {} : { body }),
+          });
           rewritten.headers.set(HEADER.CLIENT, '1');
           rewritten.headers.delete(HEADER.AUTHORIZATION);
           setIfAbsent(rewritten.headers, HEADER.CORRELATION_ID, crypto.randomUUID());

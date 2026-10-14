@@ -22,6 +22,7 @@ function fakeClient(...outcomes: RefreshOutcome[]): SessionClient & { stop: Retu
     onUnauthenticated: vi.fn(),
     signOut: vi.fn(),
     start: vi.fn(() => stop),
+    hasSession: vi.fn(() => true),
     stop,
   };
 }

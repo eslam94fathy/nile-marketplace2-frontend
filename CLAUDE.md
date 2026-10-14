@@ -206,6 +206,9 @@ E2E refresh test runs with the backend's `ACCESS_TOKEN_TTL_MINUTES=2` (skipped w
 ### 14.1j Decided (2026-10-14, T-D3)
 `proxy.ts` decrypts the session cookie (no network call) and deletes an unusable one, so a stale cookie can't loop (design 01 R-22) · user sign-out goes to the storefront home / portal sign-in (conventions §2) · every protected page calls `await requireSession()` (checked by a test per app).
 
+### 14.1k Decided (2026-10-14, T-D4)
+Resend cooldown starts on arrival only after a code was just sent (`sent=1`); from sign-in a code is offered at once · the storefront header account area (`GET /me` island, menu with Sign out) is built in T-D4 · a security review found `returnTo` accepting `/.//evil.test`; the normalised path is now checked too (design 01 R-22, R-23).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

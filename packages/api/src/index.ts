@@ -1,7 +1,14 @@
 // Public interface of @nile/api (design 01 §2). Framework-free: no React, no Next.js.
 export type { components, paths } from './generated/schema';
 export { createApiClient, unwrap, type ApiClient, type Unwrapped } from './client';
-export { ApiError, isApiError, parseRetryAfter, type ErrorDetail } from './errors';
+export {
+  ApiError,
+  apiErrorFromResponse,
+  isApiError,
+  networkError,
+  parseRetryAfter,
+  type ErrorDetail,
+} from './errors';
 export {
   BACKEND_ERROR_CODES,
   CLIENT_ERROR_CODES,

@@ -35,6 +35,18 @@ export {
 } from './status-tones';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Input, Textarea } from './components/input';
+export { PasswordInput } from './components/password-input';
+export { PhoneInput } from './components/phone-input';
+export { Notice, type NoticeProps } from './components/notice';
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/dropdown-menu';
+export { useCooldown, type Cooldown } from './use-cooldown';
 export { Label } from './components/label';
 export { Select, type SelectOption, type SelectProps } from './components/select';
 export { Checkbox, Switch } from './components/checkbox';
