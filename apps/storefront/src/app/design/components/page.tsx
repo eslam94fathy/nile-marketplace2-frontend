@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ComponentsPage() {
-  return (
-    <main>
-      <ComponentGallery />
-    </main>
-  );
+  return <ComponentGallery />;
 }

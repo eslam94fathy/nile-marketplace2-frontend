@@ -193,6 +193,9 @@ FQ-5 design tokens approved as on the storefront token page (`packages/ui/src/to
 ### 14.1f Decided (2026-10-14, T-C2)
 Toasts on Radix Toast (no `sonner`) · Select now, searchable Combobox deferred to the first screen that needs it (dependency decided then) · own DataTable (no `@tanstack/react-table`): API sort values, load more, no totals · badge tone by what the user must do (warning waiting, success done, destructive failed/blocked, neutral closed/inactive, info in progress) · pagination is "Load more" only (conventions §7).
 
+### 14.1g Decided (2026-10-14, T-C3)
+One placeholder page per navigation destination (`PlaceholderScreen` naming the task that builds it), so links stay type-checked · static stand-ins for data-driven header parts (categories drawer, signed-out account links, seller business name/status, disabled agent shift switch) until their phases.
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

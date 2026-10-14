@@ -20,13 +20,14 @@ interface DialogContentProps extends ComponentProps<typeof DialogPrimitive.Conte
   readonly title: string;
   readonly description?: ReactNode;
   readonly footer?: ReactNode;
-  /** `center`: dialog. `bottom` / `end`: sheet from the bottom (mobile) or the end edge. */
-  readonly placement?: 'center' | 'bottom' | 'end';
+  /** `center`: dialog. `bottom` / `start` / `end`: sheet from the bottom (mobile) or a side edge. */
+  readonly placement?: 'center' | 'bottom' | 'start' | 'end';
 }
 
 const PLACEMENT = {
   center: 'top-1/2 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg',
   bottom: 'inset-x-0 bottom-0 max-h-[85vh] rounded-t-lg',
+  start: 'inset-y-0 start-0 w-full max-w-xs',
   end: 'inset-y-0 end-0 w-full max-w-md',
 } as const;
 

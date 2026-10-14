@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DesignTokensPage() {
-  return (
-    <main>
-      <TokenSheet />
-    </main>
-  );
+  return <TokenSheet />;
 }

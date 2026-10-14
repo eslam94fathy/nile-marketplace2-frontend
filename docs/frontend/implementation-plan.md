@@ -126,6 +126,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-C3 Application shells per role
+- **Status (2026-10-14):** implemented: storefront header (logo, categories drawer stand-in, search 2..100 trimmed → `/search?q=`, signed-out account links with `returnTo`, cart → sign-in) and footer; seller sidebar / mobile bottom sheet with business-name and status stand-ins; admin grouped sidebar from 1024 px, menu sheet below, phone note; agent top bar with disabled shift switch and 48 px bottom navigation in a centred column. Every app: skip link, one `<main id="main">`, `<Toaster />`, `error.tsx` (Next.js 16 `retry`, digest as reference), `not-found.tsx`; seller/admin/agent pages in a `(portal)` route group (auth pages join outside it in phase d). Decisions 2026-10-14 (CLAUDE.md §14.1g): a placeholder page per navigation destination naming the task that builds it; static stand-ins for data-driven header parts. Tests: Playwright 33/33 (each app at 360/768/1280 px with landmarks, skip link, no horizontal scroll, axe, attached screenshots; navigation incl. mobile menus; not-found 404; search rules; returnTo links). Refinement: design 01 R-19.
 - **Scope:** layouts, navigation, header with session menu placeholder, responsive behaviour (agent shell mobile-first), `error.tsx`/`not-found.tsx` per app, role-specific landing placeholders.
 - **Exclusions:** auth wiring (phase d), data.
 - **Dependencies:** T-C2.

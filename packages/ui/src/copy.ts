@@ -15,4 +15,12 @@ export const UI_COPY = {
   /** conventions §3/§4: default error message. */
   genericError: 'Something went wrong. Please try again.',
   required: '(required)',
+  skipToContent: 'Skip to main content',
+  menu: 'Menu',
+  signOut: 'Sign out',
+  notFoundTitle: 'Page not found',
+  notFoundMessage: "The page you're looking for doesn't exist or has moved.",
+  errorTitle: 'Something went wrong',
+  /** Stand-in screens (T-C3) until their task builds them. */
+  placeholder: (task: string) => `This screen arrives with ${task}.`,
 } as const;

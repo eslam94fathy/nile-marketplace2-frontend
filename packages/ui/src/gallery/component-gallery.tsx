@@ -15,7 +15,7 @@ import { DateTime, Money } from '../components/formatted';
 import { Input, Textarea } from '../components/input';
 import { Select } from '../components/select';
 import { EmptyState, ErrorState, LoadingRegion, Skeleton } from '../components/states';
-import { toast, Toaster } from '../components/toast';
+import { toast } from '../components/toast';
 import { DataTable, type DataTableColumn } from '../data-table/data-table';
 import { SELLER_ORDER_STATUS_TONES } from '../status-tones';
 
@@ -345,8 +345,6 @@ export function ComponentGallery() {
         </h2>
         <TableDemo />
       </section>
-
-      <Toaster />
     </div>
   );
 }
