@@ -187,6 +187,9 @@ Design 01 and 02 v1.0 approved with every recommendation (DQ-1…DQ-9): packages
 ### 14.1d Decided (2026-10-14, T-B7)
 Contract validators from the corrected snapshot with Zod `fromJSONSchema`, objects closed (no new dependency) · test-utils delivers the mechanisms (typed `mockApi`, `defineFactory`, `renderWithProviders`), DTO factories come with their first tests · Playwright: per-role account fixtures through the backend + Mailpit and one axe smoke per app; browser-login fixtures and the CI E2E job in phase d · `contract.yml` on PRs touching `packages/api`/`packages/test-utils`/`backend.lock.json`, nightly and on demand, with the `BACKEND_REPO_TOKEN` secret.
 
+### 14.1e Decided (2026-10-14, T-C1)
+FQ-5 design tokens approved as on the storefront token page (`packages/ui/src/tokens.ts`): Nile blue `#0B5C7A` primary, slate neutrals, shadcn-named semantic colours with tested contrast, Inter (self-hosted), 4 px spacing, radii 4/6/8/12 px, four shadow levels, light theme only · token page at storefront `/design/tokens` (TC-1).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -196,6 +199,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 |---|---|---|
 | OQ-1 | Backend sees the BFF's IP for every web user (shared rate limits) | Rec: trusted client-IP header + shared secret, honoured by the backend only for rate-limit keys (api-inventory §10.4). Backend change; **blocks production** |
 | OQ-2 | Kashier return URL | Rec: `<storefront>/checkout/payment-return` (env value in the backend) |
+| TC-1 | Storefront token page `/design/tokens` is served in every build (not linked, `noindex`) | Remove or gate it before release (T-I) |
 | OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |

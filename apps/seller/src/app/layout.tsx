@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { QueryProvider } from '@nile/query';
 import { APP } from '@/lib/app';
+import { inter } from '@/lib/fonts';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: { default: APP.title, template: `%s | ${APP.title}` },
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { readonly children: ReactNode }) {
   return (
-    <html lang="en" dir="ltr">
+    <html lang="en" dir="ltr" className={inter.variable}>
       <body>
         <QueryProvider>{children}</QueryProvider>
       </body>

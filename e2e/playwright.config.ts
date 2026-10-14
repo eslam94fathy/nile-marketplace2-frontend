@@ -25,7 +25,8 @@ export default defineConfig({
   webServer: E2E_APP_NAMES.map((app) => ({
     command: `npm run start -w @nile/${app}`,
     url: appUrl(app),
-    reuseExistingServer: !isCi,
+    // Never reuse: a server left running would serve an older build and the run would test stale code.
+    reuseExistingServer: false,
     timeout: 60_000,
     // Production mode refuses insecure session cookies (design 01 §3.1, DQ-3); browsers accept Secure
     // cookies on http://localhost, so the production setting works here.

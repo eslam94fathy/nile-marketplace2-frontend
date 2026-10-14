@@ -54,6 +54,9 @@ export async function expectNoBlockingA11yViolations(page: Page): Promise<void> 
     .analyze();
   const blocking = results.violations
     .filter((violation) => BLOCKING_IMPACTS.has(violation.impact ?? ''))
-    .map((violation) => `${violation.id} (${violation.impact ?? 'unknown'}): ${violation.help}`);
+    .map((violation) => {
+      const targets = violation.nodes.map((node) => node.target.join(' ')).join(', ');
+      return `${violation.id} (${violation.impact ?? 'unknown'}): ${violation.help} at ${targets}`;
+    });
   expect(blocking, 'serious or critical accessibility violations').toEqual([]);
 }

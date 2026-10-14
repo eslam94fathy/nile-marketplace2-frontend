@@ -11,3 +11,6 @@ export type E2eAppName = keyof typeof E2E_APPS;
 export const E2E_APP_NAMES = Object.keys(E2E_APPS) as E2eAppName[];
 
 export const appUrl = (app: E2eAppName): string => `http://localhost:${E2E_APPS[app].port}`;
+
+/** Storefront token page (T-C1). */
+export const TOKEN_PAGE_PATH = '/design/tokens';

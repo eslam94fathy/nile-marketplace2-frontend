@@ -106,6 +106,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase c — Design System
 
 ### T-C1 Tailwind + shadcn/ui setup and design tokens
+- **Status (2026-10-14):** implemented; **tokens approved 2026-10-14 (FQ-5)**. `packages/ui`: `tokens.ts` (source of truth: Nile blue and slate scales, shadcn-named semantic colours, type scale, 4 px spacing, radii, shadows), `theme.css` (Tailwind v4 `@theme`, default palette switched off), `cn()`, `contrastRatio()`, `TokenSheet`, `components.json`; Tailwind 4.3.3 + Inter (`next/font/google`, self-hosted) in all four apps; token page at storefront `/design/tokens`. Tests: 83 unit tests (theme.css equals tokens.ts; 21 contrast pairs, 19 text pairs ≥ 4.5:1 and 2 boundary pairs ≥ 3:1); Playwright checks computed colours, font and axe on the token page and attaches a full-page screenshot (no pixel baseline: OS-dependent, and CI E2E starts in phase d). Refinement: design 01 R-17.
 - **Scope:** Tailwind CSS v4, shadcn/ui init in `packages/ui`, tokens (color, type scale, spacing, radius, shadow) as CSS variables, light theme (dark mode not in scope unless you ask), LTR only (FQ-4), font loading via `next/font`.
 - **Exclusions:** product screens.
 - **Dependencies:** T-B1. FQ-5: I propose the tokens; you approve them before T-C2.
