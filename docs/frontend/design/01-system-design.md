@@ -1,6 +1,6 @@
 # Design 01 — System design
 
-Status: **v0.1 DRAFT (2026-10-14), for review.** Changes after approval need explicit approval and a version bump.
+Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Changes after approval need explicit approval and a version bump.
 Inputs: `CLAUDE.md`, `docs/frontend/architecture.md` v0.2, specs `00`–`04` v1.0 (APPROVED), `api-inventory.md` v0.2, backend `4ad89a6`.
 Companion: `02-data-layer.md` (BFF allow-lists, query keys, mutations and invalidation per app).
 
@@ -311,9 +311,9 @@ Polling intervals and page sizes are code constants (specs fix them), not env.
 | R-5 | `verify-email` and `invite` are dedicated auth routes | They return tokens; the proxy must never pass tokens to the browser |
 | R-6 | Public operations never carry a Bearer token, even with a session | User-independent public responses |
 
-## 14. Design questions
+## 14. Design questions (all answered 2026-10-14: the recommendation was accepted for each)
 
-| # | Question | Options (recommendation first) |
+| # | Question | Options (recommendation first = decision) |
 |---|---|---|
 | DQ-1 | Packages: build step or source-consumed | **Source consumed by the apps via `transpilePackages`, no package build (Rec: simplest, fast HMR)** · each package built to `dist` |
 | DQ-2 | shadcn/ui's own dependencies (Radix, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`) | **Approve as part of the shadcn/ui choice (Rec)** · review each |
