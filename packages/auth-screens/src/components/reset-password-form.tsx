@@ -8,13 +8,13 @@ import { Button, Field, Input, Notice, PasswordInput, toast, useCooldown } from 
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { CODE_SENT_PARAM, EMAIL_PARAM, NOTICE_PARAM, NOTICES, ROUTES } from '@/lib/routes';
-import { requestPasswordReset, resetPassword } from '../api';
+import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
-import { RESEND_COOLDOWN_SECONDS } from '../lib/constants';
-import { dropQueryParam, loadPage } from '../lib/navigation';
-import { useSubmitFailure } from '../lib/submit-failure';
+import { RESEND_COOLDOWN_SECONDS } from '../constants';
+import { dropQueryParam, loadPage } from '../navigation';
+import { CODE_SENT_PARAM, EMAIL_PARAM, NOTICE_PARAM, NOTICES } from '../params';
 import { resetPasswordSchema, toResetBody, type ResetPasswordValues } from '../schemas';
+import { useSubmitFailure } from '../submit-failure';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -30,8 +30,9 @@ export interface ResetPasswordFormProps {
   readonly codeSent: boolean;
 }
 
-/** SF-14 Reset password: every session ends, so the customer signs in again afterwards. */
+/** Reset password (spec 01 SF-14, spec 02 SE-05, admin/agent sign-in): every session ends, so the customer signs in again afterwards. */
 export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
+  const { routes, api } = useAuthScreens();
   const failure = useSubmitFailure();
   const newCodeFailure = useSubmitFailure();
   const cooldown = useCooldown();
@@ -51,12 +52,9 @@ export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
   const onSubmit = form.handleSubmit(async (values) => {
     failure.clear();
     try {
-      await resetPassword(toResetBody(values));
+      await api.resetPassword(toResetBody(values));
       loadPage(
-        `${ROUTES.login}?${new URLSearchParams({
-          [NOTICE_PARAM]: NOTICES.passwordReset,
-          [EMAIL_PARAM]: values.email,
-        }).toString()}`,
+        withQuery(routes.login, { [NOTICE_PARAM]: NOTICES.passwordReset, [EMAIL_PARAM]: values.email }),
       );
     } catch (error) {
       if (isApiError(error, 'INVALID_OTP')) {
@@ -71,7 +69,7 @@ export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
     newCodeFailure.clear();
     if (!(await form.trigger('email'))) return;
     try {
-      await requestPasswordReset(fields.email.parse(form.getValues('email')));
+      await api.requestPasswordReset(fields.email.parse(form.getValues('email')));
       toast({ title: AUTH_COPY.reset.sent, tone: 'success' });
       cooldown.start(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
@@ -115,7 +113,7 @@ export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
           control={form.control}
           name="password"
           label={AUTH_COPY.fields.newPassword}
-          description={AUTH_COPY.register.passwordHint}
+          description={AUTH_COPY.passwordHint}
           required
           render={({ field, controlProps }) => (
             <PasswordInput {...field} {...controlProps} autoComplete="new-password" />

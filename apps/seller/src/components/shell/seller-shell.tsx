@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -23,12 +22,13 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
+import { BusinessIdentity, StatusBanner } from '@/features/profile';
 import { APP } from '@/lib/app';
 import { ROUTES } from '@/lib/routes';
+import { sessionClient } from '@/lib/session-client';
 
 // Seller shell (spec 02 §2.1): sidebar on desktop, bottom-sheet menu on mobile; header with the business
-// name and status badge. Business name and status are stand-ins until T-H1 loads `GET /seller/profile`;
-// "Sign out" is enabled with the session in phase d.
+// name and status badge, and the status banner (§2.2) above every portal page, from `GET /seller/profile`.
 
 const NAV = [
   { href: ROUTES.overview, label: 'Overview', icon: LayoutDashboard },
@@ -40,8 +40,6 @@ const NAV = [
 ] as const;
 
 const NAV_LABEL = 'Seller portal';
-const BUSINESS_NAME_PLACEHOLDER = 'Your business';
-const STATUS_PLACEHOLDER = 'Status';
 
 function NavLinks({ onNavigate }: { readonly onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -62,7 +60,13 @@ function NavLinks({ onNavigate }: { readonly onNavigate?: () => void }) {
           </Link>
         );
       })}
-      <Button variant="ghost" disabled className="justify-start gap-3 px-3">
+      <Button
+        variant="ghost"
+        className="justify-start gap-3 px-3"
+        onClick={() => {
+          void sessionClient.signOut();
+        }}
+      >
         <LogOut aria-hidden="true" />
         {UI_COPY.signOut}
       </Button>
@@ -102,12 +106,12 @@ export function SellerShell({ children }: { readonly children: ReactNode }) {
             </Button>
             <Brand />
           </div>
-          <div className="ms-auto flex items-center gap-2 text-sm">
-            <span className="font-medium">{BUSINESS_NAME_PLACEHOLDER}</span>
-            <Badge>{STATUS_PLACEHOLDER}</Badge>
+          <div className="ms-auto min-w-0">
+            <BusinessIdentity />
           </div>
         </header>
         <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 p-4 outline-none lg:p-8">
+          <StatusBanner />
           {children}
         </main>
       </div>

@@ -1,6 +1,7 @@
+import { AUTH_COPY, VerifyEmailForm } from '@nile/auth-screens';
+import { codeSentParam, emailParam, noticeParam, returnToParam } from '@nile/auth-screens/params';
 import type { Metadata } from 'next';
-import { AUTH_COPY, VerifyEmailForm } from '@/features/auth';
-import { codeSentParam, emailParam, noticeParam, returnToParam } from '@/lib/search-params';
+import { AUTH_PATHS } from '@/lib/routes';
 
 export const metadata: Metadata = { title: AUTH_COPY.verify.title };
 
@@ -10,7 +11,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<'/veri
   return (
     <VerifyEmailForm
       email={emailParam(params)}
-      returnTo={returnToParam(params)}
+      returnTo={returnToParam(params, AUTH_PATHS)}
       notice={noticeParam(params)}
       codeSent={codeSentParam(params)}
     />

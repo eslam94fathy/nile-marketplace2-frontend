@@ -6,4 +6,18 @@ export const ROUTES = {
   finance: '/finance',
   profile: '/profile',
   security: '/security',
+  login: '/login',
+  register: '/register',
+  verifyEmail: '/verify-email',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const;
+
+/** Sign-in screens: never a `returnTo` destination. */
+export const AUTH_PATHS = [
+  ROUTES.login,
+  ROUTES.register,
+  ROUTES.verifyEmail,
+  ROUTES.forgotPassword,
+  ROUTES.resetPassword,
+] as const;

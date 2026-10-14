@@ -44,6 +44,7 @@ apps/
 packages/
   api/          # OpenAPI snapshot, fix script, generated types, typed client, ApiError, error codes, query builders
   auth/         # session cookie, BFF route handlers, proxy allow-list, DAL helpers, client refresh coordinator
+  auth-screens/ # sign-in, verify-email, forgot/reset password screens shared by the apps (no Next.js)
   domain/       # money, dates, enum labels, display-only status helpers, shared Zod field schemas
   ui/           # shadcn/ui components, tokens, theme, data table
   config/       # tsconfig, eslint, prettier, vitest presets
@@ -208,6 +209,9 @@ E2E refresh test runs with the backend's `ACCESS_TOKEN_TTL_MINUTES=2` (skipped w
 
 ### 14.1k Decided (2026-10-14, T-D4)
 Resend cooldown starts on arrival only after a code was just sent (`sent=1`); from sign-in a code is offered at once · the storefront header account area (`GET /me` island, menu with Sign out) is built in T-D4 · a security review found `returnTo` accepting `/.//evil.test`; the normalised path is now checked too (design 01 R-22, R-23).
+
+### 14.1l Decided (2026-10-14, T-D5)
+Sign-in screens shared in a new package `@nile/auth-screens` (apps give routes, sites, API calls, navigate and Link through a provider; registration forms stay per app) · seller portal shows the live business name, status badge and status banner from `GET /seller/profile` from T-D5 on; Overview content stays phase h (design 01 R-24).
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).

@@ -5,20 +5,25 @@ import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
 import { RegisterForm } from './register-form';
+import { StorefrontAuthScreens } from './screens-provider';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 const server = setupMswServer();
 
+const renderForm = (returnTo: string | null) =>
+  renderWithProviders(
+    <StorefrontAuthScreens>
+      <RegisterForm returnTo={returnTo} />
+    </StorefrontAuthScreens>,
+  );
+
 beforeEach(() => {
   push.mockReset();
 });
 
-async function fill(
-  view: ReturnType<typeof renderWithProviders>,
-  overrides: Partial<Record<string, string>> = {},
-) {
+async function fill(view: ReturnType<typeof renderForm>, overrides: Partial<Record<string, string>> = {}) {
   const values = {
     'First name': ' Mona ',
     'Last name': 'Ali',
@@ -54,7 +59,7 @@ describe('SF-11 Create account', { timeout: 15_000 }, () => {
         { base: BFF_BASE },
       ),
     );
-    const view = renderWithProviders(<RegisterForm returnTo="/p/red-shirt" />);
+    const view = renderForm('/p/red-shirt');
     await fill(view);
     await vi.waitFor(() => {
       expect(push).toHaveBeenCalledWith(
@@ -71,7 +76,7 @@ describe('SF-11 Create account', { timeout: 15_000 }, () => {
   });
 
   it('checks the rules on the client: phone prefix, password length, matching confirmation', async () => {
-    const view = renderWithProviders(<RegisterForm returnTo={null} />);
+    const view = renderForm(null);
     await fill(view, { 'Mobile phone': '0201234567', Password: 'short', 'Confirm password': 'other' });
     expect(await screen.findByText('Enter a mobile number starting with 10, 11, 12 or 15.')).toBeDefined();
     expect(screen.getByText('Password must be at least 8 characters.')).toBeDefined();
@@ -90,7 +95,7 @@ describe('SF-11 Create account', { timeout: 15_000 }, () => {
         },
       ),
     );
-    const view = renderWithProviders(<RegisterForm returnTo="/cart" />);
+    const view = renderForm('/cart');
     await fill(view);
     expect(await screen.findByText('An account with this email already exists.')).toBeDefined();
     expect(screen.getByLabelText(/^Email/).getAttribute('aria-invalid')).toBe('true');
@@ -114,7 +119,7 @@ describe('SF-11 Create account', { timeout: 15_000 }, () => {
         { base: BFF_BASE },
       ),
     );
-    const view = renderWithProviders(<RegisterForm returnTo={null} />);
+    const view = renderForm(null);
     await fill(view);
     expect(await screen.findByText('Enter a mobile number starting with 10, 11, 12 or 15.')).toBeDefined();
     expect(screen.queryByText(/must match/)).toBeNull();

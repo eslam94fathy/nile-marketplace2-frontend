@@ -22,8 +22,13 @@ export interface FieldControlProps {
   readonly 'aria-required': boolean | undefined;
 }
 
-export interface FieldProps<Values extends FieldValues, Name extends FieldPath<Values>> {
-  readonly control: Control<Values>;
+export interface FieldProps<
+  Values extends FieldValues,
+  Name extends FieldPath<Values>,
+  Transformed extends FieldValues = Values,
+> {
+  /** The form's control; `Transformed` is the resolver's output (e.g. an empty input becoming `null`). */
+  readonly control: Control<Values, unknown, Transformed>;
   readonly name: Name;
   readonly label: string;
   readonly description?: string;
@@ -43,7 +48,11 @@ export interface FieldProps<Values extends FieldValues, Name extends FieldPath<V
  * The message is linked with `aria-describedby` and the control gets `aria-invalid`, so screen readers
  * announce both (conventions §5). Server errors set with `form.setError` show here the same way.
  */
-export function Field<Values extends FieldValues, Name extends FieldPath<Values>>({
+export function Field<
+  Values extends FieldValues,
+  Name extends FieldPath<Values>,
+  Transformed extends FieldValues = Values,
+>({
   control,
   name,
   label,
@@ -52,7 +61,7 @@ export function Field<Values extends FieldValues, Name extends FieldPath<Values>
   layout = 'stacked',
   className,
   render,
-}: FieldProps<Values, Name>) {
+}: FieldProps<Values, Name, Transformed>) {
   const { field, fieldState } = useController({ control, name });
   const id = useId();
   const descriptionId = description === undefined ? undefined : `${id}-description`;

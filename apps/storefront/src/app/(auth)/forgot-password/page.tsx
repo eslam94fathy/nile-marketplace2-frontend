@@ -1,6 +1,6 @@
+import { AUTH_COPY, ForgotPasswordForm } from '@nile/auth-screens';
+import { emailParam } from '@nile/auth-screens/params';
 import type { Metadata } from 'next';
-import { AUTH_COPY, ForgotPasswordForm } from '@/features/auth';
-import { emailParam } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: AUTH_COPY.forgot.title };
 

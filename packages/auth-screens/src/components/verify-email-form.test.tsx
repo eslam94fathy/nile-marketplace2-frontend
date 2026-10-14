@@ -1,16 +1,12 @@
 // @vitest-environment jsdom
-import { authTokensFactory, mockApi } from '@nile/test-utils';
-import { renderWithProviders } from '@nile/test-utils/react';
+import { authTokensFactory } from '@nile/test-utils';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadPage } from '../lib/navigation';
-import { BFF_BASE, mockAuthRoute, setupMswServer } from '@/test/msw';
+import { loadPage } from '../navigation';
+import { makeTestConfig, mockAuthRoute, renderScreen, setupMswServer } from '../test/harness';
 import { VerifyEmailForm, type VerifyEmailFormProps } from './verify-email-form';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-
-// Spy mode: the real helpers run, except loadPage, which jsdom can't perform (no navigation).
-vi.mock('../lib/navigation', { spy: true });
+vi.mock('../navigation', { spy: true });
 
 const server = setupMswServer();
 
@@ -20,8 +16,8 @@ beforeEach(() => {
     .mockImplementation(() => undefined);
 });
 
-function renderForm(props: Partial<VerifyEmailFormProps> = {}) {
-  return renderWithProviders(
+function renderForm(props: Partial<VerifyEmailFormProps> = {}, setup = makeTestConfig()) {
+  const view = renderScreen(
     <VerifyEmailForm
       email="mona@example.test"
       returnTo="/p/red-shirt"
@@ -29,12 +25,14 @@ function renderForm(props: Partial<VerifyEmailFormProps> = {}) {
       codeSent={false}
       {...props}
     />,
+    setup.config,
   );
+  return { ...view, api: setup.api };
 }
 
 const resendButton = () => screen.getByRole('button', { name: /Resend code/ });
 
-describe('SF-12 Verify email', () => {
+describe('Verify email (SF-12, SE-03)', () => {
   it('after registration: says a code was sent and waits 60 s before offering another', () => {
     renderForm({ codeSent: true });
     expect(
@@ -42,6 +40,11 @@ describe('SF-12 Verify email', () => {
     ).toBeDefined();
     expect(resendButton().textContent).toBe('Resend code in 60 s');
     expect(resendButton().hasAttribute('disabled')).toBe(true);
+  });
+
+  it("shows the app's note after registration (seller: review notice)", () => {
+    renderForm({ codeSent: true }, makeTestConfig({ verifyNote: 'Our team will review your application.' }));
+    expect(screen.getByText('Our team will review your application.')).toBeDefined();
   });
 
   it('from sign-in (no code sent yet): asks to verify first and offers a code at once', () => {
@@ -78,31 +81,19 @@ describe('SF-12 Verify email', () => {
     expect(await screen.findByText('Enter the 6-digit code.')).toBeDefined();
   });
 
-  it('resend: one generic request, then a 60 s cooldown', async () => {
-    const bodies: unknown[] = [];
-    server.use(
-      mockApi(
-        'post',
-        '/auth/email/resend-otp',
-        async ({ request, reply }) => {
-          bodies.push(await request.json());
-          return reply.ok({ message: 'If this email needs verification, a code was sent.' });
-        },
-        { base: BFF_BASE },
-      ),
-    );
+  it('resend: one request with the email, then a 60 s cooldown', async () => {
     const view = renderForm();
     await view.user.click(resendButton());
     await vi.waitFor(() => {
       expect(resendButton().textContent).toBe('Resend code in 60 s');
     });
-    expect(bodies).toEqual([{ email: 'mona@example.test' }]);
+    expect(view.api.resendVerificationCode.mock.calls).toEqual([['mona@example.test']]);
   });
 
   it('without an email in the address, asks for it first', async () => {
     const view = renderForm({ email: null });
     await view.user.click(resendButton());
     expect(await screen.findByText('This field is required.')).toBeDefined();
-    expect(screen.getByLabelText(/^Email/)).toBeDefined();
+    expect(view.api.resendVerificationCode).not.toHaveBeenCalled();
   });
 });

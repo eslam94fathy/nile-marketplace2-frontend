@@ -178,6 +178,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D5 Seller registration and auth screens (workflow S-1)
+- **Status (2026-10-14):** implemented and verified locally (815 tests; lint, format, type-check, build of 4 apps green). E2E `e2e/seller/auth.spec.ts` passed against the real backend (seller production build on a spare port): register with pickup address → Mailpit code → verify → overview with business name, "Waiting for approval" badge and banner; a customer account is pointed to the store site. The generic sign-in screens moved to `@nile/auth-screens` and the storefront uses them. Decisions: design 01 R-24.
 - **Scope:** seller login/register (business name, phone, pickup address with governorate select), verify email, password reset, post-login status page.
 - **Exclusions:** seller features (phase h).
 - **Dependencies:** T-D4 patterns, T-D1…T-D3.

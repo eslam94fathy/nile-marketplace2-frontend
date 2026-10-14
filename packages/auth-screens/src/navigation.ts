@@ -1,9 +1,12 @@
 import { safeReturnTo } from '@nile/auth/client';
-import { AUTH_PATHS, ROUTES } from '@/lib/routes';
 
-/** Where to go after signing in: the validated `returnTo`, else home (spec 01 §5, conventions §2). */
-export function destinationAfterSignIn(returnTo: string | null): string {
-  return safeReturnTo(returnTo, { exclude: AUTH_PATHS }) ?? ROUTES.home;
+/** Where to go after signing in: the validated `returnTo` (never a sign-in screen), else the role's home. */
+export function destinationAfterSignIn(
+  returnTo: string | null,
+  authPaths: readonly string[],
+  home: string,
+): string {
+  return safeReturnTo(returnTo, { exclude: authPaths }) ?? home;
 }
 
 /**

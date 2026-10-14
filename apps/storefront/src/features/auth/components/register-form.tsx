@@ -2,6 +2,8 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
+import { AUTH_COPY, AuthCard, FailureAlert, useSubmitFailure } from '@nile/auth-screens';
+import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '@nile/auth-screens/params';
 import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input, PasswordInput, PhoneInput } from '@nile/ui';
@@ -10,13 +12,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM, RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
+import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { registerCustomer } from '../api';
-import { AUTH_COPY } from '../copy';
-import { useSubmitFailure } from '../lib/submit-failure';
+import { REGISTER_COPY } from '../copy';
 import { registerSchema, toRegisterBody, type RegisterValues } from '../schemas';
-import { AuthCard } from './auth-card';
-import { FailureAlert } from './failure-alert';
 
 const FIELD_MAP = {
   firstName: { field: 'firstName', message: fields.FIELD_MESSAGES.tooLong(100) },
@@ -64,14 +63,14 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
   });
 
   return (
-    <AuthCard title={AUTH_COPY.register.title}>
+    <AuthCard title={REGISTER_COPY.title}>
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="space-y-4">
         <FailureAlert failure={failure} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             control={form.control}
             name="firstName"
-            label={AUTH_COPY.fields.firstName}
+            label={REGISTER_COPY.firstName}
             required
             render={({ field, controlProps }) => (
               <Input {...field} {...controlProps} autoComplete="given-name" />
@@ -80,7 +79,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
           <Field
             control={form.control}
             name="lastName"
-            label={AUTH_COPY.fields.lastName}
+            label={REGISTER_COPY.lastName}
             required
             render={({ field, controlProps }) => (
               <Input {...field} {...controlProps} autoComplete="family-name" />
@@ -102,20 +101,20 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
               href={{ pathname: ROUTES.login, query: { [EMAIL_PARAM]: takenEmail, ...keepReturnTo } }}
               className={LINK}
             >
-              {AUTH_COPY.register.signIn}
+              {REGISTER_COPY.signIn}
             </Link>
             <Link
               href={{ pathname: ROUTES.forgotPassword, query: { [EMAIL_PARAM]: takenEmail } }}
               className={LINK}
             >
-              {AUTH_COPY.register.forgotPassword}
+              {REGISTER_COPY.forgotPassword}
             </Link>
           </p>
         ) : null}
         <Field
           control={form.control}
           name="phone"
-          label={AUTH_COPY.fields.phone}
+          label={REGISTER_COPY.phone}
           required
           render={({ field, controlProps }) => <PhoneInput {...field} {...controlProps} />}
         />
@@ -123,7 +122,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
           control={form.control}
           name="password"
           label={AUTH_COPY.fields.password}
-          description={AUTH_COPY.register.passwordHint}
+          description={AUTH_COPY.passwordHint}
           required
           render={({ field, controlProps }) => (
             <PasswordInput {...field} {...controlProps} autoComplete="new-password" />
@@ -144,13 +143,13 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
           loading={form.formState.isSubmitting}
           disabled={failure.blocked}
         >
-          {AUTH_COPY.register.submit}
+          {REGISTER_COPY.submit}
         </Button>
       </form>
       <p className="text-sm">
-        {AUTH_COPY.register.haveAccount}{' '}
+        {REGISTER_COPY.haveAccount}{' '}
         <Link href={{ pathname: ROUTES.login, query: keepReturnTo }} className={LINK}>
-          {AUTH_COPY.register.signIn}
+          {REGISTER_COPY.signIn}
         </Link>
       </p>
     </AuthCard>

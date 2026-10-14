@@ -1,6 +1,6 @@
+import { AUTH_COPY, ResetPasswordForm } from '@nile/auth-screens';
+import { codeSentParam, emailParam } from '@nile/auth-screens/params';
 import type { Metadata } from 'next';
-import { AUTH_COPY, ResetPasswordForm } from '@/features/auth';
-import { codeSentParam, emailParam } from '@/lib/search-params';
 
 export const metadata: Metadata = { title: AUTH_COPY.reset.title };
 

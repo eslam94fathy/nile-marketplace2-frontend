@@ -4,14 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input } from '@nile/ui';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM, ROUTES } from '@/lib/routes';
-import { requestPasswordReset } from '../api';
+import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
-import { useSubmitFailure } from '../lib/submit-failure';
+import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '../params';
 import { emailOnlySchema, type EmailOnlyValues } from '../schemas';
+import { useSubmitFailure } from '../submit-failure';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -19,7 +18,7 @@ const FIELD_MAP = { email: { field: 'email', message: fields.FIELD_MESSAGES.emai
 
 /** SF-13 Forgot password: always the same answer, then the reset screen (never reveals if the email exists). */
 export function ForgotPasswordForm({ email }: { readonly email: string | null }) {
-  const router = useRouter();
+  const { routes, api, navigate } = useAuthScreens();
   const failure = useSubmitFailure();
   const form = useForm<EmailOnlyValues, unknown, z.output<typeof emailOnlySchema>>({
     resolver: zodResolver(emailOnlySchema),
@@ -30,12 +29,9 @@ export function ForgotPasswordForm({ email }: { readonly email: string | null })
   const onSubmit = form.handleSubmit(async (values) => {
     failure.clear();
     try {
-      await requestPasswordReset(values.email);
-      router.push(
-        `${ROUTES.resetPassword}?${new URLSearchParams({
-          [EMAIL_PARAM]: values.email,
-          [CODE_SENT_PARAM]: CODE_SENT_VALUE,
-        }).toString()}`,
+      await api.requestPasswordReset(values.email);
+      navigate(
+        withQuery(routes.resetPassword, { [EMAIL_PARAM]: values.email, [CODE_SENT_PARAM]: CODE_SENT_VALUE }),
       );
     } catch (error) {
       if (!applyServerErrors(error, form.setError, FIELD_MAP)) failure.fail(error);

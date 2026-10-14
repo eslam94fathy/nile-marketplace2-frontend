@@ -2,25 +2,17 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
+import { signIn } from '@nile/auth/client';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input, Notice, PasswordInput } from '@nile/ui';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
-import {
-  EMAIL_PARAM,
-  NOTICE_PARAM,
-  NOTICES,
-  RETURN_TO_PARAM,
-  ROUTES,
-  type Notice as NoticeValue,
-} from '@/lib/routes';
-import { signIn } from '../api';
+import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
-import { destinationAfterSignIn, loadPage } from '../lib/navigation';
-import { useSubmitFailure } from '../lib/submit-failure';
+import { destinationAfterSignIn, loadPage } from '../navigation';
+import { EMAIL_PARAM, NOTICE_PARAM, NOTICES, RETURN_TO_PARAM, type Notice as NoticeValue } from '../params';
 import { signInSchema, type SignInValues } from '../schemas';
+import { useSubmitFailure } from '../submit-failure';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -34,15 +26,17 @@ const FIELD_MAP = {
   password: { field: 'password', message: AUTH_COPY.fields.password },
 } as const;
 
+const LINK = 'text-primary underline-offset-4 hover:underline';
+
 export interface SignInFormProps {
   readonly returnTo: string | null;
   readonly email: string | null;
   readonly notice: NoticeValue | null;
 }
 
-/** SF-10 Sign in. */
+/** Sign in (spec 01 SF-10, spec 02 SE-01, spec 03 AD-01, spec 04 AG-01). */
 export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
-  const router = useRouter();
+  const { routes, authPaths, navigate, Link } = useAuthScreens();
   const failure = useSubmitFailure(ERRORS);
   const form = useForm<SignInValues, unknown, z.output<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -50,21 +44,20 @@ export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
     defaultValues: { email: email ?? '', password: '' },
   });
   const typedEmail = useWatch({ control: form.control, name: 'email' });
-  const keepReturnTo = returnTo === null ? {} : { [RETURN_TO_PARAM]: returnTo };
 
   const onSubmit = form.handleSubmit(async (values) => {
     failure.clear();
     try {
       await signIn(values);
-      loadPage(destinationAfterSignIn(returnTo));
+      loadPage(destinationAfterSignIn(returnTo, authPaths, routes.home));
     } catch (error) {
-      if (isApiError(error, 'EMAIL_NOT_VERIFIED')) {
-        router.push(
-          `${ROUTES.verifyEmail}?${new URLSearchParams({
+      if (isApiError(error, 'EMAIL_NOT_VERIFIED') && routes.verifyEmail !== undefined) {
+        navigate(
+          withQuery(routes.verifyEmail, {
             [EMAIL_PARAM]: values.email,
             [NOTICE_PARAM]: NOTICES.emailNotVerified,
-            ...keepReturnTo,
-          }).toString()}`,
+            [RETURN_TO_PARAM]: returnTo,
+          }),
         );
         return;
       }
@@ -109,24 +102,20 @@ export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
         </Button>
       </form>
       <div className="flex flex-wrap justify-between gap-2 text-sm">
-        <Link
-          href={{
-            pathname: ROUTES.forgotPassword,
-            query: typedEmail === '' ? {} : { [EMAIL_PARAM]: typedEmail },
-          }}
-          className="text-primary underline-offset-4 hover:underline"
-        >
+        <Link href={withQuery(routes.forgotPassword, { [EMAIL_PARAM]: typedEmail })} className={LINK}>
           {AUTH_COPY.signIn.forgotPassword}
         </Link>
-        <p>
-          {AUTH_COPY.signIn.noAccount}{' '}
-          <Link
-            href={{ pathname: ROUTES.register, query: keepReturnTo }}
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            {AUTH_COPY.signIn.createAccount}
-          </Link>
-        </p>
+        {routes.register === undefined ? null : (
+          <p>
+            {AUTH_COPY.signIn.noAccount}{' '}
+            <Link
+              href={withQuery(routes.register, { [RETURN_TO_PARAM]: returnTo })}
+              className={`font-medium ${LINK}`}
+            >
+              {AUTH_COPY.signIn.createAccount}
+            </Link>
+          </p>
+        )}
       </div>
     </AuthCard>
   );

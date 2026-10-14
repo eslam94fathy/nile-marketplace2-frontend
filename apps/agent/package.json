@@ -12,6 +12,7 @@
   "dependencies": {
     "@nile/api": "*",
     "@nile/auth": "*",
+    "@nile/auth-screens": "*",
     "@nile/config": "*",
     "@nile/logger": "*",
     "@nile/query": "*",

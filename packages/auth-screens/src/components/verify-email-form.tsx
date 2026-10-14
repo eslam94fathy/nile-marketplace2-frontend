@@ -2,20 +2,20 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
+import { verifyEmailAndSignIn } from '@nile/auth/client';
 import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input, Notice, toast, useCooldown } from '@nile/ui';
-import Link from 'next/link';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { CODE_SENT_PARAM, NOTICES, RETURN_TO_PARAM, ROUTES, type Notice as NoticeValue } from '@/lib/routes';
-import { resendVerificationCode, verifyEmailAndSignIn } from '../api';
+import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
-import { RESEND_COOLDOWN_SECONDS } from '../lib/constants';
-import { destinationAfterSignIn, dropQueryParam, loadPage } from '../lib/navigation';
-import { useSubmitFailure } from '../lib/submit-failure';
+import { RESEND_COOLDOWN_SECONDS } from '../constants';
+import { destinationAfterSignIn, dropQueryParam, loadPage } from '../navigation';
+import { CODE_SENT_PARAM, NOTICES, RETURN_TO_PARAM, type Notice as NoticeValue } from '../params';
 import { verifyEmailSchema, type VerifyEmailValues } from '../schemas';
+import { useSubmitFailure } from '../submit-failure';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -33,8 +33,9 @@ export interface VerifyEmailFormProps {
   readonly codeSent: boolean;
 }
 
-/** SF-12 Verify email: the code signs the customer in. Never states whether the email exists. */
+/** Verify email (spec 01 SF-12, spec 02 SE-03): the code signs the user in. Never states whether the email exists. */
 export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEmailFormProps) {
+  const { routes, authPaths, api, Link, verifyNote } = useAuthScreens();
   const failure = useSubmitFailure();
   const resendFailure = useSubmitFailure();
   const cooldown = useCooldown();
@@ -55,7 +56,7 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
     failure.clear();
     try {
       await verifyEmailAndSignIn(values);
-      loadPage(destinationAfterSignIn(returnTo));
+      loadPage(destinationAfterSignIn(returnTo, authPaths, routes.home));
     } catch (error) {
       if (isApiError(error, 'INVALID_OTP')) {
         form.setError('otp', { type: 'server', message: AUTH_COPY.errors.INVALID_OTP });
@@ -67,9 +68,10 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
 
   const resend = async () => {
     resendFailure.clear();
-    if (!(await form.trigger('email'))) return;
+    const resendCode = api.resendVerificationCode;
+    if (resendCode === undefined || !(await form.trigger('email'))) return;
     try {
-      await resendVerificationCode(fields.email.parse(form.getValues('email')));
+      await resendCode(fields.email.parse(form.getValues('email')));
       toast({ title: AUTH_COPY.verify.resent, tone: 'success' });
       cooldown.start(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
@@ -78,7 +80,6 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
   };
 
   const waiting = cooldown.remaining > 0 || resendFailure.blocked;
-  const keepReturnTo = returnTo === null ? {} : { [RETURN_TO_PARAM]: returnTo };
 
   return (
     <AuthCard title={AUTH_COPY.verify.title}>
@@ -88,6 +89,7 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
           {codeSent ? AUTH_COPY.verify.sentTo(email) : AUTH_COPY.verify.requestCode(email)}
         </p>
       )}
+      {codeSent && verifyNote !== undefined ? <p className="text-sm">{verifyNote}</p> : null}
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="space-y-4">
         <FailureAlert failure={failure} />
         <FailureAlert failure={resendFailure} />
@@ -130,12 +132,14 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
         <Button variant="link" className="px-0" disabled={waiting} onClick={() => void resend()}>
           {cooldown.remaining > 0 ? AUTH_COPY.verify.resendIn(cooldown.remaining) : AUTH_COPY.verify.resend}
         </Button>
-        <Link
-          href={{ pathname: ROUTES.register, query: keepReturnTo }}
-          className="text-primary underline-offset-4 hover:underline"
-        >
-          {AUTH_COPY.verify.changeEmail}
-        </Link>
+        {routes.register === undefined ? null : (
+          <Link
+            href={withQuery(routes.register, { [RETURN_TO_PARAM]: returnTo })}
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            {AUTH_COPY.verify.changeEmail}
+          </Link>
+        )}
       </div>
     </AuthCard>
   );

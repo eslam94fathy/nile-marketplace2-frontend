@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     '@nile/config',
     '@nile/api',
     '@nile/auth',
+    '@nile/auth-screens',
     '@nile/domain',
     '@nile/logger',
     '@nile/query',

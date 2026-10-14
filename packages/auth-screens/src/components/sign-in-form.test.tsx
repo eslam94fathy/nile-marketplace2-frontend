@@ -1,22 +1,17 @@
 // @vitest-environment jsdom
 import { authTokensFactory } from '@nile/test-utils';
-import { renderWithProviders } from '@nile/test-utils/react';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockAuthRoute, setupMswServer } from '@/test/msw';
-import { loadPage } from '../lib/navigation';
+import { loadPage } from '../navigation';
+import { makeTestConfig, mockAuthRoute, renderScreen, setupMswServer } from '../test/harness';
 import { SignInForm, type SignInFormProps } from './sign-in-form';
 
-const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
-
 // Spy mode: the real helpers run, except loadPage, which jsdom can't perform (no navigation).
-vi.mock('../lib/navigation', { spy: true });
+vi.mock('../navigation', { spy: true });
 
 const server = setupMswServer();
 
 beforeEach(() => {
-  push.mockReset();
   vi.mocked(loadPage)
     .mockReset()
     .mockImplementation(() => undefined);
@@ -24,8 +19,12 @@ beforeEach(() => {
 
 const user = authTokensFactory().user;
 
-function renderForm(props: Partial<SignInFormProps> = {}) {
-  return renderWithProviders(<SignInForm returnTo="/account/orders" email={null} notice={null} {...props} />);
+function renderForm(props: Partial<SignInFormProps> = {}, setup = makeTestConfig()) {
+  const view = renderScreen(
+    <SignInForm returnTo="/account/orders" email={null} notice={null} {...props} />,
+    setup.config,
+  );
+  return { ...view, navigate: setup.navigate };
 }
 
 async function fillAndSubmit(view: ReturnType<typeof renderForm>, email: string, password: string) {
@@ -34,7 +33,7 @@ async function fillAndSubmit(view: ReturnType<typeof renderForm>, email: string,
   await view.user.click(screen.getByRole('button', { name: 'Sign in' }));
 }
 
-describe('SF-10 Sign in', () => {
+describe('Sign in (SF-10, SE-01)', () => {
   it('validates before calling the API', async () => {
     const view = renderForm();
     await view.user.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -52,13 +51,17 @@ describe('SF-10 Sign in', () => {
     expect(login.bodies).toEqual([{ email: 'user@example.test', password: '  my pass  ' }]);
   });
 
-  it('goes home when returnTo is missing or unsafe', async () => {
+  it('goes home when returnTo is missing, unsafe or a sign-in screen', async () => {
     server.use(mockAuthRoute('login', { ok: { user } }).handler);
-    const view = renderForm({ returnTo: '//evil.test' });
-    await fillAndSubmit(view, 'a@b.test', 'secret');
-    await vi.waitFor(() => {
-      expect(loadPage).toHaveBeenCalledWith('/');
-    });
+    for (const returnTo of ['//evil.test', '/login', null]) {
+      vi.mocked(loadPage).mockClear();
+      const view = renderForm({ returnTo });
+      await fillAndSubmit(view, 'a@b.test', 'secret');
+      await vi.waitFor(() => {
+        expect(loadPage).toHaveBeenCalledWith('/');
+      });
+      view.unmount();
+    }
   });
 
   it.each([
@@ -81,7 +84,7 @@ describe('SF-10 Sign in', () => {
     const view = renderForm();
     await fillAndSubmit(view, 'A@b.test', 'secret');
     await vi.waitFor(() => {
-      expect(push).toHaveBeenCalledWith(
+      expect(view.navigate).toHaveBeenCalledWith(
         '/verify-email?email=a%40b.test&notice=email-not-verified&returnTo=%2Faccount%2Forders',
       );
     });
@@ -130,5 +133,19 @@ describe('SF-10 Sign in', () => {
     expect(screen.getByRole('link', { name: 'Forgot password?' }).getAttribute('href')).toBe(
       '/forgot-password?email=a%40b.test',
     );
+  });
+
+  it('apps without registration (admin, agent) offer no create-account link', () => {
+    const { routes } = makeTestConfig().config;
+    const setup = makeTestConfig({
+      routes: {
+        home: routes.home,
+        login: routes.login,
+        forgotPassword: routes.forgotPassword,
+        resetPassword: routes.resetPassword,
+      },
+    });
+    renderForm({}, setup);
+    expect(screen.queryByRole('link', { name: 'Create account' })).toBeNull();
   });
 });
