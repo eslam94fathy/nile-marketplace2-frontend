@@ -11,6 +11,8 @@ export default defineConfig({
   testDir: '.',
   outputDir: '../test-results',
   fullyParallel: true,
+  // Four production servers and the browsers share one machine; more workers starved axe runs (T-C2).
+  workers: 2,
   forbidOnly: isCi,
   retries: isCi ? 1 : 0,
   reporter: isCi ? [['list'], ['html', { open: 'never', outputFolder: '../playwright-report' }]] : 'list',

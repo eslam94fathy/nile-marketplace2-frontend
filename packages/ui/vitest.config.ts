@@ -1,3 +1,3 @@
 import { createVitestProject } from '@nile/config/vitest';
 
-export default createVitestProject('ui');
+export default createVitestProject('ui', { setupFiles: ['./src/test/setup.ts'] });

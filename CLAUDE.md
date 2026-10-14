@@ -105,7 +105,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 ## 7. UI rules
 
-- shadcn/ui components from `packages/ui` only; no ad-hoc copies in apps.
+- shadcn/ui components from `packages/ui` only; no ad-hoc copies in apps. Status badges: `<StatusBadge value labels tones />` with the view's label map and the enum's tone map; no inline `style` attributes (CSP).
 - Every screen defines **loading, empty, error, and not-authorised** states (spec notation in `docs/frontend/spec/00-conventions.md`).
 - Accessibility target WCAG 2.2 AA: keyboard-complete, visible focus, labelled controls, correct landmarks, no colour-only meaning. axe: zero serious/critical violations.
 - Plain-text API content (e.g. product descriptions) is rendered as text, never as HTML. No `dangerouslySetInnerHTML` with API data.
@@ -190,6 +190,9 @@ Contract validators from the corrected snapshot with Zod `fromJSONSchema`, objec
 ### 14.1e Decided (2026-10-14, T-C1)
 FQ-5 design tokens approved as on the storefront token page (`packages/ui/src/tokens.ts`): Nile blue `#0B5C7A` primary, slate neutrals, shadcn-named semantic colours with tested contrast, Inter (self-hosted), 4 px spacing, radii 4/6/8/12 px, four shadow levels, light theme only · token page at storefront `/design/tokens` (TC-1).
 
+### 14.1f Decided (2026-10-14, T-C2)
+Toasts on Radix Toast (no `sonner`) · Select now, searchable Combobox deferred to the first screen that needs it (dependency decided then) · own DataTable (no `@tanstack/react-table`): API sort values, load more, no totals · badge tone by what the user must do (warning waiting, success done, destructive failed/blocked, neutral closed/inactive, info in progress) · pagination is "Load more" only (conventions §7).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -199,7 +202,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 |---|---|---|
 | OQ-1 | Backend sees the BFF's IP for every web user (shared rate limits) | Rec: trusted client-IP header + shared secret, honoured by the backend only for rate-limit keys (api-inventory §10.4). Backend change; **blocks production** |
 | OQ-2 | Kashier return URL | Rec: `<storefront>/checkout/payment-return` (env value in the backend) |
-| TC-1 | Storefront token page `/design/tokens` is served in every build (not linked, `noindex`) | Remove or gate it before release (T-I) |
+| TC-1 | Storefront design pages `/design/tokens` and `/design/components` are served in every build (not linked, `noindex`) | Remove or gate it before release (T-I) |
 | OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |

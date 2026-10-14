@@ -14,3 +14,6 @@ export const appUrl = (app: E2eAppName): string => `http://localhost:${E2E_APPS[
 
 /** Storefront token page (T-C1). */
 export const TOKEN_PAGE_PATH = '/design/tokens';
+
+/** Storefront component gallery (T-C2). */
+export const COMPONENT_GALLERY_PATH = '/design/components';
