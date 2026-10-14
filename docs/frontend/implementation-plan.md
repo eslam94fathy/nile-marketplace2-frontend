@@ -148,6 +148,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD + security review checklist (architecture §9) for this PR.
 
 ### T-D2 Refresh coordination
+- **Status (2026-10-14):** implemented and verified locally (664 tests incl. a simulated two-tab browser: 20 concurrent calls after expiry → 1 backend rotation, and a control without Web Locks → 2; lint, format, type-check, drift check, build, audit green). The real-backend two-tab E2E is written but **not yet run**: it needs the backend's `ACCESS_TOKEN_TTL_MINUTES=2` and the E2E settings. Decisions: design 01 R-21.
 - **Scope:** client refresh coordinator (Web Locks + `sv` cookie + BroadcastChannel fallback), 401 → refresh → single retry in the browser transport, proactive refresh timer while visible, RSC "expired session" boundary that refreshes then `router.refresh()`, cross-tab logout.
 - **Exclusions:** none beyond T-D1.
 - **Dependencies:** T-D1.

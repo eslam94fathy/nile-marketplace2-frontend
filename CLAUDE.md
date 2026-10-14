@@ -165,6 +165,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 - Windows reserves TCP ports 2978–3077 (and others) on this machine, so the backend's port 3000 is blocked; the ranges can change after a reboot (`netsh interface ipv4 show excludedportrange protocol=tcp`). To run the backend API on another host port without changing backend files: `docker compose run -d --rm --no-deps -p 3100:3000 api` from the backend repo (Postgres, Redis, RabbitMQ and Mailpit started first).
 - Backend helpers for local and E2E work: `npm run seed:dev` (sample data), Mailpit at `http://localhost:8025` (OTP and invite emails), `PAYMENT_GATEWAY=fake` + `npm run dev:kashier-webhook` (signed Kashier webhooks).
+- E2E runs need `ACCESS_TOKEN_TTL_MINUTES=2` in the backend's own `.env` (session refresh test, design 01 R-21).
 - Contract and E2E runs need `NILE_API_BASE_URL`, `MAILPIT_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` in the shell, and a test admin seeded once in the backend (`docker compose run --rm --no-deps api node dist/seed-admin.js --email e2e-admin@example.test`; the first run accepts its invite with `E2E_ADMIN_PASSWORD`). The backend allows about 10 sign-ups/sign-ins per 5 min per IP locally: raise `RATE_LIMIT_STRICT_AUTH_POINTS` in the backend's own `.env` for repeated runs (design 01 §12.3).
 - Backend env values the web apps rely on locally: `INVITE_URL_BASE=http://localhost:4100/invite`, `KASHIER_REDIRECT_URL=http://localhost:4100/checkout/payment-return` (to be set by the user in the backend's `.env`).
 
@@ -198,6 +199,9 @@ One placeholder page per navigation destination (`PlaceholderScreen` naming the 
 
 ### 14.1h Decided (2026-10-14, T-D1)
 Auth and BFF routes answer in the backend envelope (`WRONG_APP` role in `details[0].value`) · backend unreachable → `502 NETWORK_ERROR` · non-JSON body → `415 VALIDATION_FAILED` · T-D1 ships `login`/`refresh`/`logout` only; `verify-email`, `invite`, `password-change` come with T-D4/T-D6/T-D7 (design 01 R-20).
+
+### 14.1i Decided (2026-10-14, T-D2)
+E2E refresh test runs with the backend's `ACCESS_TOKEN_TTL_MINUTES=2` (skipped with a longer TTL) · only a 401 from `/api/auth/refresh` ends the session; network/429/5xx keep it · on sign-out or session end every tab clears private data; protected pages go to login, storefront public pages reload in place (design 01 R-21).
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).

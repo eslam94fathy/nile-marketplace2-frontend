@@ -1,7 +1,4 @@
 {
-  "extends": "@nile/config/tsconfig/library.json",
-  "compilerOptions": {
-    "lib": ["ES2023", "DOM", "DOM.Iterable"]
-  },
-  "include": ["src/**/*.ts", "vitest.config.ts"]
+  "extends": "@nile/config/tsconfig/react-library.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }
