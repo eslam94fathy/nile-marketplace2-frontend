@@ -2,9 +2,10 @@
   "name": "@nile/api",
   "version": "0.0.0",
   "private": true,
-  "description": "Backend contract: OpenAPI snapshot, corrections, generated types (and from T-B4 the typed client)",
+  "description": "Backend contract: OpenAPI snapshot, corrections, generated types and the typed client",
   "type": "module",
   "exports": {
+    ".": "./src/index.ts",
     "./schema": "./src/generated/schema.d.ts"
   },
   "scripts": {
@@ -15,6 +16,10 @@
   },
   "devDependencies": {
     "@nile/config": "*",
+    "msw": "3.0.3",
     "openapi-typescript": "7.13.0"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
   }
 }

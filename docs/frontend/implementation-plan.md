@@ -64,6 +64,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD + corrections listed in `api-inventory.md` §9 are cross-referenced in code comments.
 
 ### T-B4 API client core
+- **Status (2026-10-14):** implemented and verified: `createApiClient` + `unwrap`, `ApiError` (109 backend codes from the backend source + 4 client codes), `serverTransport`, `browserTransport` (BFF rewrite, single refresh-and-retry), `productQuery`/`inValues`/literal query serializer; 57 tests with MSW 3 (success, list meta, 204, each common error code, Retry-After, non-envelope, malformed JSON, network failure, abort, idempotency header and compile-time key requirement, retry once with the same key). Refinement: design 01 R-13.
 - **Scope:** `openapi-fetch` wrapper: envelope unwrapping, `ApiError`, error-code union (api-inventory §7), `Retry-After` parsing, correlation id, idempotency-key parameter, literal filter/sort/cursor query builder, `buildProductQuery()` for `attr.*`; server transport (Bearer) and browser transport (`/api/bff`).
 - **Exclusions:** auth/session (T-D1), TanStack hooks (T-B5).
 - **Dependencies:** T-B3.
