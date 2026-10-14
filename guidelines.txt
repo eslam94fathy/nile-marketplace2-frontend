@@ -1,0 +1,74 @@
+Task 001 — Nile Marketplace Frontend Discovery
+
+You are acting as a senior frontend architect.
+
+Context
+
+The existing backend repository is:
+https://github.com/eslam94fathy/nile-marketplace2
+
+It is a multi-vendor marketplace backend built with Node.js, TypeScript, Express 5, PostgreSQL, Redis, and RabbitMQ.
+
+The backend is the source of truth for all business rules, permissions, validation, pricing, inventory, orders, and payments.
+
+Objective
+
+Analyze the backend and produce a frontend implementation plan. Do not implement frontend features yet.
+
+Requirements
+
+1. Inspect the README, CLAUDE.md, docs/spec, docs/design, and relevant source modules.
+2. Inspect the actual OpenAPI specification and existing API routes.
+3. Identify all customer-facing workflows supported by the current API.
+4. Identify seller, delivery agent and admin workflows separately.
+5. Document request and response schemas, pagination, errors, authentication, token refresh, and authorization requirements.
+6. Identify missing API capabilities and ambiguities. Never invent endpoints or business rules.
+7. Recommend a frontend architecture using Next.js App Router, React, TypeScript, Tailwind CSS, and shadcn/ui.
+8. Recommend a safe authentication strategy compatible with the actual backend contract.
+9. Define the API client and type-generation strategy.
+10. Propose a folder structure, testing strategy, and incremental implementation plan.
+
+Deliverables
+
+Create:
+
+- docs/frontend/api-inventory.md
+- docs/frontend/architecture.md
+- docs/frontend/workflows.md
+- docs/frontend/implementation-plan.md
+
+Each implementation task must include:
+
+- Scope and explicit exclusions
+- Dependencies
+- Files or modules expected to change
+- Acceptance criteria
+- Required automated tests
+- Definition of done
+
+Constraints
+
+- Do not modify backend source code.
+- Do not invent API endpoints.
+- Do not store secrets in source code.
+- Do not weaken authentication or authorization.
+- Do not implement features before the discovery deliverables are reviewed.
+- Clearly distinguish verified facts from assumptions and unresolved questions.
+
+
+1. use Next.js + React + TypeScript
+2. use Tailwind CSS + shadcn/ui
+3. use TanStack Query
+4. use Zod + React Hook Form
+5. split the web app to each role of user
+6. backend API documentation exists in http://localhost:3000/api/v1/docs
+7. the workflow will be:
+    a. API Discovery
+    b. Frontend Foundation
+    c. Design System
+    d. Authentication
+    e. Catalog
+    f. Cart & Checkout
+    g. Orders & Account
+    h. Seller & Admin
+    i. Hardening & Release
