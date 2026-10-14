@@ -310,6 +310,11 @@ Polling intervals and page sizes are code constants (specs fix them), not env.
 | R-4 | BFF proxy route path `/api/bff/[...path]`, auth routes `/api/auth/[action]` | Concrete names |
 | R-5 | `verify-email` and `invite` are dedicated auth routes | They return tokens; the proxy must never pass tokens to the browser |
 | R-6 | Public operations never carry a Bearer token, even with a session | User-independent public responses |
+| R-7 | Env (T-B2): schemas in `@nile/config/env` (`serverEnvSchema`, `publicEnvSchema(app)`, `parseEnv`, `checkEnvConsistency`); an empty value counts as missing; `NODE_ENV` comes from Next.js, never from env files | One implementation for four apps; no silent defaults |
+| R-8 | Validation points: public keys in `next.config.ts` (fails `next build`, `next dev` and `next typegen`) and at module load in the browser; server keys plus cross-checks in `instrumentation.ts` `register()` (fails server start with one JSON `fatal` line naming keys, never values) | Fail at boot, not on a request |
+| R-9 | Cross-checks: `APP_ORIGIN` must equal the app's own `NEXT_PUBLIC_<APP>_URL`; `NEXT_PUBLIC_REFRESH_SKEW_SECONDS` ≤ `REFRESH_SKEW_SECONDS` | A larger browser skew would loop refresh calls the server answers as "still fresh" (§5.3) |
+| R-10 | Production requires `SESSION_COOKIE_SECURE=true` only; origins are not forced to https by the schema | A production build must run on http://localhost under E2E (browsers accept Secure cookies there); real deployments are https by setup |
+| R-11 | `npm run dev:env` writes git-ignored `apps/*/.env.local` (local values, a random session key per app); CI runs it before type-check and build | Mirrors the backend; `NEXT_PUBLIC_APP_NAME` differs per app, so one CI env block can't serve all apps |
 
 ## 14. Design questions (all answered 2026-10-14: the recommendation was accepted for each)
 

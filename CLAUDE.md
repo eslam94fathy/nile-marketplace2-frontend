@@ -135,6 +135,8 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 - All config from env, validated with Zod at startup, split into server and public (`NEXT_PUBLIC_*`) schemas. **No defaults.** Missing/invalid keys stop the process and the error names the keys, never the values.
 - Secrets (session encryption keys) only from the environment / secret store. `.env*` never committed; `.env.example` lists keys only.
+- Shared schemas: `@nile/config/env`. Per app: `src/lib/env/public.ts` (literal `process.env.NEXT_PUBLIC_*` reads, required for inlining), `src/lib/env/server.ts` (`server-only`, `serverEnv()`), validation at startup in `src/instrumentation.ts` and at build in `next.config.ts` (design 01 R-7…R-11). An empty value counts as missing; `NODE_ENV` is never put in env files.
+- New env key: add it to the schema, the app's `.env.example`, `scripts/dev-env.mjs` and design 01 §9 in the same change.
 
 ## 12. Testing and CI
 
@@ -152,6 +154,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 ## 13. Local environment notes
 
+- First time (and after new env keys): `npm run dev:env` writes `apps/*/.env.local` (git-ignored; `-- --force` regenerates).
 - `npm run dev` starts all four apps (4100–4103); `npm run dev -w @nile/<app>` starts one. Ctrl+C stops them all. If the launcher is killed hard (IDE stop button), servers keep running: `npm run dev:stop` stops the ones from this repository only.
 - Repository scripts run npm through `process.env.npm_execpath` with argument arrays (no shell); run them through `npm run`, not `node scripts/...`.
 

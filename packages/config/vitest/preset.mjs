@@ -10,7 +10,7 @@ export function createVitestProject(name) {
     test: {
       name,
       environment: 'node',
-      include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tsconfig/**/*.test.ts'],
+      include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     },
   });
 }

@@ -44,6 +44,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B2 Environment configuration
+- **Status (2026-10-14):** implemented and verified (65 tests; build fails on a missing public key; server start fails with key names only; a client import of server env fails the build; clean CI sequence green). Refinements: design 01 R-7…R-11.
 - **Scope:** zod-validated env per app, split server/public, no defaults, startup failure naming missing keys (never values); `.env.example` per app; keys: `NILE_API_BASE_URL`, `SESSION_ENCRYPTION_KEYS`, `SESSION_ACTIVE_KEY_ID`, `APP_ORIGIN`, plus public ones.
 - **Exclusions:** secret management in deployment (phase i).
 - **Dependencies:** T-B1.

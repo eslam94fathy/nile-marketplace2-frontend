@@ -30,6 +30,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      # next.config.ts validates the public NEXT_PUBLIC_* settings, which typegen and builds load. CI uses the
+      # local development values (localhost URLs); the generated session key is never read by a build.
+      - name: Env files
+        run: npm run dev:env
+
       - name: Lint
         run: npm run lint && npm run format:check
 
