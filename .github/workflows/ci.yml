@@ -1,0 +1,48 @@
+# CLAUDE.md §12: npm ci → lint → format check → type-check → unit/component tests → build → dependency audit.
+# Later tasks add the OpenAPI drift check (T-B3), contract tests (T-B7) and E2E smoke (phase d).
+# A red CI blocks merge.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint && npm run format:check
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # High/critical advisories fail, in runtime and dev dependencies, except reviewed entries in
+      # audit-exceptions.json (each with a reason and a review date that also fails once passed).
+      - name: Dependency audit
+        run: npm run audit

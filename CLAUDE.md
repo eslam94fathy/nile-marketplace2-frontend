@@ -16,7 +16,7 @@ Read this whole file before every task. These rules are binding. If a rule confl
 
 | Concern | Choice |
 |---|---|
-| Framework | Next.js (App Router), latest **patched** stable 16.x at scaffolding time (at least the July 2026 security release, 16.2.11); keep it patched |
+| Framework | Next.js (App Router) **16.3.8** (exact pins, `save-exact`), latest patch of the mature 16.x line; never below the July 2026 security release (16.2.11); keep it patched |
 | UI runtime / language | React 19, TypeScript `strict` (flags in §10) |
 | Styling / components | Tailwind CSS v4, shadcn/ui (Radix primitives), components owned in `packages/ui` |
 | Server state | TanStack Query v5 |
@@ -25,7 +25,8 @@ Read this whole file before every task. These rules are binding. If a rule confl
 | Session crypto | `jose` (encrypted session cookie) |
 | Money | `decimal.js` (never JS `number` for money) |
 | Tests | Vitest, Testing Library, MSW, Playwright, `@axe-core/playwright` |
-| Lint / format | ESLint (`next`, `typescript-eslint` strict-type-checked, `react-hooks`, `jsx-a11y`, `@tanstack/eslint-plugin-query`, import boundaries), Prettier |
+| Lint / format | ESLint **9.39.5** (see TB-1) with `eslint-config-next` core-web-vitals (react, react-hooks, jsx-a11y, import, @next/next), `typescript-eslint` strict + stylistic type-checked, `@tanstack/eslint-plugin-query` (from T-B5), import boundaries (as packages appear); Prettier 3. Shared config: `@nile/config/eslint` |
+| TypeScript | **6.0.x** (typescript-eslint supports TypeScript < 6.1; TypeScript 7 would break type-aware linting) |
 | Package manager / runtime | npm workspaces, Node 24 LTS (`.nvmrc`), lockfile committed, `npm ci` in CI |
 | Language | English only, LTR. No i18n library |
 
@@ -139,10 +140,20 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 - Unit (Vitest): `packages/*` logic. Component (Vitest + Testing Library + MSW): every form, list and status-driven action. Contract: generated types parsed against the real backend (docker compose from the backend repo). E2E (Playwright + axe): every workflow in `docs/frontend/workflows.md` by the end of its phase.
 - Every new screen: tests for happy path, validation failure, server-error mapping and authorization state. Every bug fix comes with a regression test.
-- CI on every PR: `npm ci` → lint → format check → type-check → OpenAPI drift check → unit/component → build → E2E smoke → `npm audit`. Red CI blocks merge.
+- CI on every PR: `npm ci` → lint → format check → type-check → OpenAPI drift check (from T-B3) → unit/component → build → E2E smoke (from phase d) → `npm run audit`. Red CI blocks merge.
+- `npm run audit` fails on high/critical advisories in runtime **and** dev dependencies, except entries in `audit-exceptions.json`, each with a reason and a `reviewBy` date; an expired exception fails too. Add an exception only when no fixed version exists and the code path is not reachable in production; say so in the PR.
 - Definition of Done: `docs/frontend/implementation-plan.md` §0.1.
 
+### 12.1 Git workflow (decided 2026-10-14)
+- **One branch per phase** of the implementation plan: `phase/<letter>-<name>` (`phase/b-foundation`, `phase/c-design-system`, `phase/d-authentication`, `phase/e-catalog`, `phase/f-cart-checkout`, `phase/g-orders-account`, `phase/h-seller-admin-agent`, `phase/i-hardening-release`).
+- Inside a phase branch: one or more commits per task, message `<type>(<scope>): T-xx <summary>` (e.g. `feat(foundation): T-B1 workspace scaffold`), ending with the attribution line.
+- A phase reaches `main` through one pull request after the phase is reviewed. The next phase branches from `main` once the previous one is merged; if it isn't merged yet, it is stacked on the previous phase branch and its PR targets that branch.
+- No direct commits to `main`. Commit and push only when the user asks.
+
 ## 13. Local environment notes
+
+- `npm run dev` starts all four apps (4100–4103); `npm run dev -w @nile/<app>` starts one. Ctrl+C stops them all. If the launcher is killed hard (IDE stop button), servers keep running: `npm run dev:stop` stops the ones from this repository only.
+- Repository scripts run npm through `process.env.npm_execpath` with argument arrays (no shell); run them through `npm run`, not `node scripts/...`.
 
 - Windows reserves TCP ports 2978–3077 (and others) on this machine, so the backend's port 3000 is blocked; the ranges can change after a reboot (`netsh interface ipv4 show excludedportrange protocol=tcp`). To run the backend API on another host port without changing backend files: `docker compose run -d --rm --no-deps -p 3100:3000 api` from the backend repo (Postgres, Redis, RabbitMQ and Mailpit started first).
 - Backend helpers for local and E2E work: `npm run seed:dev` (sample data), Mailpit at `http://localhost:8025` (OTP and invite emails), `PAYMENT_GATEWAY=fake` + `npm run dev:kashier-webhook` (signed Kashier webhooks).
@@ -159,6 +170,7 @@ Spec 00 conventions v1.0 and spec 01 storefront v1.0 approved with every recomme
 Spec 02 seller v1.0 approved with every recommendation (SE-Q-1…SE-Q-8): overview = status + 5 orders to confirm + 5 returns + balance + shortcuts · products in a deactivated category show "Unavailable category" and block new variants · stock "set count to" helper stated as a delta · one variant at a time with "Save and add another" · order tabs as SE-14 · no packing slip · new variants default Active · `sellerNet` shown in lists.
 Spec 03 admin v1.0 approved with every recommendation (AD-Q-1…AD-Q-9): dashboard of five work queues · history actors as role + "you" + admin email · agent/seller names fetched per unique id on the visible page, cached 5 min · no customer suspension / agent invite resend (OQ-7) · summary confirmation for money actions · rates entered as percent (2 decimals) · payout `paidAt` as Cairo date-time, default now · desktop-first · category tree + details panel.
 Spec 04 agent v1.0 approved with every recommendation (AG-Q-1…AG-Q-6): "handed back" shown by inference from attempts (no refused attempt and < 3 attempts), refusal handled gracefully, backend asked later for `sellerOrderCancelledAt` · COD confirmed by tick box with the API amount · "Open in maps" on tap · no offline/installable app · tabs To pick up / To deliver / Returns · mobile layout centred on desktop.
+Design 01 and 02 v1.0 approved with every recommendation (DQ-1…DQ-9): packages consumed as source via `transpilePackages` · shadcn/ui dependencies approved · `SESSION_COOKIE_SECURE=false` in development only · no Server Actions for data mutations · own `@nile/logger` · CI pulls the backend with a read-only `BACKEND_REPO_TOKEN`, pinned in `backend.lock.json` · scope `@nile/*` · BFF timeout 15 s, body 64 KB, refresh skew 60 s · async-balance note on finance screens.
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
@@ -169,7 +181,9 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 |---|---|---|
 | OQ-1 | Backend sees the BFF's IP for every web user (shared rate limits) | Rec: trusted client-IP header + shared secret, honoured by the backend only for rate-limit keys (api-inventory §10.4). Backend change; **blocks production** |
 | OQ-2 | Kashier return URL | Rec: `<storefront>/checkout/payment-return` (env value in the backend) |
-| DQ-* | System design questions | `docs/frontend/design/01-system-design.md` §14 |
+
+| TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
+| TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.
 

@@ -1,0 +1,23 @@
+{
+  "name": "@nile/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript, ESLint and Vitest presets",
+  "type": "module",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./eslint": "./eslint/index.mjs",
+    "./vitest": "./vitest/preset.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint-config-next": "16.3.8",
+    "eslint-config-prettier": "10.1.8",
+    "typescript-eslint": "8.71.2"
+  }
+}

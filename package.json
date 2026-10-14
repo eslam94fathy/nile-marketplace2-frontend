@@ -1,0 +1,35 @@
+{
+  "name": "nile-marketplace-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nile Marketplace web apps (storefront, seller, admin, agent) and shared packages",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:stop": "node scripts/dev-stop.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck --workspaces --if-present",
+    "lint": "eslint --max-warnings=0 .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "audit": "node scripts/audit.mjs"
+  },
+  "devDependencies": {
+    "@nile/config": "*",
+    "@types/node": "24.19.2",
+    "eslint": "9.39.5",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "vitest": "5.0.4"
+  }
+}

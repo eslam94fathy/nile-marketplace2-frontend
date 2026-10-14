@@ -34,6 +34,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase b — Frontend Foundation
 
 ### T-B1 Repository and workspace scaffold
+- **Status (2026-10-14):** implemented, verified locally from a clean `npm ci` (lint, format, type-check, 18 tests, build of 4 apps, audit gate, dev servers on 4100–4103); awaiting review and first CI run on GitHub. Versions and deviations: `CLAUDE.md` §1, §14.3 TB-1, TB-2.
 - **Scope:** git repo (FQ-11), npm workspaces, Node 24 (`.nvmrc`, `engines`), shared `packages/config` (tsconfig strict flags from architecture §10, ESLint, Prettier, Vitest preset), one empty Next.js app per approved role (`apps/storefront`, `apps/seller`, `apps/admin`, `apps/agent` per FQ-2) rendering a placeholder page, root scripts (`dev`, `build`, `typecheck`, `lint`, `format`, `test`), CI workflow running them.
 - **Exclusions:** UI, auth, API calls, styling beyond defaults, deployment.
 - **Dependencies:** FQ-1, FQ-2, FQ-9, FQ-11 (all decided).
