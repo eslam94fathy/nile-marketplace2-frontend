@@ -90,6 +90,16 @@ describe('order confirmation (spec 01 SF-08)', { timeout: 15_000 }, () => {
     expect(await screen.findByRole('heading', { level: 1, name: /not found/i })).toBeDefined();
   });
 
+  it('a malformed id in the URL (VALIDATION_FAILED): not found (regression)', async () => {
+    server.use(
+      mockApi('get', '/orders/{orderId}', ({ reply }) => reply.error(400, 'VALIDATION_FAILED'), {
+        base: BFF_BASE,
+      }),
+    );
+    renderWithProviders(<OrderConfirmation orderId="not-an-order" />);
+    expect(await screen.findByRole('heading', { level: 1, name: /not found/i })).toBeDefined();
+  });
+
   it('a failed load offers a retry', async () => {
     serveOrder('error');
     renderWithProviders(<OrderConfirmation orderId={ORDER_ID} />);

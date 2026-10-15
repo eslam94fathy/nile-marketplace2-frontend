@@ -1,5 +1,52 @@
-// Orders copy (spec 01 SF-18-A3; the rest of SF-17/SF-18 comes with T-G3).
+// Orders copy (spec 01 SF-17, SF-18).
 export const ORDERS_COPY = {
+  title: 'Your orders',
+  tabsLabel: 'Order status',
+  tabs: {
+    all: 'All',
+    awaitingPayment: 'Awaiting payment',
+    inProgress: 'In progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  },
+  emptyAll: "You haven't placed any orders yet.",
+  emptyTab: 'No orders here.',
+  startShopping: 'Start shopping',
+  listLoadFailed: "Your orders couldn't be loaded.",
+  order: (orderNumber: string) => `Order ${orderNumber}`,
+  contents: (items: number, sellers: number) =>
+    `${items} ${items === 1 ? 'item' : 'items'} from ${sellers} ${sellers === 1 ? 'seller' : 'sellers'}`,
+  // SF-18
+  placedOn: (date: string) => `Placed ${date}`,
+  paymentHeading: 'Payment',
+  // SF-18-A2
+  payNow: {
+    action: 'Pay now',
+    errors: {
+      ORDER_NOT_AWAITING_PAYMENT: 'This order is no longer waiting for payment.',
+      PAYMENT_PROVIDER_UNAVAILABLE: "The payment provider isn't responding. Please try again in a moment.",
+    },
+  },
+  timeLeft: 'Time left to pay',
+  addressHeading: 'Delivery address',
+  soldBy: (businessName: string) => `Sold by ${businessName}`,
+  sku: (sku: string) => `SKU: ${sku}`,
+  priceTimesQuantity: (price: string, quantity: number) => `${price} × ${quantity}`,
+  cancelledBySeller: (quantity: number) => `${quantity} cancelled by the seller`,
+  openQuantity: (quantity: number) => `${quantity} still ordered`,
+  subtotal: 'Subtotal',
+  timelineHeading: 'History',
+  itemsTotal: 'Items total',
+  deliveryFee: 'Delivery fee',
+  total: 'Total',
+  notes: {
+    excluded: "Cancelled or returned parcels aren't included in the total.",
+    noFee: 'No delivery fee is charged because nothing was delivered.',
+    refunds: 'Refunds for card payments are processed by our team.',
+  },
+  detailLoadFailed: "This order couldn't be loaded.",
+  backToOrders: 'Your orders',
+  detailTitle: 'Order',
   buyAgain: {
     action: 'Buy again',
     confirmTitle: 'Buy again',

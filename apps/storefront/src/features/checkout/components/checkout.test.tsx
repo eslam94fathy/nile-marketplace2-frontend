@@ -15,9 +15,8 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Address, Governorate } from '@/features/addresses';
+import { kashierNavigation as navigation, PENDING_PAYMENT_ORDER_KEY } from '@/features/orders';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
-import { navigation } from '../kashier/redirect';
-import { PENDING_PAYMENT_ORDER_KEY } from '../kashier/storage';
 import { CheckoutView } from './checkout-view';
 
 const replace = vi.fn();

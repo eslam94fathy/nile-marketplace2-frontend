@@ -53,7 +53,6 @@ export const CHECKOUT_COPY = {
   },
   // SF-09, SF-18-A2
   kashier: {
-    payNow: 'Pay now',
     timeLeft: 'Time left to pay',
     returnTitle: 'Payment',
     confirming: 'Confirming your payment…',
@@ -65,10 +64,6 @@ export const CHECKOUT_COPY = {
     yourOrders: 'Your orders',
     goToOrder: 'Go to your order',
     loadFailed: "Your payment couldn't be checked.",
-    errors: {
-      ORDER_NOT_AWAITING_PAYMENT: 'This order is no longer waiting for payment.',
-      PAYMENT_PROVIDER_UNAVAILABLE: "The payment provider isn't responding. Please try again in a moment.",
-    },
   },
   // SF-08
   confirmation: {

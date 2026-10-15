@@ -5,7 +5,16 @@ import { buttonVariants, Countdown, ErrorState, PageHeader, Skeleton } from '@ni
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { BuyAgain, latestOpenOrderQuery, orderQuery, type Order } from '@/features/orders';
+import {
+  BuyAgain,
+  clearPendingPaymentOrder,
+  isOrderMissing,
+  latestOpenOrderQuery,
+  orderQuery,
+  PayNow,
+  readPendingPaymentOrder,
+  type Order,
+} from '@/features/orders';
 import { orderPath, ROUTES } from '@/lib/routes';
 import { OrderSummaryBlocks } from '../components/order-summary';
 import { CHECKOUT_COPY } from '../copy';
@@ -14,8 +23,6 @@ import {
   PAYMENT_RETURN_ORDER_MAX_AGE_MS,
   PAYMENT_RETURN_POLL_MS,
 } from '../lib/constants';
-import { PayNow } from './pay-now';
-import { clearPendingPaymentOrder, readPendingPaymentOrder } from './storage';
 
 const COPY = CHECKOUT_COPY.kashier;
 
@@ -115,7 +122,7 @@ function OrderOutcome({ orderId }: { readonly orderId: string }) {
   }, [final]);
 
   if (order.isError) {
-    if (isApiError(order.error, 'ORDER_NOT_FOUND')) return <NotFound />;
+    if (isOrderMissing(order.error)) return <NotFound />;
     return (
       <Screen>
         <ErrorState

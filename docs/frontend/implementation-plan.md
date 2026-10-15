@@ -304,6 +304,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G3 Orders list and detail (workflow C-7)
+- **Status (2026-10-15):** implemented and verified locally (tests incl. every order and seller-order status label, tabs → `status[in]`, "Load more", detail sections, cancelled quantities, Pay now before/after the deadline, the three total notes, Buy again, not found; lint, format, type-check, build green). E2E `e2e/storefront/orders.spec.ts` passed against the real backend: COD order → list → tabs → detail → another customer's id and a malformed id both "not found". The E2E found that a malformed id answered `400 VALIDATION_FAILED` and showed a retryable error; fixed for SF-08/SF-09/SF-18 with regression tests. Decisions: design 01 R-36.
 - **Scope:** orders list with status filter and cursor paging; detail with totals, payment status, address, seller orders, items (incl. cancelled quantities), timelines.
 - **Exclusions:** live tracking (no data).
 - **Dependencies:** T-F3.

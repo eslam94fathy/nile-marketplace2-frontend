@@ -1,5 +1,4 @@
-import { createKashierSession } from './api';
-import { goToKashier } from './redirect';
+import { createKashierSession, goToKashier } from '@/features/orders';
 
 /**
  * After a card checkout (spec 01 SF-07-A1 step 3): go to `checkoutUrl`, or, when checkout returned none

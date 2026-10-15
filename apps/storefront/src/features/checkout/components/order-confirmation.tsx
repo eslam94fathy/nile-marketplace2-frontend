@@ -5,7 +5,7 @@ import { formatMoney, ORDER_STATUS_LABELS } from '@nile/domain';
 import { buttonVariants, ErrorState, NotFoundScreen, PageHeader, Skeleton } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { orderQuery } from '@/features/orders';
+import { isOrderMissing, orderQuery } from '@/features/orders';
 import { orderPath, ROUTES } from '@/lib/routes';
 import { CHECKOUT_COPY } from '../copy';
 import { OrderSummaryBlocks } from './order-summary';
@@ -20,7 +20,7 @@ export function OrderConfirmation({ orderId }: { readonly orderId: string }) {
   const order = useQuery(orderQuery(orderId));
 
   if (order.isError) {
-    if (isApiError(order.error, 'ORDER_NOT_FOUND')) {
+    if (isOrderMissing(order.error)) {
       return (
         <NotFoundScreen
           homeLink={

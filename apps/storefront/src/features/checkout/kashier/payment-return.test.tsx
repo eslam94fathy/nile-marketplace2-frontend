@@ -5,11 +5,10 @@ import { renderWithProviders } from '@nile/test-utils/react';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { kashierNavigation as navigation, PENDING_PAYMENT_ORDER_KEY } from '@/features/orders';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
 import { PAYMENT_RETURN_POLL_MS } from '../lib/constants';
 import { PaymentReturn } from './payment-return';
-import { navigation } from './redirect';
-import { PENDING_PAYMENT_ORDER_KEY } from './storage';
 
 vi.mock('@/lib/use-has-session', () => ({ useHasSession: () => true }));
 
@@ -236,10 +235,13 @@ describe('Kashier payment return (spec 01 SF-09)', { timeout: 20_000 }, () => {
     expect(screen.getByRole('link', { name: 'Your orders' }).getAttribute('href')).toBe('/account/orders');
   });
 
-  it('a stored id that is not (or no longer) the customer’s: not found', async () => {
+  it.each([
+    ['not (or no longer) the customer’s', 404, 'ORDER_NOT_FOUND'],
+    ['malformed (regression)', 400, 'VALIDATION_FAILED'],
+  ] as const)('a stored id that is %s: not found', async (_, status, code) => {
     window.sessionStorage.setItem(PENDING_PAYMENT_ORDER_KEY, fixtureId(0x999));
     server.use(
-      mockApi('get', '/orders/{orderId}', ({ reply }) => reply.error(404, 'ORDER_NOT_FOUND'), {
+      mockApi('get', '/orders/{orderId}', ({ reply }) => reply.error(status, code), {
         base: BFF_BASE,
       }),
     );

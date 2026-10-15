@@ -5,11 +5,11 @@ import { isApiError } from '@nile/api';
 import { useSubmitFailure } from '@nile/auth-screens';
 import { Button, FormAlert } from '@nile/ui';
 import { useMutation } from '@tanstack/react-query';
-import { CHECKOUT_COPY } from '../copy';
+import { ORDERS_COPY } from '../copy';
 import { createKashierSession } from './api';
 import { goToKashier } from './redirect';
 
-const COPY = CHECKOUT_COPY.kashier;
+const COPY = ORDERS_COPY.payNow;
 
 /** Thrown when the API's checkout URL is not `https:` (never followed, CLAUDE.md §9.4). */
 class UnsafeCheckoutUrlError extends Error {}
@@ -54,7 +54,7 @@ export function PayNow({ orderId, onStale }: PayNowProps) {
           session.mutate();
         }}
       >
-        {COPY.payNow}
+        {COPY.action}
       </Button>
     </div>
   );
