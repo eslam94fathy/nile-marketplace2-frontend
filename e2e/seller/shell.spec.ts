@@ -9,7 +9,7 @@ test('desktop sidebar navigates and marks the current page', async ({ page }) =>
   await page.setViewportSize(VIEWPORTS.desktop);
   await page.goto('/');
   await expectNavigation(page, NAV, 'Products', 'Products');
-  await expect(page.getByText('This screen arrives with T-H2.')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Products' })).toBeVisible();
 });
 
 test('mobile menu opens as a sheet, navigates and closes', async ({ page }) => {

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ProductsList } from '@/features/products';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Products' };
 
-export default async function ProductsPage() {
+/** SE-08 Products: filters come from the URL; the list is fetched on the client. */
+export default async function ProductsPage({ searchParams }: PageProps<'/products'>) {
   await requireSession();
-  return <PlaceholderScreen title="Products" task="T-H2" />;
+  return <ProductsList params={await searchParams} />;
 }

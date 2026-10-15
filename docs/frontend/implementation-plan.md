@@ -338,6 +338,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H2 Products and variants
+- **Status (2026-10-15):** implemented; unit and component tests green (filters URL ⇄ API, category paths, option matrix incl. incomplete set and existing combination, compare-at rule, body order, edit patch, last-active warning; list rows, filters, debounce, empty and error states; new product incl. `CATEGORY_NOT_FOUND`, `SELLER_NOT_APPROVED`, redirect when not approved; product page incl. not found, Publish rules and refusals, Unpublish/Delete confirmations, category lock, unavailable category; every create/edit error code). Seller lint, type-check and build green. E2E `e2e/seller/products.spec.ts` (create → variant → publish → storefront) written and type-checked, **not yet run** against the real backend. Category picker: Select with path labels (decided 2026-10-15). Stock actions stay with T-H3. Decisions: design 01 R-39.
 - **Scope:** product list (filters), create draft, edit, delete, activate/deactivate; variant create (option matrix from effective attributes, one option per attribute; default-variant case), edit, delete.
 - **Exclusions:** images, bulk import (no API).
 - **Dependencies:** T-H1.

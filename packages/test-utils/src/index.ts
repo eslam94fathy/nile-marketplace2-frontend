@@ -19,3 +19,8 @@ export { addressFactory } from './factories/address';
 export { governorateFactory } from './factories/governorate';
 export { orderDetailFactory } from './factories/order';
 export { sellerProfileFactory } from './factories/seller';
+export {
+  sellerProductFactory,
+  sellerProductListItemFactory,
+  sellerVariantFactory,
+} from './factories/seller-catalog';

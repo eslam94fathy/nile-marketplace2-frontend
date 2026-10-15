@@ -22,3 +22,9 @@ export const AUTH_PATHS = [
   ROUTES.forgotPassword,
   ROUTES.resetPassword,
 ] as const;
+
+/** The storefront product page (spec 01 SF-05), for "View in store". */
+export const STOREFRONT_PRODUCT_PATH = (slug: string) => `/p/${slug}` as const;
+
+/** SE-10 Product. */
+export const productPath = (productId: string) => `${ROUTES.products}/${productId}` as const;
