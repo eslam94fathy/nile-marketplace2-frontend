@@ -37,6 +37,7 @@ export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Input, Textarea } from './components/input';
 export { PasswordInput } from './components/password-input';
 export { PhoneInput } from './components/phone-input';
+export { QuantityStepper, type QuantityStepperProps } from './components/quantity-stepper';
 export { Notice, type NoticeProps } from './components/notice';
 export {
   DropdownMenu,

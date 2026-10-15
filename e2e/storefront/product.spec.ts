@@ -62,8 +62,10 @@ test.describe('product page', () => {
       await expect(page.getByRole('radio', { name: option.value, exact: true })).toBeChecked();
     }
     await expect(page.getByLabel('Quantity', { exact: true })).toHaveValue('2');
-    // Signed in: the cart write itself arrives with T-F1.
-    await expect(page.getByText('This screen arrives with T-F1.')).toBeVisible();
+    // FQ-6: nothing is added automatically; the shopper presses "Add to cart" again.
+    await expect(page.getByRole('button', { name: 'Add to cart' })).toBeEnabled();
+    await expect(page.getByText('Added to cart')).toHaveCount(0);
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Cart', exact: true })).toBeVisible();
   });
 
   test('opening a product by id redirects to its slug URL', async ({ page }) => {

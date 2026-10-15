@@ -242,6 +242,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase f — Cart & Checkout
 
 ### T-F1 Cart (workflow C-4)
+- **Status (2026-10-15):** implemented and verified locally (947 tests incl. every `issue` value and add/change error code; lint, format, type-check, build green). E2E `e2e/storefront/cart.spec.ts` passed against the real backend (production build on a spare port): signed-in add from the product page → badge "Cart, 1 item" → cart page → two clicks = one debounced update → "Items (3)" → remove → empty; the T-E3 product journey now checks that nothing is added automatically after sign-in (FQ-6). Decisions: design 01 R-30.
 - **Scope:** add from product page (logged-out visitor → login/register → back to the product with variant and quantity preselected, FQ-6), cart page grouped by seller, quantity change (1..99, ≤ `availableQuantity`), remove, empty, issue display and resolution, header cart count (`itemCount`).
 - **Exclusions:** guest cart, automatic add after login (FQ-6).
 - **Dependencies:** T-E3, T-D3.

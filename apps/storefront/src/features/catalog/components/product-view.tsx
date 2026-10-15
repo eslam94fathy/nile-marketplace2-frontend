@@ -1,12 +1,12 @@
 'use client';
 
 import { formatMoney } from '@nile/domain';
-import { Badge, Button, Input, Label, Money, UI_COPY } from '@nile/ui';
-import { Minus, Plus } from 'lucide-react';
+import { Badge, Button, Money, QuantityStepper } from '@nile/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
-import { useHasSession } from '@/features/account';
+import { AddToCart } from '@/features/cart';
+import { useHasSession } from '@/lib/use-has-session';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
 import { LISTING_PARAMS } from '../lib/listing-params';
@@ -83,61 +83,6 @@ function OptionGroup({
   );
 }
 
-function QuantityStepper({
-  value,
-  max,
-  onChange,
-}: {
-  readonly value: number;
-  readonly max: number;
-  readonly onChange: (value: number) => void;
-}) {
-  const id = useId();
-  const clamp = (next: number) => Math.min(Math.max(next, 1), max);
-  return (
-    <div className="space-y-1">
-      <Label htmlFor={id}>{CATALOG_COPY.quantity}</Label>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={CATALOG_COPY.decrease}
-          disabled={value <= 1}
-          onClick={() => {
-            onChange(clamp(value - 1));
-          }}
-        >
-          <Minus aria-hidden="true" />
-        </Button>
-        <Input
-          id={id}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={max}
-          value={value}
-          className="w-20 text-center"
-          onChange={(event) => {
-            const next = Number.parseInt(event.target.value, 10);
-            onChange(Number.isNaN(next) ? 1 : clamp(next));
-          }}
-        />
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={CATALOG_COPY.increase}
-          disabled={value >= max}
-          onClick={() => {
-            onChange(clamp(value + 1));
-          }}
-        >
-          <Plus aria-hidden="true" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export interface ProductViewProps {
   readonly product: ProductDetail;
   /** `?variant=` from the URL. */
@@ -148,7 +93,7 @@ export interface ProductViewProps {
 
 /**
  * SF-05 interactive part: price, variant picker, availability, quantity and the add-to-cart entry point
- * (signed out: sign-in with returnTo carrying variant and quantity, FQ-6; the cart write arrives with T-F1).
+ * (signed out: sign-in with returnTo carrying variant and quantity, FQ-6; signed in: the cart, SF-05-A1).
  */
 export function ProductView({ product, variantId, quantity: quantityParam }: ProductViewProps) {
   const router = useRouter();
@@ -175,7 +120,7 @@ export function ProductView({ product, variantId, quantity: quantityParam }: Pro
     router.push(`${ROUTES.login}?${new URLSearchParams({ [RETURN_TO_PARAM]: back }).toString()}`);
   };
 
-  const canAdd = variant !== null && variant.inStock && !signedIn;
+  const canAdd = variant?.inStock === true;
 
   return (
     <div className="space-y-6">
@@ -233,12 +178,17 @@ export function ProductView({ product, variantId, quantity: quantityParam }: Pro
         <QuantityStepper value={shownQuantity} max={max} onChange={setQuantity} />
       ) : null}
 
-      <div className="space-y-2">
+      {signedIn ? (
+        <AddToCart
+          variantId={variant?.inStock === true ? variant.id : null}
+          quantity={shownQuantity}
+          label={CATALOG_COPY.addToCart}
+        />
+      ) : (
         <Button size="lg" disabled={!canAdd} onClick={addToCart} className="w-full sm:w-auto">
           {CATALOG_COPY.addToCart}
         </Button>
-        {signedIn ? <p className="text-sm text-muted-foreground">{UI_COPY.placeholder('T-F1')}</p> : null}
-      </div>
+      )}
 
       {variant === null ? null : (
         <section aria-labelledby="product-details" className="space-y-2">

@@ -228,6 +228,9 @@ Spec 01 v1.1: the home page has no search box of its own (the header's is on eve
 ### 14.1q Decided (2026-10-15, T-E3)
 Signed-in "Add to cart" stays disabled with the T-F1 note until the cart write exists · selection mirrored to `?variant=` without a navigation · constants shared with Server Components never live in `'use client'` modules (design 01 R-29).
 
+### 14.1r Decided (2026-10-15, T-F1)
+Cart shown is always the last `CartDto` from the API (totals never recomputed); adds are never retried, an ambiguous failure refetches; quantity saved 500 ms after the last change; checkout only without issues (design 01 R-30).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

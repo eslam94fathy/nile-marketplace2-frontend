@@ -1,15 +1,19 @@
 // @vitest-environment jsdom
+import { mockApi } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BFF_BASE, setupMswServer } from '@/test/msw';
 import type { ProductDetail, ProductVariant } from '../lib/variant-selection';
 import { ProductView, type ProductViewProps } from './product-view';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
+
+const server = setupMswServer();
 
 const session = vi.hoisted(() => ({ present: false }));
-vi.mock('@/features/account', () => ({ useHasSession: () => session.present }));
+vi.mock('@/lib/use-has-session', () => ({ useHasSession: () => session.present }));
 
 beforeEach(() => {
   push.mockReset();
@@ -149,11 +153,26 @@ describe('product page (spec 01 SF-05)', { timeout: 15_000 }, () => {
     );
   });
 
-  it('signed in: the add arrives with T-F1, so the button waits', () => {
+  it('signed in: adds the selected variant and quantity, then offers "View cart"', async () => {
     session.present = true;
-    renderView({ variantId: M_RED.id });
-    expect(addButton().hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('This screen arrives with T-F1.')).toBeDefined();
+    let body: unknown;
+    server.use(
+      mockApi(
+        'post',
+        '/cart/items',
+        async ({ request, reply }) => {
+          body = await request.json();
+          return reply.created({ id: null, sellers: [], itemsTotal: '0.00', itemCount: 0, hasIssues: false });
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    const view = renderView({ variantId: M_RED.id, quantity: '2' });
+    await view.user.click(addButton());
+    expect(await screen.findByText('Added to cart')).toBeDefined();
+    expect(body).toEqual({ variantId: M_RED.id, quantity: 2 });
+    expect(screen.getByRole('link', { name: 'View cart' }).getAttribute('href')).toBe('/cart');
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('links the seller to their products', () => {

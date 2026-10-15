@@ -12,11 +12,12 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
+import { CartLink } from '@/features/cart';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 import { profileQuery } from '../api';
 import { ACCOUNT_COPY } from '../copy';
-import { useHasSession } from '../hooks';
+import { useHasSession } from '@/lib/use-has-session';
 
 const LINK = 'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted';
 const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md hover:bg-muted';
@@ -63,7 +64,7 @@ function SignedInMenu() {
 
 /**
  * Header account area and cart link (spec 01 §2.2): sign-in links for visitors (with `returnTo`), the
- * "Hi, {firstName}" menu with sign-out for customers. The cart count arrives with T-F1.
+ * "Hi, {firstName}" menu with sign-out for customers, and the cart button with its count (T-F1).
  */
 export function AccountArea({ pathname }: { readonly pathname: string }) {
   const signedIn = useHasSession();
@@ -85,13 +86,17 @@ export function AccountArea({ pathname }: { readonly pathname: string }) {
           </Link>
         </>
       )}
-      <Link
-        href={signedIn ? ROUTES.cart : { pathname: ROUTES.login, query: { [RETURN_TO_PARAM]: ROUTES.cart } }}
-        aria-label={ACCOUNT_COPY.cart}
-        className={ICON_LINK}
-      >
-        <ShoppingCart aria-hidden="true" className="size-5" />
-      </Link>
+      {signedIn ? (
+        <CartLink className={ICON_LINK} />
+      ) : (
+        <Link
+          href={{ pathname: ROUTES.login, query: { [RETURN_TO_PARAM]: ROUTES.cart } }}
+          aria-label={ACCOUNT_COPY.cart}
+          className={ICON_LINK}
+        >
+          <ShoppingCart aria-hidden="true" className="size-5" />
+        </Link>
+      )}
     </nav>
   );
 }
