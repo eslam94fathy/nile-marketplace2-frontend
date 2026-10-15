@@ -241,6 +241,9 @@ Checkout always refetches governorates (fees feed the total); empty cart or `has
 ### 14.1u Decided (2026-10-15, T-F4)
 Card checkout leaves for Kashier only on `https:` URLs, after keeping the order id in `sessionStorage`; no URL or no session → the order page (Pay now) · return page decides only from `GET /orders/{id}` (3 s polling while visible, stops at a final state or 2 min after the window) · Pay now and Buy again built as shared pieces for SF-18 (design 01 R-33).
 
+### 14.1v Decided (2026-10-15, T-G1)
+Profile sends only changed fields, compared after normalisation; Save disabled without a change; email shown as text, not an input; `formatDate` added to `@nile/domain` (design 01 R-34).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

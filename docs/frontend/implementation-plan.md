@@ -284,6 +284,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase g — Orders & Account
 
 ### T-G1 Customer profile (workflow C-3)
+- **Status (2026-10-15):** implemented and verified locally (1036 tests incl. the changed-fields patch, Save disabled without a change, header greeting update, client and server validation, failure and load states, `formatDate`; lint, format, type-check, build green). E2E `e2e/storefront/profile.spec.ts` passed against the real backend (production build on a spare port): edit last name and phone → one PATCH → "Profile saved." → values survive a reload and match `GET /me`. Decisions: design 01 R-34.
 - **Scope:** view/edit name and phone; email read-only.
 - **Exclusions:** email change (no endpoint).
 - **Dependencies:** T-D3.

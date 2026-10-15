@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countdown, formatDateTime } from './dates';
+import { countdown, formatDate, formatDateTime } from './dates';
 
 describe('formatDateTime', () => {
   it('shows Cairo time as "14 Oct 2026, 10:30"', () => {
@@ -17,6 +17,24 @@ describe('formatDateTime', () => {
 
   it('rejects an invalid timestamp', () => {
     expect(() => formatDateTime('not a date')).toThrow(RangeError);
+  });
+});
+
+describe('formatDate', () => {
+  it('shows the Cairo day as "14 Oct 2026"', () => {
+    expect(formatDate('2026-10-14T07:30:00.000Z')).toBe('14 Oct 2026');
+  });
+
+  it('late UTC evening is already the next day in Cairo', () => {
+    expect(formatDate('2026-01-05T22:15:00Z')).toBe('6 Jan 2026');
+  });
+
+  it('a date-only value stays that day', () => {
+    expect(formatDate('2026-10-01')).toBe('1 Oct 2026');
+  });
+
+  it('rejects an invalid value', () => {
+    expect(() => formatDate('nope')).toThrow(RangeError);
   });
 });
 

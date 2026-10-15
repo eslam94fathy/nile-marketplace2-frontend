@@ -12,6 +12,13 @@ const DATE_TIME_FORMAT = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
   hourCycle: 'h23',
 });
 
+const DATE_FORMAT = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+  timeZone: DISPLAY_TIME_ZONE,
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
 const SECOND_MS = 1000;
 const MINUTE_S = 60;
 const HOUR_S = 60 * MINUTE_S;
@@ -32,6 +39,15 @@ export function formatDateTime(iso: string): string {
   ) as Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
   const { day = '', month = '', year = '', hour = '', minute = '' } = parts;
   return `${day} ${month} ${year}, ${hour}:${minute}`;
+}
+
+/** `14 Oct 2026` in Cairo time (conventions §8 order). A date-only value (`2026-10-14`) is that day. */
+export function formatDate(iso: string): string {
+  const parts = Object.fromEntries(
+    DATE_FORMAT.formatToParts(parseTimestamp(iso)).map((part) => [part.type, part.value]),
+  ) as Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
+  const { day = '', month = '', year = '' } = parts;
+  return `${day} ${month} ${year}`;
 }
 
 export interface Countdown {
