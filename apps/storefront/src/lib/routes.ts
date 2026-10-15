@@ -4,6 +4,8 @@ export const ROUTES = {
   search: '/search',
   cart: '/cart',
   checkout: '/checkout',
+  /** SF-09, the backend's `KASHIER_REDIRECT_URL` (OQ-2). */
+  paymentReturn: '/checkout/payment-return',
   login: '/login',
   register: '/register',
   verifyEmail: '/verify-email',

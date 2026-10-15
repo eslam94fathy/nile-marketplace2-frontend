@@ -5,8 +5,21 @@ import { isApiError } from '@nile/api';
 import { useSubmitFailure } from '@nile/auth-screens';
 import { formatMoney } from '@nile/domain';
 import { governoratesQuery, useIdempotentMutation } from '@nile/query';
-import { Button, ConfirmDialog, ErrorState, FormAlert, Money, PageHeader, Skeleton } from '@nile/ui';
+import {
+  Button,
+  buttonVariants,
+  ConfirmDialog,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  ErrorState,
+  FormAlert,
+  Money,
+  PageHeader,
+  Skeleton,
+} from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -20,11 +33,12 @@ import {
 import { cartKeys, CART_NOTICES, useCart } from '@/features/cart';
 import { orderKeys } from '@/features/orders';
 import { browserApi } from '@/lib/browser-api';
-import { ROUTES } from '@/lib/routes';
+import { orderPath, ROUTES } from '@/lib/routes';
 import { placeOrder, type CheckoutBody, type PaymentMethod } from '../api';
 import { CHECKOUT_COPY } from '../copy';
 import { confirmationPath } from '../lib/constants';
 import { expectedTotal } from '../lib/expected-total';
+import { leaveForKashier } from '../kashier/leave-for-kashier';
 import { AddressPicker } from './address-picker';
 import { OrderReview } from './order-review';
 import { PaymentMethodPicker } from './payment-method';
@@ -61,18 +75,23 @@ export function CheckoutView() {
   /** Set once the order exists: the emptied cart must not trigger the entry guard on the way out. */
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [totalChanged, setTotalChanged] = useState(false);
+  /** `ORDER_PAYMENT_PENDING`: the order already waiting for card payment (`''` when the id is missing). */
+  const [paymentPendingOrderId, setPaymentPendingOrderId] = useState<string | null | undefined>(undefined);
   const failure = useSubmitFailure(CHECKOUT_COPY.errors);
 
   const place = useIdempotentMutation({
     mutationFn: placeOrder,
-    onSuccess: (result) => {
-      const { order } = result;
+    onSuccess: async ({ order, kashier }) => {
       setPlacedOrderId(order.id);
       queryClient.setQueryData(orderKeys.detail(order.id), order);
       void queryClient.invalidateQueries({ queryKey: cartKeys.cart() });
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
-      // Only cash on delivery can be chosen until T-F4 adds the Kashier redirect.
-      router.push(confirmationPath(order.id));
+      if (order.paymentMethod === 'cod') {
+        router.push(confirmationPath(order.id));
+        return;
+      }
+      // The order exists either way: if Kashier can't be reached now, its page offers "Pay now" (SF-18).
+      if (!(await leaveForKashier(order.id, kashier?.checkoutUrl ?? null))) router.push(orderPath(order.id));
     },
   });
 
@@ -149,6 +168,11 @@ export function CheckoutView() {
       place.resetIntent();
       await Promise.all([cart.refetch(), governorates.refetch()]);
       setTotalChanged(true);
+      return;
+    }
+    if (isApiError(error, 'ORDER_PAYMENT_PENDING')) {
+      const pending = error.details[0]?.value;
+      setPaymentPendingOrderId(typeof pending === 'string' ? pending : null);
       return;
     }
     if (isApiError(error, 'ADDRESS_NOT_FOUND')) {
@@ -254,6 +278,30 @@ export function CheckoutView() {
           if (body !== null) submit(body);
         }}
       />
+      <Dialog
+        open={paymentPendingOrderId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setPaymentPendingOrderId(undefined);
+        }}
+      >
+        <DialogContent
+          title={CHECKOUT_COPY.paymentPending.title}
+          description={CHECKOUT_COPY.paymentPending.message}
+          footer={
+            <>
+              <DialogClose asChild>
+                <Button variant="outline">{CHECKOUT_COPY.paymentPending.close}</Button>
+              </DialogClose>
+              <Link
+                href={paymentPendingOrderId ? orderPath(paymentPendingOrderId) : ROUTES.orders}
+                className={buttonVariants()}
+              >
+                {CHECKOUT_COPY.paymentPending.goToOrder}
+              </Link>
+            </>
+          }
+        />
+      </Dialog>
     </div>
   );
 }

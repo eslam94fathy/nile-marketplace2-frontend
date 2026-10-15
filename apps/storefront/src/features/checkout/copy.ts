@@ -44,6 +44,32 @@ export const CHECKOUT_COPY = {
     confirm: 'Place order',
     cancel: 'Go back',
   },
+  paymentPending: {
+    title: 'An order is waiting for payment',
+    message:
+      'You already have an order waiting for card payment. Pay for it or wait until it expires before placing another card order.',
+    goToOrder: 'Go to that order',
+    close: 'Close',
+  },
+  // SF-09, SF-18-A2
+  kashier: {
+    payNow: 'Pay now',
+    timeLeft: 'Time left to pay',
+    returnTitle: 'Payment',
+    confirming: 'Confirming your payment…',
+    paid: (orderNumber: string) => `Payment received. Your order ${orderNumber} is placed.`,
+    cancelled: "Your payment wasn't completed in time and the order was cancelled.",
+    stillWaiting:
+      "We're still waiting for confirmation from the payment provider. Check your order page in a few minutes.",
+    notFound: "We couldn't find your order.",
+    yourOrders: 'Your orders',
+    goToOrder: 'Go to your order',
+    loadFailed: "Your payment couldn't be checked.",
+    errors: {
+      ORDER_NOT_AWAITING_PAYMENT: 'This order is no longer waiting for payment.',
+      PAYMENT_PROVIDER_UNAVAILABLE: "The payment provider isn't responding. Please try again in a moment.",
+    },
+  },
   // SF-08
   confirmation: {
     title: 'Order placed',

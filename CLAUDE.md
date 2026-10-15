@@ -167,6 +167,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Windows reserves TCP ports 2978–3077 (and others) on this machine, so the backend's port 3000 is blocked; the ranges can change after a reboot (`netsh interface ipv4 show excludedportrange protocol=tcp`). To run the backend API on another host port without changing backend files: `docker compose run -d --rm --no-deps -p 3100:3000 api` from the backend repo (Postgres, Redis, RabbitMQ and Mailpit started first).
 - Backend helpers for local and E2E work: `npm run seed:dev` (sample data), Mailpit at `http://localhost:8025` (OTP and invite emails), `PAYMENT_GATEWAY=fake` + `npm run dev:kashier-webhook` (signed Kashier webhooks).
 - E2E runs need `ACCESS_TOKEN_TTL_MINUTES=2` in the backend's own `.env` (session refresh test, design 01 R-21).
+- Card payment E2E (T-F4) needs the backend with `PAYMENT_GATEWAY=fake`, `NILE_BACKEND_DIR` in the shell (the built backend checkout, whose `scripts/dev-kashier-webhook.js` signs the webhook; skipped without it), and `KASHIER_PAYMENT_TTL_MINUTES=1` in the backend's `.env` for the expired path (skipped with a longer window) (design 01 R-33).
 - Contract and E2E runs need `NILE_API_BASE_URL`, `MAILPIT_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` in the shell, and a test admin seeded once in the backend (`docker compose run --rm --no-deps api node dist/seed-admin.js --email e2e-admin@example.test`; the first run accepts its invite with `E2E_ADMIN_PASSWORD`). The backend allows about 10 sign-ups/sign-ins per 5 min per IP locally: raise `RATE_LIMIT_STRICT_AUTH_POINTS` in the backend's own `.env` for repeated runs (design 01 §12.3).
 - Backend env values the web apps rely on locally: `INVITE_URL_BASE=http://localhost:4100/invite`, `KASHIER_REDIRECT_URL=http://localhost:4100/checkout/payment-return` (to be set by the user in the backend's `.env`).
 
@@ -236,6 +237,9 @@ Checkout always refetches governorates (fees feed the total); empty cart or `has
 
 ### 14.1t Decided (2026-10-15, T-F3)
 `useIdempotentMutation` in `@nile/query` (design 01 §6.1) · card payment shown disabled until T-F4 · Place order errors per SF-07-A1 (cart codes back to `/cart` with notices, `ORDER_TOTAL_CHANGED` re-confirmed with a new key) · confirmation from `GET /orders/{id}` only (design 01 R-32).
+
+### 14.1u Decided (2026-10-15, T-F4)
+Card checkout leaves for Kashier only on `https:` URLs, after keeping the order id in `sessionStorage`; no URL or no session → the order page (Pay now) · return page decides only from `GET /orders/{id}` (3 s polling while visible, stops at a final state or 2 min after the window) · Pay now and Buy again built as shared pieces for SF-18 (design 01 R-33).
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).

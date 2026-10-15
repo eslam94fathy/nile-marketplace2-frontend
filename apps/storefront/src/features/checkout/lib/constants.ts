@@ -6,3 +6,12 @@ export const KASHIER_PAYMENT_WINDOW_MINUTES = 15;
 
 /** SF-08 route for an order placed with cash on delivery. */
 export const confirmationPath = (orderId: string) => `/checkout/confirmation/${orderId}` as const;
+
+/** SF-09: the order is polled every 3 s while the tab is visible (design 02 §2.2 `orders.detail`). */
+export const PAYMENT_RETURN_POLL_MS = 3_000;
+
+/** SF-09: still awaiting payment this long after `paymentExpiresAt` → stop polling, send to the order page. */
+export const PAYMENT_CONFIRMATION_GRACE_MS = 2 * 60_000;
+
+/** SF-09 fallback without a stored id: the newest open order counts only if created within this time. */
+export const PAYMENT_RETURN_ORDER_MAX_AGE_MS = 60 * 60_000;

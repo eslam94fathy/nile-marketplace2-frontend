@@ -16,6 +16,8 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Address, Governorate } from '@/features/addresses';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
+import { navigation } from '../kashier/redirect';
+import { PENDING_PAYMENT_ORDER_KEY } from '../kashier/storage';
 import { CheckoutView } from './checkout-view';
 
 const replace = vi.fn();
@@ -342,11 +344,16 @@ async function chooseCod() {
 const placeButton = () => screen.getByRole('button', { name: /Place order|Placing your order/ });
 
 describe('checkout: payment, review and Place order (spec 01 SF-07)', { timeout: 20_000 }, () => {
-  it('no payment method preselected; card payment is shown but not offered yet (T-F4)', async () => {
+  it('no payment method preselected; both methods offered', async () => {
     serve({ addresses: [addressFactory({ isDefault: true })] });
     renderWithProviders(<CheckoutView />);
     expect(await screen.findByRole('radio', { name: /Cash on delivery/ })).toHaveProperty('checked', false);
-    expect(screen.getByRole('radio', { name: /Pay by card \(Kashier\)/ })).toHaveProperty('disabled', true);
+    const card = screen.getByRole('radio', { name: /Pay by card \(Kashier\)/ });
+    expect(card).toHaveProperty('checked', false);
+    expect(card).toHaveProperty('disabled', false);
+    expect(
+      screen.getByText(/You have 15 minutes to pay; until then your items are reserved\./),
+    ).toBeDefined();
     expect(placeButton()).toHaveProperty('disabled', true);
     expect(
       screen.getByText('Choose a delivery address and a payment method to place your order.'),
@@ -533,5 +540,145 @@ describe('checkout: payment, review and Place order (spec 01 SF-07)', { timeout:
     await user.click(placeButton());
     expect(await screen.findByText(/Try again in 30 s/)).toBeDefined();
     expect(placeButton()).toHaveProperty('disabled', true);
+  });
+});
+
+// ---- T-F4: card payment (spec 01 SF-07-A1 step 3, ORDER_PAYMENT_PENDING) ----
+
+const CARD_ORDER = orderDetailFactory({
+  paymentMethod: 'kashier',
+  paymentStatus: 'initiated',
+  status: 'pending_payment',
+  paymentExpiresAt: '2026-10-15T10:15:00.000Z',
+  placedAt: null,
+});
+
+const cardPlaced =
+  (checkoutUrl: string | null): Answer =>
+  () =>
+    HttpResponse.json(
+      {
+        success: true,
+        data: {
+          order: CARD_ORDER,
+          kashier: {
+            expiresAt: '2026-10-15T10:15:00.000Z',
+            ...(checkoutUrl === null ? {} : { checkoutUrl }),
+          },
+        },
+      },
+      { status: 201 },
+    );
+
+async function chooseCard() {
+  const user = userEvent.setup();
+  renderWithProviders(<CheckoutView />);
+  await user.click(await screen.findByRole('radio', { name: /Pay by card/ }));
+  return user;
+}
+
+describe('checkout: card payment (spec 01 SF-07-A1)', { timeout: 20_000 }, () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
+  it('https checkoutUrl: remembers the order for the return page, then leaves for Kashier', async () => {
+    const assign = vi.spyOn(navigation, 'assign').mockImplementation(() => undefined);
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const sent = serveCheckout(cardPlaced('https://checkout.kashier.io/session/abc'));
+    const user = await chooseCard();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith('https://checkout.kashier.io/session/abc');
+    });
+    expect(sent[0]?.body.paymentMethod).toBe('kashier');
+    expect(window.sessionStorage.getItem(PENDING_PAYMENT_ORDER_KEY)).toBe(CARD_ORDER.id);
+    expect(push).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    assign.mockRestore();
+  });
+
+  it('no checkoutUrl: opens a session for the order first', async () => {
+    const assign = vi.spyOn(navigation, 'assign').mockImplementation(() => undefined);
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    serveCheckout(cardPlaced(null));
+    server.use(
+      mockApi(
+        'post',
+        '/orders/{orderId}/payment/kashier-session',
+        ({ reply }) =>
+          reply.ok({
+            checkoutUrl: 'https://checkout.kashier.io/session/new',
+            expiresAt: '2026-10-15T10:15:00.000Z',
+          }),
+        { base: BFF_BASE },
+      ),
+    );
+    const user = await chooseCard();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith('https://checkout.kashier.io/session/new');
+    });
+    assign.mockRestore();
+  });
+
+  it('no session possible: the order page, where "Pay now" is offered', async () => {
+    const assign = vi.spyOn(navigation, 'assign').mockImplementation(() => undefined);
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    serveCheckout(cardPlaced(null));
+    server.use(
+      mockApi(
+        'post',
+        '/orders/{orderId}/payment/kashier-session',
+        ({ reply }) => reply.error(502, 'PAYMENT_PROVIDER_UNAVAILABLE'),
+        { base: BFF_BASE },
+      ),
+    );
+    const user = await chooseCard();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith(`/account/orders/${CARD_ORDER.id}`);
+    });
+    expect(assign).not.toHaveBeenCalled();
+    assign.mockRestore();
+  });
+
+  it('a checkoutUrl that is not https is never followed', async () => {
+    const assign = vi.spyOn(navigation, 'assign').mockImplementation(() => undefined);
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    serveCheckout(cardPlaced('http://checkout.kashier.io/session/abc'));
+    const user = await chooseCard();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith(`/account/orders/${CARD_ORDER.id}`);
+    });
+    expect(assign).not.toHaveBeenCalled();
+    assign.mockRestore();
+  });
+
+  it('ORDER_PAYMENT_PENDING: explains, links to the order waiting for payment', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const waiting = fixtureId(0x777);
+    serveCheckout(() =>
+      HttpResponse.json(
+        errorBody('ORDER_PAYMENT_PENDING', {
+          details: [
+            { field: 'orderId', value: waiting, constraint: 'pending_payment', message: 'awaiting payment' },
+          ],
+        }),
+        { status: 409 },
+      ),
+    );
+    const user = await chooseCard();
+    await user.click(placeButton());
+    const dialog = await screen.findByRole('dialog', { name: 'An order is waiting for payment' });
+    expect(
+      within(dialog).getByText(
+        'You already have an order waiting for card payment. Pay for it or wait until it expires before placing another card order.',
+      ),
+    ).toBeDefined();
+    expect(within(dialog).getByRole('link', { name: 'Go to that order' }).getAttribute('href')).toBe(
+      `/account/orders/${waiting}`,
+    );
   });
 });

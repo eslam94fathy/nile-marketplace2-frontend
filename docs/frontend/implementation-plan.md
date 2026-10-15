@@ -272,6 +272,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F4 Kashier payment and return page
+- **Status (2026-10-15):** implemented and verified locally (1021 tests incl. https check, storage guards, card checkout with/without `checkoutUrl`, `ORDER_PAYMENT_PENDING`, return page per outcome, tampered URL, grace limit, fallback lookup, Pay now errors, Buy again; lint, format, type-check, build green). E2E `e2e/storefront/checkout-kashier.spec.ts` paid path passed against the real backend (fake gateway, production build on a spare port): card checkout → intercepted Kashier page → cross-site return with `?paymentStatus=SUCCESS` still signed in (SameSite=Lax verified) and still "Confirming…" → signed webhook → "Payment received" → order `placed`/`paid`. Expired path written but **skipped locally**: it needs `KASHIER_PAYMENT_TTL_MINUTES=1` in the backend (currently 15). Decisions: design 01 R-33.
 - **Scope:** save the order id in `sessionStorage` and redirect to `checkoutUrl` (https check), recovery via `kashier-session` when `null`, return page locating the order (saved id, else newest `pending_payment`/`placed` order) and polling `GET /orders/:id` until placed/cancelled/expired with countdown from `paymentExpiresAt`, "pay now" on pending orders, `ORDER_PAYMENT_PENDING` handling.
 - **Exclusions:** refunds (admin, phase h).
 - **Dependencies:** T-F3; backend env `KASHIER_REDIRECT_URL` pointed at `<storefront>/checkout/payment-return` (OQ-2; locally `http://localhost:4100/checkout/payment-return`).
