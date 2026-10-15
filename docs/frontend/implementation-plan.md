@@ -230,6 +230,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-E3 Product detail and variant selection
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests incl. 16 variant-selection cases, build green). E2E `e2e/storefront/product.spec.ts` passed against the real backend (production build on a spare port, live data): choose options → URL `?variant=` → "Add to cart" signed out → sign in → back on the product with the variant and quantity preselected; id URL → 308 to the slug; unknown product → 404 "This product isn't available any more.". The run found a server/client boundary bug (a constant imported from a client module), fixed. JSON-LD pending a decision (CLAUDE.md §14.3 SF-JSONLD). Decisions: design 01 R-29.
 - **Scope:** product page by slug (server-rendered, `no-store`), description as plain text, seller link (`/search?seller=`), variant picker by option, price/compare-at, availability (`availableQuantity`), add-to-cart entry point (logged out → login with `returnTo` carrying variant and quantity, FQ-6), SEO metadata.
 - **Exclusions:** images, reviews (not in API); the cart write itself (T-F1).
 - **Dependencies:** T-E2 (FQ-6 decided: login required to add).

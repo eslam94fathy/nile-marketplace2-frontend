@@ -81,3 +81,19 @@ export async function getNewArrivals() {
   const query = productQuery({ limit: NEW_ARRIVALS_COUNT, sort: '-publishedAt' });
   return (await unwrap(publicServerApi().GET('/api/v1/products', { params: { query } }))).data;
 }
+
+/**
+ * One product by id or slug (spec 01 SF-05), never cached (stock and visibility are live); once per request
+ * for the page and its metadata. Null for `PRODUCT_NOT_FOUND` (hidden, deleted, suspended seller).
+ */
+export const getProduct = cache(async (idOrSlug: string) => {
+  await connection();
+  try {
+    return (
+      await unwrap(publicServerApi().GET('/api/v1/products/{idOrSlug}', { params: { path: { idOrSlug } } }))
+    ).data;
+  } catch (error) {
+    if (isApiError(error, 'PRODUCT_NOT_FOUND')) return null;
+    throw error;
+  }
+});

@@ -17,5 +17,9 @@ export {
   type SearchParams,
 } from './lib/listing-params';
 export { productHref } from './lib/product-href';
+export { Breadcrumbs } from './components/breadcrumbs';
+export { ProductView } from './components/product-view';
+export { PRODUCT_PARAMS } from './lib/product-params';
+export type { ProductDetail } from './lib/variant-selection';
 export { categoryHref } from './lib/category-href';
 export { categoryOptions, findCategoryPath, type CategoryNode } from './lib/category-tree';

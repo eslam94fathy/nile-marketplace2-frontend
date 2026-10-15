@@ -1,9 +1,9 @@
 import { PageHeader } from '@nile/ui';
 import Link from 'next/link';
-import { ROUTES } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
 import { categoryHref } from '../lib/category-href';
 import type { CategoryNode } from '../lib/category-tree';
+import { Breadcrumbs } from './breadcrumbs';
 
 const CHIP =
   'inline-flex items-center rounded-full border border-border px-3 py-1 text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring';
@@ -17,29 +17,10 @@ export function CategoryHeader({ path }: { readonly path: readonly CategoryNode[
   if (current === undefined) return null;
   return (
     <div className="space-y-4">
-      <nav aria-label={CATALOG_COPY.breadcrumb}>
-        <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          <li>
-            <Link href={ROUTES.home} className="hover:text-foreground hover:underline">
-              {CATALOG_COPY.home}
-            </Link>
-          </li>
-          {path.map((node) => (
-            <li key={node.id} className="flex items-center gap-1">
-              <span aria-hidden="true">›</span>
-              {node === current ? (
-                <span aria-current="page" className="text-foreground">
-                  {node.name}
-                </span>
-              ) : (
-                <Link href={categoryHref(node.slug)} className="hover:text-foreground hover:underline">
-                  {node.name}
-                </Link>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <Breadcrumbs
+        links={path.slice(0, -1).map((node) => ({ name: node.name, href: categoryHref(node.slug) }))}
+        current={current.name}
+      />
       <PageHeader title={current.name} />
       {current.children.length === 0 ? null : (
         <nav aria-label={CATALOG_COPY.subcategories}>

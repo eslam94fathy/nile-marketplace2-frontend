@@ -225,6 +225,9 @@ Home page split: T-E1 builds search + "Shop by category", T-E2 fills "New arriva
 ### 14.1p Decided (2026-10-15, T-E2)
 Spec 01 v1.1: the home page has no search box of its own (the header's is on every page) · one URL ⇄ API mapping module for listings; invalid URL values dropped, never sent; filter changes navigate (Back restores) with the previous results dimmed; product route `/p/[idOrSlug]` per spec 01 (design 01 R-28).
 
+### 14.1q Decided (2026-10-15, T-E3)
+Signed-in "Add to cart" stays disabled with the T-F1 note until the cart write exists · selection mirrored to `?variant=` without a navigation · constants shared with Server Components never live in `'use client'` modules (design 01 R-29).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -238,6 +241,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
+| SF-JSONLD | Spec 01 SF-05 [PROPOSED] asks for JSON-LD `Product`; the usual way is a `<script type="application/ld+json">` with `dangerouslySetInnerHTML`, which CLAUDE.md §7 forbids with API data | Rec: allow one exception: JSON-LD built from typed fields, `JSON.stringify` with `<` escaped as `\u003c`, in one reviewed helper. Alternative: drop JSON-LD from SF-05 |
 | TB-3 | `@nile/config/env` is one module: browser bundles that read public settings also carry the server env *schema* (key names and rules, no values) | Rec: split into `env/public` and `env/server` entry points (small change) |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 

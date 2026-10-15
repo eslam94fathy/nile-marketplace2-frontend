@@ -50,4 +50,18 @@ export const CATALOG_COPY = {
   inStock: 'In stock',
   noResults: 'No products match your search.',
   updating: 'Updating results…',
+  // SF-05
+  productUnavailable: "This product isn't available any more.",
+  soldByLine: 'Sold by',
+  was: (amount: string) => `Was ${amount}`,
+  notInThisCombination: 'Not available in this combination',
+  combinationUnavailable: "This combination isn't available. Please choose other options.",
+  chooseOptions: 'Choose your options to add this to your cart.',
+  quantity: 'Quantity',
+  decrease: 'Decrease quantity',
+  increase: 'Increase quantity',
+  addToCart: 'Add to cart',
+  description: 'Description',
+  details: 'Details',
+  sku: 'SKU',
 } as const;
