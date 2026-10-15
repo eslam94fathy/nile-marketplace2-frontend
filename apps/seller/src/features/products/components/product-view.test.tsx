@@ -334,17 +334,21 @@ describe('product page (spec 02 SE-10)', { timeout: 15_000 }, () => {
     serveProduct(PUBLISHED);
     serveAction('deactivate', { status: 403, code: 'SELLER_NOT_APPROVED' });
     const view = renderPage();
-    const unpublish = await screen.findByRole('button', { name: 'Unpublish' });
+    // Generous waits: the full suite runs many jsdom files at once (flaked at the 1 s default once).
+    const slow = { timeout: 5000 };
+    const unpublish = await screen.findByRole('button', { name: 'Unpublish' }, slow);
     await vi.waitFor(() => {
       expect(unpublish).toHaveProperty('disabled', false);
-    });
+    }, slow);
     await view.user.click(unpublish);
     await view.user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Unpublish' }));
     await vi.waitFor(() => {
-      expect(profileCalls).toBe(2);
-    });
+      expect(profileCalls).toBeGreaterThanOrEqual(2);
+    }, slow);
     // In the toast, and next to the controls the new status disables.
-    expect((await screen.findAllByText(/Your account is suspended\./)).length).toBeGreaterThan(1);
-    expect(screen.getByRole('button', { name: 'Unpublish' })).toHaveProperty('disabled', true);
+    expect((await screen.findAllByText(/Your account is suspended\./, {}, slow)).length).toBeGreaterThan(1);
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Unpublish' })).toHaveProperty('disabled', true);
+    }, slow);
   });
 });

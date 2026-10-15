@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ORDER_TAB_PARAM, OrdersList } from '@/features/orders';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Orders' };
 
-export default async function OrdersPage() {
+/** SE-14 Orders: the tab comes from `?tab=`; the list is fetched on the client. */
+export default async function OrdersPage({ searchParams }: PageProps<'/orders'>) {
   await requireSession();
-  return <PlaceholderScreen title="Orders" task="T-H4" />;
+  const tab = (await searchParams)[ORDER_TAB_PARAM];
+  return <OrdersList tab={typeof tab === 'string' ? tab : null} />;
 }

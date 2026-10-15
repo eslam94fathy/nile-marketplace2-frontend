@@ -63,15 +63,3 @@ export const PROFILE_PAGE_COPY = {
     GOVERNORATE_NOT_FOUND: 'This governorate is no longer available. Please choose again.',
   },
 } as const;
-
-// SE-06 Overview (T-H1 part: status checklist and shortcuts; orders T-H4, balance T-H5).
-export const OVERVIEW_COPY = {
-  title: 'Overview',
-  checklistLabel: 'Application progress',
-  emailVerified: 'Email verified',
-  waitingForReview: 'Waiting for admin review',
-  shortcutsHeading: 'Shortcuts',
-  addProduct: 'Add product',
-  orders: 'Orders',
-  products: 'Products',
-} as const;

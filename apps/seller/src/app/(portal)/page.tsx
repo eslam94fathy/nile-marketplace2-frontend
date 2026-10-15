@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Overview } from '@/features/profile';
+import { Overview } from '@/features/overview';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Overview' };

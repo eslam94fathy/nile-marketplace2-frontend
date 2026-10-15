@@ -18,14 +18,18 @@ export async function signInThroughForm(page: Page, email: string, password: str
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
-/** One in-stock item, a deliverable default address, then `POST /checkout` (COD) as the customer. */
+/**
+ * One in-stock item (`variantId`, or the first one found), a deliverable default address, then
+ * `POST /checkout` (COD) as the customer.
+ */
 export async function placeCodOrder(
   backend: Accounts['backend'],
   token: string,
+  chosenVariantId?: string,
 ): Promise<Schema<'OrderDetailDto'>> {
   const list = await backend.request('GET', '/api/v1/products?limit=40&inStock[eq]=true');
-  let variantId: string | undefined;
-  for (const item of (list.body as { data: { slug: string }[] }).data) {
+  let variantId = chosenVariantId;
+  for (const item of chosenVariantId === undefined ? (list.body as { data: { slug: string }[] }).data : []) {
     const detail = (await backend.request('GET', `/api/v1/products/${item.slug}`)).body as {
       data: ProductDetail;
     };

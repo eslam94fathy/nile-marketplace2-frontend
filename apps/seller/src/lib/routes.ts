@@ -32,3 +32,6 @@ export const productPath = (productId: string) => `${ROUTES.products}/${productI
 /** SE-13 Stock history of one variant. */
 export const variantStockPath = (productId: string, variantId: string) =>
   `${ROUTES.products}/${productId}/variants/${variantId}/stock` as const;
+
+/** SE-15 Order. */
+export const orderPath = (sellerOrderId: string) => `${ROUTES.orders}/${sellerOrderId}` as const;

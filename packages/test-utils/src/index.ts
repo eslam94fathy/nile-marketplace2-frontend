@@ -24,3 +24,4 @@ export {
   sellerProductListItemFactory,
   sellerVariantFactory,
 } from './factories/seller-catalog';
+export { sellerOrderFactory } from './factories/seller-order';

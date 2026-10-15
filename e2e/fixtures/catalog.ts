@@ -54,3 +54,8 @@ export async function createProductWithVariant(page: Page, initialStock: number)
   );
   return { product, variant };
 }
+
+/** Publishes the product (it has an active variant), so customers can buy it. */
+export async function publishProduct(page: Page, productId: string) {
+  await bff<Schema<'SellerProductDetailDto'>>(page, 'POST', `/seller/products/${productId}/activate`);
+}

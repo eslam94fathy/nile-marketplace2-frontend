@@ -358,6 +358,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H4 Seller orders
+- **Status (2026-10-15):** implemented; unit tests (tabs, open quantities, whole-order cancellation, final statuses) and component tests (list per tab with query and countdown, empty and error; detail per status with only the allowed actions; confirm, confirm after the deadline, ready, cancel with note and key reuse on retry, not cancellable, return received, item cancellation limits, "Other" note, whole-order warning, quantity changed; pending vs suspended access; not found; overview queues) green; seller lint, type-check and build green. E2E `e2e/seller/orders.spec.ts` (customer COD order for the seller's product → confirm → ready) written and type-checked, **not yet run** against the real backend. Default tab "To confirm", no date filter (decided 2026-10-15). The Overview moved to `features/overview` and shows the order queues. Decisions: design 01 R-41.
 - **Scope:** list with status filters, detail, accept, ready, cancel, item cancel (reason/note rules), return received, accept-deadline countdown, polling per OQ-13.
 - **Exclusions:** customer PII (not provided by API).
 - **Dependencies:** T-H1 (polling: 60 s while visible, api-inventory §10.4).
