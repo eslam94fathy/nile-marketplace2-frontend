@@ -231,6 +231,9 @@ Signed-in "Add to cart" stays disabled with the T-F1 note until the cart write e
 ### 14.1r Decided (2026-10-15, T-F1)
 Cart shown is always the last `CartDto` from the API (totals never recomputed); adds are never retried, an ambiguous failure refetches; quantity saved 500 ms after the last change; checkout only without issues (design 01 R-30).
 
+### 14.1s Decided (2026-10-15, T-F2)
+Checkout always refetches governorates (fees feed the total); empty cart or `hasIssues` sends back to `/cart` (with a notice for issues); non-deliverable addresses shown but disabled; default preselected only when deliverable; the first address becomes the default (spec 04 C-3); address form shared with T-G2 (design 01 R-31).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

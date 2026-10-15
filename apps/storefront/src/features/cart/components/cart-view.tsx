@@ -1,11 +1,21 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { buttonVariants, ConfirmDialog, EmptyState, ErrorState, Money, PageHeader, Skeleton } from '@nile/ui';
+import {
+  buttonVariants,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  Money,
+  Notice,
+  PageHeader,
+  Skeleton,
+} from '@nile/ui';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ROUTES } from '@/lib/routes';
 import { CART_COPY } from '../copy';
+import type { CartNotice } from '../notices';
 import { useCart, useCartActions } from '../hooks';
 import { CartLine } from './cart-line';
 
@@ -13,7 +23,7 @@ import { CartLine } from './cart-line';
  * SF-06 Cart: one group per seller, lines, the API's totals (never recomputed), checkout only without issues.
  * The cart shown is always the last one the API returned.
  */
-export function CartView() {
+export function CartView({ notice = null }: { readonly notice?: CartNotice | null }) {
   const cart = useCart();
   const { empty } = useCartActions();
   const [confirmEmpty, setConfirmEmpty] = useState(false);
@@ -62,6 +72,7 @@ export function CartView() {
   return (
     <div className="space-y-6">
       <PageHeader title={CART_COPY.title} />
+      {notice === null ? null : <Notice>{CART_COPY.notices[notice]}</Notice>}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-6">
           {data.sellers.map((seller) => (

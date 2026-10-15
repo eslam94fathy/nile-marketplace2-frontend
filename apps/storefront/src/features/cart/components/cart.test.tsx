@@ -343,3 +343,11 @@ describe('add to cart (spec 01 SF-05-A1)', { timeout: 15_000 }, () => {
     expect(adds).toBe(1);
   });
 });
+
+describe('cart notice (spec 01 SF-07 entry guard)', () => {
+  it('shows "needs attention" when sent back from checkout', async () => {
+    serveCart(cart([line({ issue: 'OUT_OF_STOCK', availableQuantity: 0 })]));
+    renderWithProviders(<CartView notice="needs-attention" />);
+    expect(await screen.findByText('Some items in your cart need attention.')).toBeDefined();
+  });
+});

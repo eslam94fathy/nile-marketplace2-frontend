@@ -252,6 +252,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F2 Address selection at checkout (workflow C-3, C-5)
+- **Status (2026-10-15):** implemented and verified locally (959 tests incl. preselection rules, non-deliverable addresses, the C-3 default rule, `ADDRESS_LIMIT_REACHED`, `GOVERNORATE_NOT_FOUND`, entry guard and load failure; lint, format, type-check, build green). E2E `e2e/storefront/checkout-address.spec.ts` passed against the real backend (production build on a spare port): cart item → checkout → inline form → saved address selected → delivery fee shown → emptied cart sends back to `/cart`. Decisions: design 01 R-31.
 - **Scope:** choose/add an address in checkout; governorate picker marking non-deliverable ones; delivery fee display.
 - **Exclusions:** full address book management (T-G2), though components are shared.
 - **Dependencies:** T-F1, T-G2 components (or built here and reused there).

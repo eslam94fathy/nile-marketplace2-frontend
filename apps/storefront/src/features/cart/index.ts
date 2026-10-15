@@ -4,3 +4,5 @@ export { AddToCart } from './components/add-to-cart';
 export { CartLink } from './components/cart-link';
 export { CartView } from './components/cart-view';
 export { CART_COPY } from './copy';
+export { useCart } from './hooks';
+export { CART_NOTICES, type CartNotice } from './notices';

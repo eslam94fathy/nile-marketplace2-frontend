@@ -1,0 +1,286 @@
+// @vitest-environment jsdom
+import type { Schema } from '@nile/api';
+import { addressFactory, fixtureId, governorateFactory, mockApi } from '@nile/test-utils';
+import { makeTestQueryClient, renderWithProviders } from '@nile/test-utils/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Address, Governorate } from '@/features/addresses';
+import { BFF_BASE, setupMswServer } from '@/test/msw';
+import { CheckoutView } from './checkout-view';
+
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock('@/lib/use-has-session', () => ({ useHasSession: () => true }));
+
+const server = setupMswServer();
+
+beforeEach(() => {
+  replace.mockReset();
+});
+
+const CAIRO = governorateFactory({ id: fixtureId(1), name: 'Cairo', deliveryFee: '45.00' });
+const ASWAN = governorateFactory({
+  id: fixtureId(2),
+  name: 'Aswan',
+  deliveryFee: null,
+  isDeliverable: false,
+});
+
+function cart(overrides: Partial<Schema<'CartDto'>> = {}): Schema<'CartDto'> {
+  return {
+    id: fixtureId(0x500),
+    sellers: [
+      {
+        sellerId: fixtureId(0x600),
+        businessName: 'Nile Crafts',
+        subtotal: '500.00',
+        items: [
+          {
+            id: fixtureId(0x700),
+            variantId: fixtureId(0x701),
+            productId: fixtureId(0x702),
+            productName: 'Linen shirt',
+            productSlug: 'linen-shirt',
+            sku: 'LIN-M',
+            attributes: [],
+            unitPrice: '250.00',
+            quantity: 2,
+            lineTotal: '500.00',
+            issue: null,
+            availableQuantity: 10,
+          },
+        ],
+      },
+    ],
+    itemsTotal: '500.00',
+    itemCount: 2,
+    hasIssues: false,
+    ...overrides,
+  };
+}
+
+function serve({
+  basket = cart(),
+  addresses = [] as Address[],
+  governorates = [CAIRO, ASWAN] as Governorate[],
+} = {}) {
+  let governorateCalls = 0;
+  server.use(
+    mockApi('get', '/cart', ({ reply }) => reply.ok(basket), { base: BFF_BASE }),
+    mockApi('get', '/me/addresses', ({ reply }) => reply.ok(addresses), { base: BFF_BASE }),
+    mockApi(
+      'get',
+      '/governorates',
+      ({ reply }) => {
+        governorateCalls += 1;
+        return reply.ok(governorates);
+      },
+      { base: BFF_BASE },
+    ),
+  );
+  return { governorateCalls: () => governorateCalls };
+}
+
+async function fillAddressForm(user: ReturnType<typeof userEvent.setup>, governorate: string) {
+  await user.type(screen.getByRole('textbox', { name: /^Label/ }), 'Work');
+  await user.type(screen.getByRole('textbox', { name: /^Recipient name/ }), 'Mona Adel');
+  await user.type(screen.getByRole('textbox', { name: /^Recipient phone/ }), '1001234567');
+  screen.getByRole('combobox', { name: /^Governorate/ }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(await screen.findByRole('option', { name: governorate }));
+  await user.type(screen.getByRole('textbox', { name: /^City/ }), 'Nasr City');
+  await user.type(screen.getByRole('textbox', { name: /^Area/ }), 'District 7');
+  await user.type(screen.getByRole('textbox', { name: /^Street/ }), 'Abbas El Akkad');
+  await user.type(screen.getByRole('textbox', { name: /^Building/ }), '12');
+}
+
+const deliveryFee = () => screen.getByText('Delivery fee').nextElementSibling?.textContent;
+
+describe('checkout: delivery address (spec 01 SF-07 §1)', { timeout: 20_000 }, () => {
+  it('preselects a deliverable default address and shows its delivery fee', async () => {
+    const home = addressFactory({ label: 'Home', isDefault: true });
+    serve({ addresses: [home, addressFactory({ label: 'Work' })] });
+    renderWithProviders(<CheckoutView />);
+    expect(await screen.findByRole('radio', { name: /Home/ })).toHaveProperty('checked', true);
+    expect(screen.getByRole('radio', { name: /Work/ })).toHaveProperty('checked', false);
+    expect(screen.getByText('Items (2)')).toBeDefined();
+    expect(deliveryFee()).toMatch(/45\.00/);
+  });
+
+  it('does not preselect a default it cannot deliver to; that address is disabled with the reason', async () => {
+    serve({
+      addresses: [
+        addressFactory({ label: 'Home', isDefault: true, governorateId: ASWAN.id }),
+        addressFactory({ label: 'Work' }),
+      ],
+    });
+    renderWithProviders(<CheckoutView />);
+    const home = await screen.findByRole('radio', { name: /Home/ });
+    expect(home).toHaveProperty('disabled', true);
+    expect(home).toHaveProperty('checked', false);
+    expect(screen.getByText("We don't deliver to Aswan yet.")).toBeDefined();
+    expect(deliveryFee()).toBe('—');
+
+    await userEvent.click(screen.getByRole('radio', { name: /Work/ }));
+    expect(screen.getByRole('radio', { name: /Work/ })).toHaveProperty('checked', true);
+    expect(deliveryFee()).toMatch(/45\.00/);
+  });
+
+  it('fetches governorates fresh even when cached (fees feed the total)', async () => {
+    const calls = serve({ addresses: [addressFactory({ isDefault: true })] });
+    const queryClient = makeTestQueryClient();
+    // A cached, older fee (e.g. from the address book) must not be used.
+    queryClient.setQueryData(['public', 'governorates', 'list'], [{ ...CAIRO, deliveryFee: '30.00' }]);
+    renderWithProviders(<CheckoutView />, { queryClient });
+    await waitFor(() => {
+      expect(deliveryFee()).toMatch(/45\.00/);
+    });
+    expect(calls.governorateCalls()).toBe(1);
+  });
+
+  it('no addresses: the form is inline; the saved address becomes the default and is selected', async () => {
+    const user = userEvent.setup();
+    serve();
+    server.use(
+      mockApi(
+        'post',
+        '/me/addresses',
+        async ({ request, reply }) => {
+          const body = (await request.json()) as Record<string, unknown>;
+          expect(body).toEqual({
+            label: 'Work',
+            recipientName: 'Mona Adel',
+            recipientPhone: '+201001234567',
+            governorateId: CAIRO.id,
+            city: 'Nasr City',
+            area: 'District 7',
+            street: 'Abbas El Akkad',
+            building: '12',
+            isDefault: true,
+          });
+          const created = addressFactory({ label: 'Work', isDefault: true });
+          // The list now holds it.
+          server.use(mockApi('get', '/me/addresses', ({ reply: r }) => r.ok([created]), { base: BFF_BASE }));
+          return reply.created(created);
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    renderWithProviders(<CheckoutView />);
+    expect(await screen.findByText('This will be your default address.')).toBeDefined();
+    expect(screen.queryByRole('checkbox', { name: /default/ })).toBeNull();
+    await fillAddressForm(user, 'Cairo');
+    await user.click(screen.getByRole('button', { name: 'Save address' }));
+    expect(await screen.findByRole('radio', { name: /Work/ })).toHaveProperty('checked', true);
+    expect(deliveryFee()).toMatch(/45\.00/);
+  });
+
+  it('a new address in a governorate without delivery is saved but not selected', async () => {
+    const user = userEvent.setup();
+    const home = addressFactory({ label: 'Home', isDefault: true });
+    serve({ addresses: [home] });
+    server.use(
+      mockApi(
+        'post',
+        '/me/addresses',
+        async ({ request, reply }) => {
+          const body = (await request.json()) as Record<string, unknown>;
+          expect(body.isDefault).toBe(false);
+          const created = addressFactory({ label: 'Work', governorateId: ASWAN.id });
+          server.use(
+            mockApi('get', '/me/addresses', ({ reply: r }) => r.ok([home, created]), { base: BFF_BASE }),
+          );
+          return reply.created(created);
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    renderWithProviders(<CheckoutView />);
+    await user.click(await screen.findByRole('button', { name: 'Add a new address' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a new address' });
+    expect(within(dialog).getByRole('checkbox', { name: 'Make this my default address' })).toBeDefined();
+    await fillAddressForm(user, 'Aswan (no delivery yet)');
+    await user.click(within(dialog).getByRole('button', { name: 'Save address' }));
+    const work = await screen.findByRole('radio', { name: /Work/ });
+    expect(work).toHaveProperty('disabled', true);
+    expect(screen.getByRole('radio', { name: /Home/ })).toHaveProperty('checked', true);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('GOVERNORATE_NOT_FOUND: reloads governorates and asks to choose again', async () => {
+    const user = userEvent.setup();
+    const calls = serve();
+    server.use(
+      mockApi('post', '/me/addresses', ({ reply }) => reply.error(404, 'GOVERNORATE_NOT_FOUND'), {
+        base: BFF_BASE,
+      }),
+    );
+    renderWithProviders(<CheckoutView />);
+    await screen.findByText('This will be your default address.');
+    await fillAddressForm(user, 'Cairo');
+    await user.click(screen.getByRole('button', { name: 'Save address' }));
+    expect(
+      await screen.findByText('This governorate is no longer available. Please choose again.'),
+    ).toBeDefined();
+    await waitFor(() => {
+      expect(calls.governorateCalls()).toBe(2);
+    });
+  });
+
+  it('ADDRESS_LIMIT_REACHED from the server: form-level message', async () => {
+    const user = userEvent.setup();
+    serve();
+    server.use(
+      mockApi('post', '/me/addresses', ({ reply }) => reply.error(409, 'ADDRESS_LIMIT_REACHED'), {
+        base: BFF_BASE,
+      }),
+    );
+    renderWithProviders(<CheckoutView />);
+    await screen.findByText('This will be your default address.');
+    await fillAddressForm(user, 'Cairo');
+    await user.click(screen.getByRole('button', { name: 'Save address' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      expect.stringContaining('You have the maximum of 20 addresses.'),
+    );
+  });
+
+  it('at 20 addresses: no "Add a new address", the limit is explained', async () => {
+    serve({ addresses: Array.from({ length: 20 }, () => addressFactory()) });
+    renderWithProviders(<CheckoutView />);
+    await screen.findAllByRole('radio');
+    expect(screen.queryByRole('button', { name: 'Add a new address' })).toBeNull();
+    expect(screen.getByText(/You have the maximum of 20 addresses/)).toBeDefined();
+  });
+});
+
+describe('checkout: entry guard and states (spec 01 SF-07)', { timeout: 15_000 }, () => {
+  it('empty cart → back to the cart', async () => {
+    serve({ basket: cart({ sellers: [], itemCount: 0, itemsTotal: '0.00' }) });
+    renderWithProviders(<CheckoutView />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/cart');
+    });
+    expect(screen.queryByRole('radio')).toBeNull();
+  });
+
+  it('cart with issues → back to the cart with the notice', async () => {
+    serve({ basket: cart({ hasIssues: true }), addresses: [addressFactory({ isDefault: true })] });
+    renderWithProviders(<CheckoutView />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/cart?notice=needs-attention');
+    });
+    expect(screen.queryByRole('radio')).toBeNull();
+  });
+
+  it('a failed load shows the error with a retry', async () => {
+    serve();
+    server.use(
+      mockApi('get', '/me/addresses', ({ reply }) => reply.error(500, 'INTERNAL_ERROR'), { base: BFF_BASE }),
+    );
+    renderWithProviders(<CheckoutView />);
+    expect(await screen.findByText("Checkout couldn't be loaded.")).toBeDefined();
+    expect(screen.getByRole('button', { name: /Try again/ })).toBeDefined();
+  });
+});
