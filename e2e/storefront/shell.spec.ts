@@ -5,7 +5,7 @@ shellTests('storefront');
 
 test('search needs 2 characters, trims, and submits to /search', async ({ page }) => {
   await page.goto('/');
-  const search = page.getByRole('search');
+  const search = page.getByRole('banner').getByRole('search');
   const submit = search.getByRole('button', { name: 'Search' });
   await search.getByRole('searchbox', { name: 'Search products' }).fill(' a ');
   await expect(submit).toBeDisabled();
@@ -38,8 +38,9 @@ test('categories drawer opens from the header on phones', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('footer links work', async ({ page }) => {
+test('footer links work; "Your orders" asks a visitor to sign in first (T-D3)', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('navigation', { name: 'Footer' }).getByRole('link', { name: 'Your orders' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Your orders' })).toBeVisible();
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Faccount%2Forders$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
 });

@@ -210,6 +210,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase e — Catalog (workflow C-1)
 
 ### T-E1 Category navigation and category pages
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests, build green). E2E `e2e/storefront/catalog-navigation.spec.ts` passed against the real backend (production build on a spare port) with the live tree: home tile → category → subcategory chips to the third level → breadcrumbs back; desktop dropdown; phone drawer to the third level; unknown slug → 404. The storefront shell specs pass too (the T-C3 footer test now expects the T-D3 sign-in redirect). Home split with T-E2 (decided 2026-10-15). Decisions: design 01 R-27.
 - **Scope:** category tree menu (`GET /categories`, server-prefetched, revalidated), category page by slug with breadcrumbs, subcategory links.
 - **Exclusions:** product listing logic (T-E2).
 - **Dependencies:** T-B5, T-C3, FQ-7.

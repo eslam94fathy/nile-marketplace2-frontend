@@ -219,6 +219,9 @@ Invite acceptance on the storefront `/invite` with the session revoked at once a
 ### 14.1n Decided (2026-10-15, T-D7)
 One shared security screen (change password, sign out) in all four apps; the session survives its own password change; agent `/security` linked from the Me placeholder (design 01 R-26).
 
+### 14.1o Decided (2026-10-15, T-E1)
+Home page split: T-E1 builds search + "Shop by category", T-E2 fills "New arrivals" · desktop categories menu is a two-level dropdown, phones keep the expandable drawer (design 01 R-27).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
