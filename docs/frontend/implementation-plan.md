@@ -314,6 +314,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G4 Customer cancellation (workflow C-8)
+- **Status (2026-10-15):** implemented and verified locally (tests incl. Cancel only when `canCancel`, body with and without a note, note limit, card refund line, retry with the same key, `SELLER_ORDER_NOT_CANCELLABLE` refetch, "Keep them"; lint, format, type-check, build green). E2E `e2e/storefront/order-cancel.spec.ts` passed against the real backend: COD order → order page → cancel with a note → block "Cancelled", Cancel gone, API agrees. Decisions: design 01 R-37.
 - **Scope:** cancel a seller order when `canCancel`, optional note, idempotency key, refund notice for Kashier.
 - **Exclusions:** item-level cancel (seller only).
 - **Dependencies:** T-G3.

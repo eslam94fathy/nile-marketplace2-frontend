@@ -19,6 +19,19 @@ export const ORDERS_COPY = {
   // SF-18
   placedOn: (date: string) => `Placed ${date}`,
   paymentHeading: 'Payment',
+  // SF-18-A1
+  cancel: {
+    label: 'Cancel',
+    action: (businessName: string) => `Cancel the items from ${businessName}`,
+    title: 'Cancel these items',
+    confirm: (businessName: string) => `Cancel the items from ${businessName}? This can't be undone.`,
+    refund: 'Your refund will be processed by our team.',
+    note: 'Reason (optional)',
+    confirmAction: 'Cancel items',
+    keep: 'Keep them',
+    notCancellable:
+      "The seller has already confirmed this part of your order, so it can't be cancelled here.",
+  },
   // SF-18-A2
   payNow: {
     action: 'Pay now',

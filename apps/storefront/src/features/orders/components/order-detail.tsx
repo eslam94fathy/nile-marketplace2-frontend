@@ -32,6 +32,7 @@ import { isOrderMissing, orderQuery, type Order } from '../api';
 import { ORDERS_COPY } from '../copy';
 import { PayNow } from '../payment/pay-now';
 import { BuyAgain } from './buy-again';
+import { CancelSellerOrder } from './cancel-seller-order';
 
 const COPY = ORDERS_COPY;
 
@@ -161,7 +162,12 @@ export function OrderDetail({ orderId }: { readonly orderId: string }) {
       </section>
 
       {data.sellerOrders.map((sellerOrder) => (
-        <SellerOrderBlock key={sellerOrder.id} sellerOrder={sellerOrder} />
+        <SellerOrderBlock
+          key={sellerOrder.id}
+          order={data}
+          sellerOrder={sellerOrder}
+          onStale={() => void order.refetch()}
+        />
       ))}
 
       <section aria-label={COPY.total} className="max-w-sm space-y-3">
@@ -219,18 +225,30 @@ function AwaitingPayment({
   );
 }
 
-function SellerOrderBlock({ sellerOrder }: { readonly sellerOrder: SellerOrder }) {
+interface SellerOrderBlockProps {
+  readonly order: Order;
+  readonly sellerOrder: SellerOrder;
+  readonly onStale: () => void;
+}
+
+function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps) {
   // Oldest first (spec 01 SF-18 §4), whatever order the API used.
   const timeline = [...sellerOrder.timeline].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   return (
     <section aria-label={COPY.soldBy(sellerOrder.businessName)} className="rounded-lg border border-border">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="font-medium">{COPY.soldBy(sellerOrder.businessName)}</h2>
-        <StatusBadge
-          value={sellerOrder.status}
-          labels={SELLER_ORDER_STATUS_LABELS.customer}
-          tones={SELLER_ORDER_STATUS_TONES}
-        />
+        <span className="flex items-center gap-3">
+          <StatusBadge
+            value={sellerOrder.status}
+            labels={SELLER_ORDER_STATUS_LABELS.customer}
+            tones={SELLER_ORDER_STATUS_TONES}
+          />
+          {/* Offered exactly when the API says so (SF-18 acceptance 1). */}
+          {sellerOrder.canCancel ? (
+            <CancelSellerOrder order={order} sellerOrder={sellerOrder} onStale={onStale} />
+          ) : null}
+        </span>
       </div>
       <ul className="divide-y divide-border">
         {sellerOrder.items.map((item) => (

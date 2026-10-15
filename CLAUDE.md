@@ -250,6 +250,9 @@ Address book edits send only changed fields (cleared optional → `null`, `isDef
 ### 14.1x Decided (2026-10-15, T-G3)
 Order tabs live in the URL as `?status=<tab>` (all / awaiting-payment / in-progress / completed / cancelled); the order detail refetches every 30 s only while awaiting payment; Kashier pieces moved to `features/orders/payment` so checkout → orders stays one-way (design 01 R-36).
 
+### 14.1y Decided (2026-10-15, T-G4)
+Cancel only when `canCancel`, idempotent with one key per intent, note optional and omitted when empty; "not cancellable" refetches and explains (design 01 R-37).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
