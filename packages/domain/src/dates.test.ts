@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countdown, formatDate, formatDateTime } from './dates';
+import { cairoDayBounds, countdown, formatDate, formatDateTime, isCalendarDay } from './dates';
 
 describe('formatDateTime', () => {
   it('shows Cairo time as "14 Oct 2026, 10:30"', () => {
@@ -75,5 +75,31 @@ describe('countdown', () => {
 
   it('rejects an invalid deadline', () => {
     expect(() => countdown('', 0)).toThrow(RangeError);
+  });
+});
+
+describe('cairoDayBounds (Cairo calendar days for createdAt filters)', () => {
+  it('winter time (UTC+2): 22:00 UTC the evening before to 21:59:59.999 UTC', () => {
+    expect(cairoDayBounds('2026-01-15')).toEqual({
+      start: '2026-01-14T22:00:00.000Z',
+      end: '2026-01-15T21:59:59.999Z',
+    });
+  });
+
+  it('summer time (UTC+3): 21:00 UTC the evening before', () => {
+    expect(cairoDayBounds('2026-07-15')).toEqual({
+      start: '2026-07-14T21:00:00.000Z',
+      end: '2026-07-15T20:59:59.999Z',
+    });
+  });
+
+  it("rejects anything that isn't YYYY-MM-DD", () => {
+    expect(() => cairoDayBounds('15/07/2026')).toThrow(RangeError);
+  });
+
+  it('isCalendarDay: real days only', () => {
+    expect(isCalendarDay('2026-02-28')).toBe(true);
+    expect(isCalendarDay('2026-02-30')).toBe(false);
+    expect(isCalendarDay('2026-2-3')).toBe(false);
   });
 });

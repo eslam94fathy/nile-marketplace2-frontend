@@ -6,6 +6,7 @@ import {
   formatRatePercent,
   parseMoney,
   percentToRate,
+  ratePercentValue,
   rateToPercent,
 } from './money';
 
@@ -119,5 +120,16 @@ describe('rates and percents', () => {
     for (const percent of ['0.00', '0.01', '12.34', '99.99', '100.00']) {
       expect(rateToPercent(percentToRate(percent))).toBe(percent);
     }
+  });
+});
+
+describe('ratePercentValue (prefilling a percent input)', () => {
+  it.each([
+    ['0.1250', '12.5'],
+    ['0.1000', '10'],
+    ['0', '0'],
+    ['0.0525', '5.25'],
+  ])('%s → %s', (rate, value) => {
+    expect(ratePercentValue(rate)).toBe(value);
   });
 });

@@ -72,3 +72,57 @@ export function countdown(deadlineIso: string, nowMs: number): Countdown {
   const label = hours > 0 ? `${hours} h ${pad2(minutes)} min` : `${pad2(minutes)}:${pad2(seconds)}`;
   return { secondsLeft, expired: secondsLeft === 0, label };
 }
+
+const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const OFFSET_FORMAT = new Intl.DateTimeFormat('en-US', {
+  timeZone: DISPLAY_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Cairo's UTC offset at an instant (Egypt observes summer time, so it isn't constant). */
+function cairoOffsetMs(utcMs: number): number {
+  const parts = Object.fromEntries(
+    OFFSET_FORMAT.formatToParts(utcMs).map((part) => [part.type, Number(part.value)]),
+  ) as Partial<Record<Intl.DateTimeFormatPartTypes, number>>;
+  const { year = 0, month = 1, day = 1, hour = 0, minute = 0, second = 0 } = parts;
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  return wallAsUtc - Math.floor(utcMs / SECOND_MS) * SECOND_MS;
+}
+
+/** The UTC instant of a Cairo wall-clock time (the offset re-checked once around a summer-time change). */
+function cairoWallToUtc(wallAsUtcMs: number): number {
+  const first = wallAsUtcMs - cairoOffsetMs(wallAsUtcMs);
+  return wallAsUtcMs - cairoOffsetMs(first);
+}
+
+/**
+ * A Cairo calendar day (`2026-10-14`, as from `<input type="date">`) as the UTC instants of its first and last
+ * millisecond, for `createdAt[gte]` / `createdAt[lte]` filters (CLAUDE.md §8: days are Cairo days).
+ */
+export function cairoDayBounds(day: string): { readonly start: string; readonly end: string } {
+  const match = DAY_PATTERN.exec(day);
+  if (match === null) throw new RangeError('Not a calendar day');
+  const [, year = '', month = '', date = ''] = match;
+  const midnight = Date.UTC(Number(year), Number(month) - 1, Number(date));
+  const nextMidnight = Date.UTC(Number(year), Number(month) - 1, Number(date) + 1);
+  return {
+    start: new Date(cairoWallToUtc(midnight)).toISOString(),
+    end: new Date(cairoWallToUtc(nextMidnight) - 1).toISOString(),
+  };
+}
+
+/** Whether a string is a calendar day `YYYY-MM-DD` that exists. */
+export function isCalendarDay(value: string): boolean {
+  const match = DAY_PATTERN.exec(value);
+  if (match === null) return false;
+  const [, year = '', month = '', date = ''] = match;
+  const at = new Date(Date.UTC(Number(year), Number(month) - 1, Number(date)));
+  return at.toISOString().slice(0, 10) === value;
+}

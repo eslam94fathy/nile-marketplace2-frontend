@@ -271,6 +271,9 @@ No date filter on the seller statement in R1 · an unexpected ledger entry type 
 ### 14.1ae Decided (2026-10-15, T-H6)
 Admin Dashboard split per task: T-H6 builds the frame and `QueueCard`, each of T-H7, T-H9, T-H10 and T-H11 adds its queue · "Suspend" is never offered on the signed-in admin's own row (session user id passed from the server page) · the admin app uses the seller app's test harness and form/query packages (design 01 R-43).
 
+### 14.1af Decided (2026-10-15, T-H7)
+Admin sellers list opens on Pending (oldest first) and has the created date range as specified (Cairo days via `cairoDayBounds` in `@nile/domain`) · rates are typed as percents (`fields.percentRate`) and sent as fractions with decimal arithmetic · seller status-history actors: registration and re-apply are the seller, every other change an admin [VERIFIED backend] · AD-05 links to `/finance/accounts?owner=&type=` for T-H11 to honour (design 01 R-44).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

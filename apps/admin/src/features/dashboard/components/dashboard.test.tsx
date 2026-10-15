@@ -34,10 +34,9 @@ const card = (props: Partial<Parameters<typeof QueueCard<Row>>[0]> = {}) => (
 );
 
 describe('dashboard (spec 03 AD-02)', () => {
-  it('without queues yet: the heading and a note', () => {
+  it('the page heading', () => {
     renderWithProviders(<Dashboard queues={[]} />);
     expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeDefined();
-    expect(screen.getByText(/The work queues arrive with/)).toBeDefined();
   });
 
   it('a card: up to 5 rows and "See all"', () => {

@@ -52,9 +52,14 @@ export function rateToPercent(rate: string): string {
   return parse(rate, RATE_PATTERN, 'rate').times(PERCENT_PER_RATE).toFixed(MONEY_DECIMALS);
 }
 
+/** API rate as a plain percent number without trailing zeros, e.g. to prefill an input: `'0.1250'` → `'12.5'`. */
+export function ratePercentValue(rate: string): string {
+  return new MoneyDecimal(rateToPercent(rate)).toString();
+}
+
 /** API rate as a percent for reading, without trailing zeros: `'0.1000'` → `'10%'`, `'0.1250'` → `'12.5%'`. */
 export function formatRatePercent(rate: string): string {
-  return `${new MoneyDecimal(rateToPercent(rate)).toString()}%`;
+  return `${ratePercentValue(rate)}%`;
 }
 
 /** Admin percent input to an API rate with 4 decimals: `'10.5'` → `'0.1050'`. Throws above 100. */

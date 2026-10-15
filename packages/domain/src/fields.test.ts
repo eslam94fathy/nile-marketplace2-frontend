@@ -9,6 +9,7 @@ import {
   nullableTrimmedString,
   otp,
   password,
+  percentRate,
   positiveMoney,
   slug,
   toLocalPhone,
@@ -168,5 +169,21 @@ describe('nullableTrimmedString', () => {
   it('trims and checks a value', () => {
     expect(schema.parse(' ab ')).toBe('ab');
     expect(firstMessage(schema, 'abcdef')).toBe(FIELD_MESSAGES.tooLong(5));
+  });
+});
+
+describe('percentRate (spec 03 AD-Q-6)', () => {
+  it.each([
+    ['12.5', '0.1250'],
+    [' 10 ', '0.1000'],
+    ['0', '0.0000'],
+    ['100', '1.0000'],
+    ['5.25', '0.0525'],
+  ])('%j → %s', (input, rate) => {
+    expect(percentRate.parse(input)).toBe(rate);
+  });
+
+  it.each(['100.01', '101', '-1', '12.345', '', 'abc'])('rejects %j', (input) => {
+    expect(percentRate.safeParse(input).success).toBe(false);
   });
 });

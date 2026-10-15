@@ -104,7 +104,8 @@ describe('cancel a seller order (spec 01 SF-18-A1)', { timeout: 15_000 }, () => 
   it('offered only when canCancel', async () => {
     serveOrder(order({ sellerOrders: [sellerOrder({ status: 'accepted', canCancel: false })] }));
     render();
-    await screen.findByRole('region', { name: 'Sold by Nile Crafts' });
+    // The file's first render is slow under a full parallel run (flaked at the 1 s default once).
+    await screen.findByRole('region', { name: 'Sold by Nile Crafts' }, { timeout: 5000 });
     expect(screen.queryByRole('button', { name: /Cancel the items/ })).toBeNull();
   });
 

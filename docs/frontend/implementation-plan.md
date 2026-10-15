@@ -390,6 +390,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H7 Seller management and commission
+- **Status (2026-10-15):** implemented; unit tests (percent ⇄ rate and `fields.percentRate`, Cairo-day bounds in winter and summer time, list filters URL ⇄ API, history actor roles) and component tests (list query, governorate names, date filter; seller page details, links and histories with "you" / admin email / Seller; actions per status; approve disabled without a verified email and `SELLER_EMAIL_NOT_VERIFIED`; reject reason rules; reinstate without a reason; stale transition; commission 12.5 → `"0.1250"`, unchanged rate, invalid percent; default commission with confirmation; dashboard queue) green; admin lint, type-check and build green. E2E `e2e/admin/sellers.spec.ts` (pending seller → approve → commission, API agrees; list and dashboard axe) written and type-checked, **not yet run** against the real backend. Date range built as specified (decided 2026-10-15). Decisions: design 01 R-44.
 - **Scope:** sellers list/filters, detail with histories, approve/reject/suspend/reinstate with reasons, commission rate per seller, default commission setting.
 - **Exclusions:** —
 - **Dependencies:** T-H6.

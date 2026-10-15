@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { percentToRate } from './money';
 
 // Shared Zod field schemas mirroring the backend DTO rules (backend `src/lib/http/validation/*`,
 // conventions §5). Forms compose them in `features/<f>/schemas.ts`. The backend stays the final check.
@@ -28,6 +29,7 @@ export const FIELD_MESSAGES = {
   otp: 'Enter the 6-digit code.',
   money: 'Enter an amount with up to 2 decimals.',
   positiveMoney: 'Enter an amount greater than 0 with up to 2 decimals.',
+  percent: 'Enter a percentage from 0 to 100 with up to 2 decimals.',
   slug: 'Use lower-case letters, digits and single hyphens.',
   tooShort: (min: number) => `Must be at least ${min} characters.`,
   tooLong: (max: number) => `Must be at most ${max} characters.`,
@@ -80,6 +82,17 @@ export const money = z.string().trim().regex(MONEY_PATTERN, FIELD_MESSAGES.money
 
 /** As `money`, but greater than 0 (backend `IsPositiveMoney`, e.g. a variant price). */
 export const positiveMoney = z.string().trim().regex(POSITIVE_MONEY_PATTERN, FIELD_MESSAGES.positiveMoney);
+
+/**
+ * A rate typed as a percent, 0..100 with up to 2 decimals (spec 03 §2.2, AD-Q-6), sent as the API's fraction
+ * string with decimal arithmetic: `'12.5'` → `'0.1250'`.
+ */
+export const percentRate = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}(\.\d{1,2})?$/, FIELD_MESSAGES.percent)
+  .refine((value) => Number(value) <= 100, FIELD_MESSAGES.percent)
+  .transform((value) => percentToRate(value));
 
 /** Lower-case kebab-case of `min..max` characters (backend `SlugField`; not trimmed there either). */
 export const slug = (min: number, max: number) =>
