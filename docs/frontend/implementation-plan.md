@@ -220,6 +220,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-E2 Product listing, search and filters
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests incl. 32 URL ⇄ API mapping cases, build green). E2E `e2e/storefront/catalog-listing.spec.ts` passed against the real backend (production build on a spare port, live data): header search → results → sort and "In stock only" in the URL → Back restores; "Load more" without duplicates; attribute facet on a category page; invalid URL values dropped. Home "New arrivals" done (T-E1 split). Decisions: design 01 R-28.
 - **Scope:** listing with infinite/“load more” cursor paging; search `q` (2..100); filters (price range, in stock, attribute facets from `GET /categories/:id/attributes` when a category is selected); sort options valid for the context (relevance only with `q`); all state in the URL.
 - **Exclusions:** result counts (API has none); autocomplete (no endpoint).
 - **Dependencies:** T-E1, T-B4 (`buildProductQuery`).

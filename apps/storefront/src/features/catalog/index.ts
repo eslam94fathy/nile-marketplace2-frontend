@@ -3,6 +3,19 @@
 export { CategoriesMenu } from './components/categories-menu';
 export { CategoryHeader } from './components/category-header';
 export { CategoryTiles } from './components/category-tiles';
+export { catalogKeys, productListOptions } from './api';
+export { ProductBrowser, type CategoryOption, type ProductBrowserProps } from './components/product-browser';
+export { ProductGrid, type ProductListItem } from './components/product-card';
 export { CATALOG_COPY } from './copy';
+export {
+  LISTING_PARAMS,
+  parseListingParams,
+  resolveListing,
+  toProductQuery,
+  type EffectiveAttribute,
+  type ResolvedListing,
+  type SearchParams,
+} from './lib/listing-params';
+export { productHref } from './lib/product-href';
 export { categoryHref } from './lib/category-href';
-export { findCategoryPath, type CategoryNode } from './lib/category-tree';
+export { categoryOptions, findCategoryPath, type CategoryNode } from './lib/category-tree';

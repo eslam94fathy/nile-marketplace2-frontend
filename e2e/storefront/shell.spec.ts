@@ -13,7 +13,7 @@ test('search needs 2 characters, trims, and submits to /search', async ({ page }
   await search.getByRole('searchbox', { name: 'Search products' }).fill('  phone ');
   await submit.click();
   await expect(page).toHaveURL(/\/search\?q=phone$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Results for "phone"' })).toBeVisible();
 });
 
 test('signed-out links carry returnTo; cart asks to sign in first', async ({ page }) => {

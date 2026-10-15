@@ -222,6 +222,9 @@ One shared security screen (change password, sign out) in all four apps; the ses
 ### 14.1o Decided (2026-10-15, T-E1)
 Home page split: T-E1 builds search + "Shop by category", T-E2 fills "New arrivals" · desktop categories menu is a two-level dropdown, phones keep the expandable drawer (design 01 R-27).
 
+### 14.1p Decided (2026-10-15, T-E2)
+Spec 01 v1.1: the home page has no search box of its own (the header's is on every page) · one URL ⇄ API mapping module for listings; invalid URL values dropped, never sent; filter changes navigate (Back restores) with the previous results dimmed; product route `/p/[idOrSlug]` per spec 01 (design 01 R-28).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

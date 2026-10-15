@@ -1,6 +1,6 @@
 # Spec 01 — Storefront (visitor + customer)
 
-Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in §9 (SF-Q-1…SF-Q-12) and every [PROPOSED] item; SF-Q-12 adds "Buy again" (SF-18-A3). Changes from now on need explicit approval and a version bump.
+Status: **v1.1 APPROVED (2026-10-15).** v1.0 (2026-10-14) approved by the user with every recommendation in §9 (SF-Q-1…SF-Q-12) and every [PROPOSED] item; SF-Q-12 adds "Buy again" (SF-18-A3). v1.1 (approved 2026-10-15): SF-01 has no search box of its own (the header's search box is on every page). Changes from now on need explicit approval and a version bump.
 Conventions: `00-conventions.md` (notation, states, default error handling, forms, lists, formatting). Backend specs cited as [SPEC 03] … [SPEC 12] = `../nile-marketplace2/docs/spec/<nn>-*.md`.
 App: `apps/storefront`, dev port 4100. Access roles: public, `customer`.
 
@@ -81,11 +81,10 @@ Header (every page) · main content · footer. Responsive per `00-conventions.md
 
 Route: `/` · Access: public · Render: server (category tree revalidated every 5 min; product list not cached)
 Data: `GET /categories`; `GET /products?limit=12` (default sort `-publishedAt` = newest) [PROPOSED content, SF-Q-1].
-Content:
-1. Search box (large).
-2. "Shop by category": one tile per **top-level** category (name), linking to `/c/[slug]`.
-3. "New arrivals": up to 12 product cards (SF-04 card) and a link "See all" → `/search?sort=newest` (SF-03 without `q`).
-States: no categories → hide section 2; no products → section 3 says "New products are coming soon."; API failure in one section shows that section's error block, the rest renders.
+Content (v1.1: no search box of its own; the header's search box is on every page):
+1. "Shop by category": one tile per **top-level** category (name), linking to `/c/[slug]`.
+2. "New arrivals": up to 12 product cards (SF-04 card) and a link "See all" → `/search?sort=newest` (SF-03 without `q`).
+States: no categories → hide section 1; no products → section 2 says "New products are coming soon."; API failure in one section shows that section's error block, the rest renders.
 Acceptance:
 1. Only active categories appear (the API returns only active ones).
 2. "New arrivals" shows the newest published products first.

@@ -13,21 +13,10 @@ const MAX_LENGTH = 100;
 const HINT = `Type at least ${MIN_LENGTH} characters`;
 const LABEL = 'Search products';
 const SUBMIT = 'Search';
-/** Landmark names: every `search` landmark on a page needs its own (WCAG, axe `landmark-unique`). */
-export const SEARCH_LANDMARKS = { header: 'Site search', home: 'Product search' } as const;
+/** The search landmark's name. */
+const LANDMARK_LABEL = 'Site search';
 
-export interface SearchBoxProps {
-  readonly className?: string;
-  readonly landmarkLabel?: string;
-  /** The home page's large search box (spec 01 SF-01). */
-  readonly large?: boolean;
-}
-
-export function SearchBox({
-  className,
-  landmarkLabel = SEARCH_LANDMARKS.header,
-  large = false,
-}: SearchBoxProps) {
+export function SearchBox({ className }: { readonly className?: string }) {
   const [text, setText] = useState('');
   const hintId = useId();
   const query = text.trim();
@@ -37,7 +26,7 @@ export function SearchBox({
     <Form
       action={ROUTES.search}
       role="search"
-      aria-label={landmarkLabel}
+      aria-label={LANDMARK_LABEL}
       className={cn('flex items-start gap-2', className)}
     >
       <div className="flex-1">
@@ -46,7 +35,6 @@ export function SearchBox({
           aria-label={LABEL}
           placeholder={LABEL}
           maxLength={MAX_LENGTH}
-          className={large ? 'h-12 text-base' : undefined}
           value={text}
           onChange={(event) => {
             setText(event.target.value);
@@ -61,13 +49,7 @@ export function SearchBox({
           </p>
         ) : null}
       </div>
-      <Button
-        type="submit"
-        size="icon"
-        aria-label={SUBMIT}
-        disabled={tooShort}
-        className={large ? 'size-12' : undefined}
-      >
+      <Button type="submit" size="icon" aria-label={SUBMIT} disabled={tooShort}>
         <Search aria-hidden="true" />
       </Button>
     </Form>

@@ -1,4 +1,4 @@
-// Catalog copy (spec 01 §2.2, SF-01, SF-02).
+// Catalog copy (spec 01 §2.2, SF-01…SF-04).
 export const CATALOG_COPY = {
   categories: 'Categories',
   categoriesLoading: 'Loading categories…',
@@ -10,4 +10,44 @@ export const CATALOG_COPY = {
   subcategories: 'Subcategories',
   shopByCategory: 'Shop by category',
   newArrivals: 'New arrivals',
+  seeAll: 'See all',
+  newArrivalsEmpty: 'New products are coming soon.',
+  productsFailed: "Products couldn't be loaded.",
+  // SF-03
+  resultsFor: (q: string) => `Results for "${q}"`,
+  allProducts: 'All products',
+  /** [PROPOSED, SF-Q-2] title from the first result; without results the seller's name is unknown. */
+  productsFrom: (businessName: string) => `Products from ${businessName}`,
+  sellerProducts: "This seller's products",
+  categoryRefinement: 'Category',
+  allCategories: 'All categories',
+  // SF-04
+  products: 'Products',
+  outOfStock: 'Out of stock',
+  soldBy: 'Sold by',
+  sortLabel: 'Sort by',
+  sorts: {
+    newest: 'Newest',
+    'price-asc': 'Price: low to high',
+    'price-desc': 'Price: high to low',
+    'best-match': 'Best match',
+  },
+  filters: 'Filters',
+  showFilters: 'Filters',
+  activeFilters: 'Active filters',
+  price: 'Price',
+  min: 'Min',
+  max: 'Max',
+  priceNote: "Filters on each product's lowest price.",
+  priceInvalid: 'Enter an amount with up to 2 decimals.',
+  apply: 'Apply',
+  inStockOnly: 'In stock only',
+  clearAll: 'Clear all',
+  clearFilters: 'Clear filters',
+  remove: (label: string) => `Remove filter: ${label}`,
+  priceFrom: (amount: string) => `From ${amount}`,
+  priceUpTo: (amount: string) => `Up to ${amount}`,
+  inStock: 'In stock',
+  noResults: 'No products match your search.',
+  updating: 'Updating results…',
 } as const;
