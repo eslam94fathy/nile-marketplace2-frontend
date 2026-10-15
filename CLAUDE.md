@@ -259,6 +259,9 @@ Overview split: T-H1 builds the pending checklist and shortcuts, T-H4 the order 
 ### 14.1aa Decided (2026-10-15, T-H2)
 Category picker is the existing Select with full-path labels (`Fashion › Men`), any level; the searchable Combobox stays deferred · product list filters live in the URL (name search replaced after 400 ms) · variant create requires one option per attribute and disables combinations that exist · the last-active-variant consequence is confirmed before it happens (design 01 R-39).
 
+### 14.1ab Decided (2026-10-15, T-H3)
+`features/stock` stays independent of `products` (products hosts the dialog and history page) · the stock is re-read every time the dialog opens and "set to" works from that read · the effect sentence is computed from the delta that is sent · a definite refusal (`STOCK_ADJUSTMENT_INVALID`) starts a new idempotency intent, a network failure reuses the key (design 01 R-40).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

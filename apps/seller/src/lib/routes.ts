@@ -28,3 +28,7 @@ export const STOREFRONT_PRODUCT_PATH = (slug: string) => `/p/${slug}` as const;
 
 /** SE-10 Product. */
 export const productPath = (productId: string) => `${ROUTES.products}/${productId}` as const;
+
+/** SE-13 Stock history of one variant. */
+export const variantStockPath = (productId: string, variantId: string) =>
+  `${ROUTES.products}/${productId}/variants/${variantId}/stock` as const;

@@ -348,6 +348,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H3 Stock adjustments and history
+- **Status (2026-10-15):** implemented; unit tests (delta for add/remove/set, refusals, amount parsing, schema) and component tests (fresh read on opening, "set to" from it, effect sentence equals the delta sent, removal beyond sellable blocked with the reserved count, "No change needed.", network retry reuses the key, `STOCK_ADJUSTMENT_INVALID` re-reads and the next try has a new key, `SELLER_NOT_APPROVED`, not-approved state; history labels, signed changes, "Order item", load more, empty, error, not found) green; seller lint, type-check and build green. E2E `e2e/seller/stock.spec.ts` (add, set, history) written and type-checked, **not yet run** against the real backend. The products feature hosts the dialog and history page; `features/stock` doesn't import it. Decisions: design 01 R-40.
 - **Scope:** delta adjustments with idempotency key; optional "set to N" helper computing the delta from fresh `onHand` with explicit confirmation; movements list.
 - **Exclusions:** absolute stock set (not in API).
 - **Dependencies:** T-H2.

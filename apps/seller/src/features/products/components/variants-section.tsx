@@ -5,6 +5,7 @@ import { VARIANT_STATUS_LABELS } from '@nile/domain';
 import { errorMessage } from '@nile/query';
 import {
   Button,
+  buttonVariants,
   ConfirmDialog,
   DataTable,
   Money,
@@ -14,8 +15,11 @@ import {
   type DataTableColumn,
 } from '@nile/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { useId, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useId, useState } from 'react';
 import { useNotApprovedHandler, useSellerAccess } from '@/features/profile';
+import { STOCK_COPY } from '@/features/stock';
+import { variantStockPath } from '@/lib/routes';
 import {
   deleteVariant,
   productKeys,
@@ -25,6 +29,7 @@ import {
 } from '../api';
 import { PRODUCTS_COPY as COPY } from '../copy';
 import { canAddVariant, isLastActiveVariant, variantOptionsLabel } from '../lib/variants';
+import { AdjustStock } from './adjust-stock';
 import { CreateVariantDialog, EditVariantDialog } from './variant-dialogs';
 
 export interface VariantsSectionProps {
@@ -35,13 +40,18 @@ export interface VariantsSectionProps {
   readonly categoryUnavailable: boolean;
 }
 
-/** SE-10 item 4-5: variants with stock (adjust stock and history come with T-H3), "Add variant". */
+/** SE-10 item 4-5: variants with stock, "Adjust stock" (SE-12) and "History" (SE-13), "Add variant". */
 export function VariantsSection({ product, attributes, categoryUnavailable }: VariantsSectionProps) {
   const access = useSellerAccess();
   const reasonId = useId();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<SellerVariant | null>(null);
   const [deleting, setDeleting] = useState<SellerVariant | null>(null);
+  // Each opening gets a new key, so the dialog reads the stock again (SE-12).
+  const [adjusting, setAdjusting] = useState<{ variant: SellerVariant; opening: number } | null>(null);
+  const closeAdjust = useCallback(() => {
+    setAdjusting(null);
+  }, []);
   const known = attributes ?? [];
   const showAdd = attributes !== null && canAddVariant(product, attributes);
 
@@ -69,6 +79,24 @@ export function VariantsSection({ product, attributes, categoryUnavailable }: Va
       >
         {COPY.delete}
       </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!access.catalog}
+        aria-label={STOCK_COPY.adjustAction(variant.sku)}
+        onClick={() => {
+          setAdjusting({ variant, opening: Date.now() });
+        }}
+      >
+        {STOCK_COPY.adjust}
+      </Button>
+      <Link
+        href={variantStockPath(product.id, variant.id)}
+        aria-label={STOCK_COPY.historyAction(variant.sku)}
+        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+      >
+        {STOCK_COPY.history}
+      </Link>
     </span>
   );
 
@@ -217,6 +245,14 @@ export function VariantsSection({ product, attributes, categoryUnavailable }: Va
             }}
           />
         </>
+      )}
+      {adjusting === null ? null : (
+        <AdjustStock
+          key={adjusting.opening}
+          product={product}
+          variant={adjusting.variant}
+          onClose={closeAdjust}
+        />
       )}
       <DeleteVariantDialog
         product={product}
