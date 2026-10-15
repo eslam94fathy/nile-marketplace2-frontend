@@ -244,6 +244,9 @@ Card checkout leaves for Kashier only on `https:` URLs, after keeping the order 
 ### 14.1v Decided (2026-10-15, T-G1)
 Profile sends only changed fields, compared after normalisation; Save disabled without a change; email shown as text, not an input; `formatDate` added to `@nile/domain` (design 01 R-34).
 
+### 14.1w Decided (2026-10-15, T-G2)
+Address book edits send only changed fields (cleared optional → `null`, `isDefault` only `true`); one `AddressForm` for create and edit, shared with checkout; `ADDRESS_NOT_FOUND` → "This address no longer exists." + reload (design 01 R-35).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

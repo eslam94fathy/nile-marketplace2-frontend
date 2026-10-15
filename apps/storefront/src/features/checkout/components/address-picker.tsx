@@ -43,10 +43,11 @@ export function AddressPicker({
   const hasDefault = addresses.some((address) => address.isDefault);
   const form = (
     <AddressForm
+      mode="create"
       governorates={governorates}
       hasDefault={hasDefault}
       onGovernoratesStale={onGovernoratesStale}
-      onCreated={(address) => {
+      onSaved={(address) => {
         setAdding(false);
         onCreated(address);
       }}

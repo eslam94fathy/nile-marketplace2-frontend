@@ -294,6 +294,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G2 Address book
+- **Status (2026-10-15):** implemented and verified locally (1049 tests incl. edit body rules (changed fields only, `null` for cleared optionals, never unsetting the default), list order and limit, add/edit/make default/delete, `ADDRESS_NOT_FOUND` reload, empty and failure states; lint, format, type-check, build green). E2E `e2e/storefront/addresses.spec.ts` passed against the real backend (production build on a spare port): add two → first is default → edit → make the second default → delete it → "Choose a default address." and the API agrees; the T-F2 checkout address E2E still passes with the shared form. Decisions: design 01 R-35.
 - **Scope:** list, create, edit, delete, set default (rules in workflow C-3).
 - **Exclusions:** maps/geolocation.
 - **Dependencies:** T-G1 (or T-F2 components).

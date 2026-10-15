@@ -53,3 +53,58 @@ export function toCreateAddressBody(values: z.output<typeof addressSchema>, make
     isDefault: makeDefault,
   } satisfies Schema<'CreateAddressDto'>;
 }
+
+/** The edit form's starting values: the address as saved (phone after `+20`, missing optional fields empty). */
+export function addressValues(address: Schema<'AddressDto'>): AddressValues {
+  return {
+    label: address.label,
+    recipientName: address.recipientName,
+    recipientPhone: fields.toLocalPhone(address.recipientPhone),
+    governorateId: address.governorateId,
+    city: address.city,
+    area: address.area,
+    street: address.street,
+    building: address.building,
+    floor: address.floor ?? '',
+    apartment: address.apartment ?? '',
+    landmark: address.landmark ?? '',
+    isDefault: address.isDefault,
+  };
+}
+
+const EDITABLE = [
+  'label',
+  'recipientName',
+  'recipientPhone',
+  'governorateId',
+  'city',
+  'area',
+  'street',
+  'building',
+  'floor',
+  'apartment',
+  'landmark',
+] as const;
+
+/**
+ * The edit body (spec 01 SF-16): only the fields that differ from the saved address, compared after
+ * normalisation; a cleared optional field is sent as `null`. `isDefault` is only ever sent as `true` (moving
+ * the default here): unsetting it is refused [SPEC 04]. Null when nothing changed (no empty PATCH).
+ */
+export function toUpdateAddressBody(
+  values: z.output<typeof addressSchema>,
+  address: Schema<'AddressDto'>,
+): Schema<'UpdateAddressDto'> | null {
+  const body: Record<string, string | null | boolean> = {};
+  for (const key of EDITABLE) {
+    if (values[key] !== (address[key] ?? null)) body[key] = values[key];
+  }
+  if (values.isDefault && !address.isDefault) body.isDefault = true;
+  return Object.keys(body).length === 0 ? null : body;
+}
+
+/** Whether the edit inputs differ from the saved address; a value that doesn't parse counts as a change. */
+export function hasAddressChanges(values: AddressValues, address: Schema<'AddressDto'>): boolean {
+  const parsed = addressSchema.safeParse(values);
+  return !parsed.success || toUpdateAddressBody(parsed.data, address) !== null;
+}

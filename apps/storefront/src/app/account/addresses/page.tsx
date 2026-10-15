@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ADDRESS_COPY, AddressBook } from '@/features/addresses';
 import { requireSession } from '@/lib/dal';
 
-export const metadata: Metadata = { title: 'Addresses' };
+export const metadata: Metadata = { title: ADDRESS_COPY.book.title };
 
+/** SF-16 Addresses: shell on the server, the address book on the client. */
 export default async function AddressesPage() {
   await requireSession();
-  return <PlaceholderScreen title="Addresses" task="T-G2" />;
+  return <AddressBook />;
 }

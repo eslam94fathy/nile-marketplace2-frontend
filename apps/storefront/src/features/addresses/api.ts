@@ -29,3 +29,15 @@ export function addressesQuery() {
 export async function createAddress(body: Schema<'CreateAddressDto'>): Promise<Address> {
   return (await unwrap(browserApi.POST('/api/v1/me/addresses', { body }))).data;
 }
+
+export async function updateAddress(addressId: string, body: Schema<'UpdateAddressDto'>): Promise<Address> {
+  return (
+    await unwrap(
+      browserApi.PATCH('/api/v1/me/addresses/{addressId}', { params: { path: { addressId } }, body }),
+    )
+  ).data;
+}
+
+export async function deleteAddress(addressId: string): Promise<void> {
+  await unwrap(browserApi.DELETE('/api/v1/me/addresses/{addressId}', { params: { path: { addressId } } }));
+}

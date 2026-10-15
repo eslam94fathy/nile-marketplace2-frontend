@@ -7,12 +7,20 @@ import { useHydrated, useSubmitFailure } from '@nile/auth-screens';
 import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Checkbox, Field, FormAlert, Input, PhoneInput, Select } from '@nile/ui';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
-import { createAddress, type Address, type Governorate } from '../api';
+import { createAddress, updateAddress, type Address, type Governorate } from '../api';
 import { ADDRESS_COPY } from '../copy';
 import { isDeliverable } from '../lib/address-text';
-import { addressSchema, EMPTY_ADDRESS, toCreateAddressBody, type AddressValues } from '../schemas';
+import {
+  addressSchema,
+  addressValues,
+  EMPTY_ADDRESS,
+  hasAddressChanges,
+  toCreateAddressBody,
+  toUpdateAddressBody,
+  type AddressValues,
+} from '../schemas';
 
 const FIELD_MAP = {
   label: { field: 'label', message: fields.FIELD_MESSAGES.tooLong(50) },
@@ -41,24 +49,46 @@ const TEXT_FIELDS: readonly { name: TextField; autoComplete: string; required: b
   { name: 'landmark', autoComplete: 'off', required: false },
 ];
 
-export interface AddressFormProps {
-  readonly governorates: readonly Governorate[];
-  /** True when the customer already has a default address (spec 04 C-3: otherwise the new one becomes it). */
+/** Creating: `hasDefault` says whether the customer already has a default (spec 04 C-3). */
+interface CreateMode {
+  readonly mode: 'create';
   readonly hasDefault: boolean;
-  readonly onCreated: (address: Address) => void;
-  /** The list of governorates changed under the form (`GOVERNORATE_NOT_FOUND`): reload it. */
-  readonly onGovernoratesStale: () => void;
 }
 
-/** Create-address form (spec 01 SF-16), used in checkout (SF-07 §1) and the address book (T-G2). */
-export function AddressForm({ governorates, hasDefault, onCreated, onGovernoratesStale }: AddressFormProps) {
-  const failure = useSubmitFailure({ ADDRESS_LIMIT_REACHED: ADDRESS_COPY.errors.ADDRESS_LIMIT_REACHED });
+/** Editing a saved address; `onGone` when it no longer exists (`ADDRESS_NOT_FOUND`). */
+interface EditMode {
+  readonly mode: 'edit';
+  readonly address: Address;
+  readonly onGone: () => void;
+}
+
+export type AddressFormProps = (CreateMode | EditMode) & {
+  readonly governorates: readonly Governorate[];
+  readonly onSaved: (address: Address) => void;
+  /** The list of governorates changed under the form (`GOVERNORATE_NOT_FOUND`): reload it. */
+  readonly onGovernoratesStale: () => void;
+};
+
+/** Address form (spec 01 SF-16), create and edit; used in checkout (SF-07 §1) and the address book. */
+export function AddressForm(props: AddressFormProps) {
+  const { governorates, onSaved, onGovernoratesStale } = props;
+  const editing = props.mode === 'edit' ? props.address : null;
+  const failure = useSubmitFailure({
+    ADDRESS_LIMIT_REACHED: ADDRESS_COPY.errors.ADDRESS_LIMIT_REACHED,
+    ADDRESS_NOT_FOUND: ADDRESS_COPY.errors.ADDRESS_NOT_FOUND,
+    DEFAULT_ADDRESS_UNSET_NOT_ALLOWED: ADDRESS_COPY.errors.DEFAULT_ADDRESS_UNSET_NOT_ALLOWED,
+  });
   const hydrated = useHydrated();
   const form = useForm<AddressValues, unknown, z.output<typeof addressSchema>>({
     resolver: zodResolver(addressSchema),
     mode: 'onBlur',
-    defaultValues: EMPTY_ADDRESS,
+    defaultValues: editing === null ? EMPTY_ADDRESS : addressValues(editing),
   });
+  const current = useWatch({ control: form.control }) as AddressValues;
+  /** Editing: Save waits for a change (PATCH never sends an empty body). */
+  const unchanged = editing !== null && !hasAddressChanges(current, editing);
+  /** Whether the "Make this my default address" box is offered. */
+  const offerDefault = props.mode === 'create' ? props.hasDefault : !props.address.isDefault;
   const options = governorates.map((governorate) => ({
     value: governorate.id,
     // Not deliverable yet, but still a valid address to save [SPEC 04].
@@ -68,8 +98,15 @@ export function AddressForm({ governorates, hasDefault, onCreated, onGovernorate
   const onSubmit = form.handleSubmit(async (values) => {
     failure.clear();
     try {
-      onCreated(await createAddress(toCreateAddressBody(values, !hasDefault || values.isDefault)));
+      if (props.mode === 'create') {
+        onSaved(await createAddress(toCreateAddressBody(values, !props.hasDefault || values.isDefault)));
+        return;
+      }
+      const body = toUpdateAddressBody(values, props.address);
+      if (body === null) return;
+      onSaved(await updateAddress(props.address.id, body));
     } catch (error) {
+      if (props.mode === 'edit' && isApiError(error, 'ADDRESS_NOT_FOUND')) props.onGone();
       if (isApiError(error, 'GOVERNORATE_NOT_FOUND')) {
         onGovernoratesStale();
         form.setError('governorateId', {
@@ -140,7 +177,7 @@ export function AddressForm({ governorates, hasDefault, onCreated, onGovernorate
           />
         ))}
       </div>
-      {hasDefault ? (
+      {offerDefault ? (
         <Field
           control={form.control}
           name="isDefault"
@@ -158,9 +195,15 @@ export function AddressForm({ governorates, hasDefault, onCreated, onGovernorate
           )}
         />
       ) : (
-        <p className="text-sm text-muted-foreground">{ADDRESS_COPY.willBeDefault}</p>
+        <p className="text-sm text-muted-foreground">
+          {editing === null ? ADDRESS_COPY.willBeDefault : ADDRESS_COPY.isTheDefault}
+        </p>
       )}
-      <Button type="submit" loading={form.formState.isSubmitting} disabled={!hydrated || failure.blocked}>
+      <Button
+        type="submit"
+        loading={form.formState.isSubmitting}
+        disabled={!hydrated || failure.blocked || unchanged}
+      >
         {ADDRESS_COPY.save}
       </Button>
     </form>
