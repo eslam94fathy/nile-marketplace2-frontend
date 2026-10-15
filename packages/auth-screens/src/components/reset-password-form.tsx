@@ -15,6 +15,7 @@ import { dropQueryParam, loadPage } from '../navigation';
 import { CODE_SENT_PARAM, EMAIL_PARAM, NOTICE_PARAM, NOTICES } from '../params';
 import { resetPasswordSchema, toResetBody, type ResetPasswordValues } from '../schemas';
 import { useSubmitFailure } from '../submit-failure';
+import { useHydrated } from '../use-hydrated';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -34,6 +35,7 @@ export interface ResetPasswordFormProps {
 export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
   const { routes, api } = useAuthScreens();
   const failure = useSubmitFailure();
+  const hydrated = useHydrated();
   const newCodeFailure = useSubmitFailure();
   const cooldown = useCooldown();
   const startCooldown = cooldown.start;
@@ -132,7 +134,7 @@ export function ResetPasswordForm({ email, codeSent }: ResetPasswordFormProps) {
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {AUTH_COPY.reset.submit}
         </Button>

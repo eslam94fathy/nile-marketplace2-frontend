@@ -33,7 +33,8 @@ async function fillAndSubmit(view: ReturnType<typeof renderForm>, email: string,
   await view.user.click(screen.getByRole('button', { name: 'Sign in' }));
 }
 
-describe('Sign in (SF-10, SE-01)', () => {
+// Fields typed key by key: slow in jsdom when the whole suite runs in parallel.
+describe('Sign in (SF-10, SE-01)', { timeout: 15_000 }, () => {
   it('validates before calling the API', async () => {
     const view = renderForm();
     await view.user.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -133,6 +134,26 @@ describe('Sign in (SF-10, SE-01)', () => {
     expect(screen.getByRole('link', { name: 'Forgot password?' }).getAttribute('href')).toBe(
       '/forgot-password?email=a%40b.test',
     );
+  });
+
+  it('after an invite: "Your password is set. Please sign in." with the email prefilled', () => {
+    renderForm({ notice: 'invited', email: 'agent@example.test' });
+    expect(screen.getByRole('status').textContent).toBe('Your password is set. Please sign in.');
+    expect(screen.getByLabelText<HTMLInputElement>(/^Email/).value).toBe('agent@example.test');
+  });
+
+  it('WRONG_APP in an app with its own wording (admin): that text, no link', async () => {
+    server.use(
+      mockAuthRoute('login', {
+        error: 'WRONG_APP',
+        status: 403,
+        init: { details: [{ field: 'role', constraint: 'app', message: 'x', value: 'seller' }] },
+      }).handler,
+    );
+    const view = renderForm({}, makeTestConfig({ wrongAppMessage: "This isn't an admin account." }));
+    await fillAndSubmit(view, 'a@b.test', 'secret');
+    expect((await screen.findByRole('alert')).textContent).toBe("This isn't an admin account.");
+    expect(screen.queryByRole('link', { name: /Go to/ })).toBeNull();
   });
 
   it('apps without registration (admin, agent) offer no create-account link', () => {

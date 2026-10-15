@@ -8,6 +8,7 @@ export type SignedInUser = Schema<'AuthUserDto'>;
 const SIGN_IN_ROUTES = {
   login: '/api/auth/login',
   verifyEmail: '/api/auth/verify-email',
+  invite: '/api/auth/invite',
 } as const;
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -48,6 +49,17 @@ export function signIn(body: { email: string; password: string }): Promise<{ use
 /** Verifies the email with the emailed code and signs in (storefront, seller). */
 export function verifyEmailAndSignIn(body: { email: string; otp: string }): Promise<{ user: SignedInUser }> {
   return postJson(SIGN_IN_ROUTES.verifyEmail, body);
+}
+
+/**
+ * Accepts an admin or agent invite on the storefront's landing page: the password is set, but no session is
+ * kept (architecture §5.7). Answers the role and email, so the page can send the invitee to their app.
+ */
+export function acceptInvite(body: { token: string; password: string }): Promise<{
+  role: SignedInUser['role'];
+  email: string;
+}> {
+  return postJson(SIGN_IN_ROUTES.invite, body);
 }
 
 /** The role of a `WRONG_APP` error (`details[0].value`), so the screen can point to the right site. */

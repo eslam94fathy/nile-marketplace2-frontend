@@ -11,6 +11,7 @@ import { AUTH_COPY } from '../copy';
 import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '../params';
 import { emailOnlySchema, type EmailOnlyValues } from '../schemas';
 import { useSubmitFailure } from '../submit-failure';
+import { useHydrated } from '../use-hydrated';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -20,6 +21,7 @@ const FIELD_MAP = { email: { field: 'email', message: fields.FIELD_MESSAGES.emai
 export function ForgotPasswordForm({ email }: { readonly email: string | null }) {
   const { routes, api, navigate } = useAuthScreens();
   const failure = useSubmitFailure();
+  const hydrated = useHydrated();
   const form = useForm<EmailOnlyValues, unknown, z.output<typeof emailOnlySchema>>({
     resolver: zodResolver(emailOnlySchema),
     mode: 'onBlur',
@@ -56,7 +58,7 @@ export function ForgotPasswordForm({ email }: { readonly email: string | null })
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {AUTH_COPY.forgot.submit}
         </Button>

@@ -4,4 +4,10 @@ export const ROUTES = {
   history: '/history',
   finance: '/finance',
   me: '/me',
+  login: '/login',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const;
+
+/** Sign-in screens: never a `returnTo` destination. */
+export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPassword] as const;

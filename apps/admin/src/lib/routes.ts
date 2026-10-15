@@ -15,4 +15,10 @@ export const ROUTES = {
   commission: '/settings/commission',
   admins: '/admins',
   security: '/security',
+  login: '/login',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const;
+
+/** Sign-in screens: never a `returnTo` destination. */
+export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPassword] as const;

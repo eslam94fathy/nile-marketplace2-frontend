@@ -13,8 +13,9 @@ export const NOTICE_PARAM = 'notice';
 export const CODE_SENT_PARAM = 'sent';
 export const CODE_SENT_VALUE = '1';
 
-/** `notice` values shown on arrival (spec 01 SF-10, SF-12; spec 03/04 `invited` arrives with T-D6). */
+/** `notice` values shown on arrival (spec 01 SF-10, SF-12; spec 03 AD-01, spec 04 AG-01 `invited`). */
 export const NOTICES = {
+  invited: 'invited',
   passwordReset: 'password-reset',
   sessionEnded: 'session-ended',
   emailNotVerified: 'email-not-verified',

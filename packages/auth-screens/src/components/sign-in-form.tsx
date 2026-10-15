@@ -13,6 +13,7 @@ import { destinationAfterSignIn, loadPage } from '../navigation';
 import { EMAIL_PARAM, NOTICE_PARAM, NOTICES, RETURN_TO_PARAM, type Notice as NoticeValue } from '../params';
 import { signInSchema, type SignInValues } from '../schemas';
 import { useSubmitFailure } from '../submit-failure';
+import { useHydrated } from '../use-hydrated';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -38,6 +39,7 @@ export interface SignInFormProps {
 export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
   const { routes, authPaths, navigate, Link } = useAuthScreens();
   const failure = useSubmitFailure(ERRORS);
+  const hydrated = useHydrated();
   const form = useForm<SignInValues, unknown, z.output<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
     mode: 'onBlur',
@@ -67,8 +69,8 @@ export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
 
   return (
     <AuthCard title={AUTH_COPY.signIn.title}>
-      {notice === NOTICES.passwordReset || notice === NOTICES.sessionEnded ? (
-        <Notice tone={notice === NOTICES.passwordReset ? 'success' : 'info'}>
+      {notice === NOTICES.passwordReset || notice === NOTICES.sessionEnded || notice === NOTICES.invited ? (
+        <Notice tone={notice === NOTICES.sessionEnded ? 'info' : 'success'}>
           {AUTH_COPY.notices[notice]}
         </Notice>
       ) : null}
@@ -96,7 +98,7 @@ export function SignInForm({ returnTo, email, notice }: SignInFormProps) {
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {AUTH_COPY.signIn.submit}
         </Button>

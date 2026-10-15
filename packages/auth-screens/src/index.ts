@@ -21,3 +21,4 @@ export { AUTH_COPY } from './copy';
 export { RESEND_COOLDOWN_SECONDS } from './constants';
 export { confirmationMatches } from './schemas';
 export { useSubmitFailure, type SubmitFailure } from './submit-failure';
+export { useHydrated } from './use-hydrated';

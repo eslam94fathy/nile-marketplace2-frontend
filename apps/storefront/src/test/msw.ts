@@ -23,7 +23,7 @@ export function setupMswServer() {
   return server;
 }
 
-type AuthAction = 'login' | 'verify-email' | 'logout';
+type AuthAction = 'login' | 'verify-email' | 'invite' | 'logout';
 
 /** A handler for this app's auth route (`/api/auth/<action>`), recording the bodies it received. */
 export function mockAuthRoute(

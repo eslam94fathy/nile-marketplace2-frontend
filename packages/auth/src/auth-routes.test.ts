@@ -282,7 +282,7 @@ describe('CSRF on auth routes', () => {
   );
 
   it('answers 404 ROUTE_NOT_FOUND for an unknown action', async () => {
-    for (const action of ['invite', 'password-change', 'constructor', '__proto__']) {
+    for (const action of ['password-change', 'constructor', '__proto__']) {
       const response = await setup().call(action);
       expect(response.status, action).toBe(404);
     }
@@ -339,6 +339,72 @@ describe('POST /api/auth/verify-email', () => {
       const response = await setup(app).call('verify-email', { body: JSON.stringify(VERIFY) });
       expect(response.status, app).toBe(404);
     }
+  });
+});
+
+describe('POST /api/auth/invite (storefront landing, SF-20)', () => {
+  const INVITE = { token: 't'.repeat(43), password: ' new password ' };
+
+  it.each(['admin', 'agent'] as const)(
+    'a %s invite: password set, the new session revoked at once, no cookie, only role and email returned',
+    async (app) => {
+      const tokens = tokensFor(app);
+      let sent: unknown;
+      server.use(
+        mockApi('post', '/auth/invite/accept', async ({ request, reply }) => {
+          sent = await request.json();
+          return reply.ok(tokens);
+        }),
+      );
+      const revoked = recordLogout();
+      const { call, logs } = setup('storefront');
+      const response = await call('invite', { body: JSON.stringify(INVITE) });
+
+      expect(response.status).toBe(200);
+      expect(await response.clone().json()).toEqual({
+        success: true,
+        data: { role: tokens.user.role, email: tokens.user.email },
+      });
+      expect(sent).toEqual(INVITE);
+      expect(revoked).toEqual([tokens.refreshToken]);
+      expect(setCookies(response)).toEqual([]);
+      await expectNoSecrets(response, logs, tokens);
+      for (const line of logs) expect(line).not.toContain(INVITE.token);
+    },
+  );
+
+  it('passes INVALID_INVITE_TOKEN through, with nothing to revoke and no cookie', async () => {
+    server.use(
+      mockApi('post', '/auth/invite/accept', ({ reply }) => reply.error(400, 'INVALID_INVITE_TOKEN')),
+    );
+    const response = await setup('storefront').call('invite', { body: JSON.stringify(INVITE) });
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as { error: { code: string } }).error.code).toBe('INVALID_INVITE_TOKEN');
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it('an unexpected role still has its session revoked and gets a generic error', async () => {
+    const tokens = tokensFor('storefront');
+    server.use(mockApi('post', '/auth/invite/accept', ({ reply }) => reply.ok(tokens)));
+    const revoked = recordLogout();
+    const response = await setup('storefront').call('invite', { body: JSON.stringify(INVITE) });
+    expect(response.status).toBe(500);
+    expect(revoked).toEqual([tokens.refreshToken]);
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it('exists only on the storefront', async () => {
+    for (const app of ['seller', 'admin', 'agent'] as const) {
+      const response = await setup(app).call('invite', { body: JSON.stringify(INVITE) });
+      expect(response.status, app).toBe(404);
+    }
+  });
+
+  it('rejects unknown keys without calling the backend', async () => {
+    const response = await setup('storefront').call('invite', {
+      body: JSON.stringify({ ...INVITE, role: 'admin' }),
+    });
+    expect(response.status).toBe(400);
   });
 });
 

@@ -14,6 +14,7 @@
     "@nile/auth": "*",
     "@nile/auth-screens": "*",
     "@nile/config": "*",
+    "@nile/domain": "*",
     "@nile/logger": "*",
     "@nile/query": "*",
     "@nile/ui": "*",

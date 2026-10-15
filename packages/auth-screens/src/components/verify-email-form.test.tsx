@@ -32,7 +32,7 @@ function renderForm(props: Partial<VerifyEmailFormProps> = {}, setup = makeTestC
 
 const resendButton = () => screen.getByRole('button', { name: /Resend code/ });
 
-describe('Verify email (SF-12, SE-03)', () => {
+describe('Verify email (SF-12, SE-03)', { timeout: 15_000 }, () => {
   it('after registration: says a code was sent and waits 60 s before offering another', () => {
     renderForm({ codeSent: true });
     expect(

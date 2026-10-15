@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
-import { AUTH_COPY, AuthCard, FailureAlert, useSubmitFailure } from '@nile/auth-screens';
+import { AUTH_COPY, AuthCard, FailureAlert, useSubmitFailure, useHydrated } from '@nile/auth-screens';
 import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '@nile/auth-screens/params';
 import { fields } from '@nile/domain';
 import { applyServerErrors, governoratesQuery } from '@nile/query';
@@ -46,6 +46,7 @@ const TEXT_FIELDS = [
 export function RegisterSellerForm() {
   const router = useRouter();
   const failure = useSubmitFailure();
+  const hydrated = useHydrated();
   const governorates = useQuery(governoratesQuery(browserApi));
   const [takenEmail, setTakenEmail] = useState<string | null>(null);
   const form = useForm<RegisterSellerValues, unknown, z.output<typeof registerSellerSchema>>({
@@ -204,7 +205,7 @@ export function RegisterSellerForm() {
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {REGISTER_COPY.submit}
         </Button>

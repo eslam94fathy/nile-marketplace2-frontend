@@ -15,10 +15,11 @@ import { usePathname } from 'next/navigation';
 import { useId, useState, type ReactNode } from 'react';
 import { APP } from '@/lib/app';
 import { ROUTES } from '@/lib/routes';
+import { sessionClient } from '@/lib/session-client';
 
 // Admin shell (spec 03 §2.1, AD-Q-8): desktop-first sidebar in groups; below 1024 px the sidebar moves into
 // a menu sheet; phones get a "best on a larger screen" note but keep working. The account menu shows the
-// signed-in admin's email from phase d; until then a stand-in.
+// signed-in admin's email (from the session, read by the portal layout on the server) and Sign out.
 
 const NAV_GROUPS = [
   { label: null, items: [{ href: ROUTES.dashboard, label: 'Dashboard' }] },
@@ -58,7 +59,6 @@ const NAV_GROUPS = [
 ] as const;
 
 const NAV_LABEL = 'Admin console';
-const ACCOUNT_PLACEHOLDER = 'Signed-in admin';
 const SMALL_SCREEN_NOTE = 'The admin console works best on a larger screen.';
 
 function NavGroups({ onNavigate }: { readonly onNavigate?: () => void }) {
@@ -106,12 +106,12 @@ function NavGroups({ onNavigate }: { readonly onNavigate?: () => void }) {
   );
 }
 
-function AccountMenu() {
+function AccountMenu({ email }: { readonly email: string | null }) {
   const pathname = usePathname();
   const active = isActivePath(pathname, ROUTES.security);
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="hidden text-muted-foreground sm:inline">{ACCOUNT_PLACEHOLDER}</span>
+      {email === null ? null : <span className="hidden text-muted-foreground sm:inline">{email}</span>}
       <Link
         href={ROUTES.security}
         aria-current={active ? 'page' : undefined}
@@ -120,7 +120,13 @@ function AccountMenu() {
         <ShieldCheck aria-hidden="true" />
         Security
       </Link>
-      <Button variant="ghost" size="sm" disabled>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          void sessionClient.signOut();
+        }}
+      >
         <LogOut aria-hidden="true" />
         {UI_COPY.signOut}
       </Button>
@@ -136,7 +142,14 @@ function Brand() {
   );
 }
 
-export function AdminShell({ children }: { readonly children: ReactNode }) {
+export function AdminShell({
+  email,
+  children,
+}: {
+  /** The signed-in admin's email (not a secret; tokens never reach the client). */
+  readonly email: string | null;
+  readonly children: ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
@@ -161,7 +174,7 @@ export function AdminShell({ children }: { readonly children: ReactNode }) {
             <Brand />
           </div>
           <div className="ms-auto">
-            <AccountMenu />
+            <AccountMenu email={email} />
           </div>
         </header>
         <p className="flex items-center gap-2 border-b border-border bg-accent px-4 py-2 text-sm text-accent-foreground md:hidden">

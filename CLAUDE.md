@@ -213,6 +213,9 @@ Resend cooldown starts on arrival only after a code was just sent (`sent=1`); fr
 ### 14.1l Decided (2026-10-14, T-D5)
 Sign-in screens shared in a new package `@nile/auth-screens` (apps give routes, sites, API calls, navigate and Link through a provider; registration forms stay per app) · seller portal shows the live business name, status badge and status banner from `GET /seller/profile` from T-D5 on; Overview content stays phase h (design 01 R-24).
 
+### 14.1m Decided (2026-10-15, T-D6)
+Invite acceptance on the storefront `/invite` with the session revoked at once and no cookie · admin/agent wrong-app wording per specs 03/04 (no link) · admin shell shows the signed-in email and Sign out; agent Sign out on the `/me` placeholder until T-H12 · E2E test admin `e2e-admin@example.test` (password reset by the app's own flow on 2026-10-15; value given to the user) (design 01 R-25).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

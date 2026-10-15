@@ -256,10 +256,42 @@ async function logout(request: NextRequest, ctx: RequestContext): Promise<NextRe
   return response;
 }
 
-const AUTH_ACTIONS = { login, 'verify-email': verifyEmail, refresh, logout } as const satisfies Record<
-  string,
-  (request: NextRequest, ctx: RequestContext) => Promise<NextResponse>
->;
+const inviteBodySchema = z.strictObject({ token: z.string(), password: z.string() });
+
+/** Roles that are invited (spec 03 / 04); their apps are the only places they may sign in. */
+const INVITED_ROLES: readonly string[] = ['admin', 'delivery_agent'];
+
+/**
+ * Invite acceptance on the storefront's neutral landing page (architecture §5.7, spec 01 SF-20): the backend
+ * sets the password and returns a session, which is revoked at once. No cookie is ever written here; the
+ * invitee signs in to their own app. Answers only the role and email, so the page can send them there.
+ */
+async function acceptInvite(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  if (ctx.config.app !== 'storefront') return notFound(ctx);
+  const body = await parseBody(request, inviteBodySchema, ctx);
+  if (!body.ok) return body.response;
+  const { data: tokens } = await unwrap(
+    backendClient(ctx).POST('/api/v1/auth/invite/accept', {
+      body: { token: body.value.token, password: body.value.password },
+    }),
+  );
+  await revoke(tokens.refreshToken, ctx);
+  if (!INVITED_ROLES.includes(tokens.user.role)) {
+    // Not expected (only admins and agents are invited); the session is already gone.
+    ctx.log.warn('INVITE_UNEXPECTED_ROLE', { userId: tokens.user.id, role: tokens.user.role });
+    return errorResponse(500, 'INTERNAL_ERROR', 'Unexpected account type', ctx.correlationId);
+  }
+  ctx.log.info('INVITE_ACCEPTED', { userId: tokens.user.id, role: tokens.user.role });
+  return okResponse({ role: tokens.user.role, email: tokens.user.email }, ctx.correlationId);
+}
+
+const AUTH_ACTIONS = {
+  login,
+  'verify-email': verifyEmail,
+  invite: acceptInvite,
+  refresh,
+  logout,
+} as const satisfies Record<string, (request: NextRequest, ctx: RequestContext) => Promise<NextResponse>>;
 export type AuthAction = keyof typeof AUTH_ACTIONS;
 
 function isAuthAction(action: string): action is AuthAction {

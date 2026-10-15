@@ -188,6 +188,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D6 Invite acceptance (admins, agents)
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests, build of 4 apps green). E2E `e2e/storefront/invite.spec.ts` passed against the real backend (production builds on spare ports): admin invited → token from Mailpit → storefront `/invite` (token removed from the URL) → admin app sign-in with the "password set" notice → dashboard, no storefront session cookie; same for a delivery agent → agent app; a used invite asks for a new one. The run found a pre-hydration native GET submit that put the password in the URL; fixed in every form with a regression test. Decisions: design 01 R-25.
 - **Scope:** neutral `/invite?token=…` page in the storefront (architecture §5.7): set password, server-side accept, immediate session discard (no cookie set), redirect to the admin or agent app login with a "password set" notice; token removed from the URL after reading. Admin and agent `/login` pages show that notice.
 - **Exclusions:** invite sending (phase h); a backend per-role invite URL.
 - **Dependencies:** T-D1; backend env `INVITE_URL_BASE` pointed at `<storefront>/invite` (locally `http://localhost:4100/invite`).

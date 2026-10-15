@@ -16,6 +16,7 @@ import { destinationAfterSignIn, dropQueryParam, loadPage } from '../navigation'
 import { CODE_SENT_PARAM, NOTICES, RETURN_TO_PARAM, type Notice as NoticeValue } from '../params';
 import { verifyEmailSchema, type VerifyEmailValues } from '../schemas';
 import { useSubmitFailure } from '../submit-failure';
+import { useHydrated } from '../use-hydrated';
 import { AuthCard } from './auth-card';
 import { FailureAlert } from './failure-alert';
 
@@ -37,6 +38,7 @@ export interface VerifyEmailFormProps {
 export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEmailFormProps) {
   const { routes, authPaths, api, Link, verifyNote } = useAuthScreens();
   const failure = useSubmitFailure();
+  const hydrated = useHydrated();
   const resendFailure = useSubmitFailure();
   const cooldown = useCooldown();
   const startCooldown = cooldown.start;
@@ -123,7 +125,7 @@ export function VerifyEmailForm({ email, returnTo, notice, codeSent }: VerifyEma
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {AUTH_COPY.verify.submit}
         </Button>

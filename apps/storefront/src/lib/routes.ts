@@ -8,6 +8,8 @@ export const ROUTES = {
   verifyEmail: '/verify-email',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  /** Invite landing for admins and agents (spec 01 SF-20); the backend's `INVITE_URL_BASE`. */
+  invite: '/invite',
   account: '/account',
   addresses: '/account/addresses',
   orders: '/account/orders',
@@ -26,4 +28,5 @@ export const AUTH_PATHS = [
   ROUTES.verifyEmail,
   ROUTES.forgotPassword,
   ROUTES.resetPassword,
+  ROUTES.invite,
 ] as const;

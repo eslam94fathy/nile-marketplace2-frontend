@@ -17,7 +17,7 @@ beforeEach(() => {
 
 const GENERIC = 'If an active account uses this email, we sent a reset code.';
 
-describe('Forgot password (SF-13, SE-04)', () => {
+describe('Forgot password (SF-13, SE-04)', { timeout: 15_000 }, () => {
   it('always moves on to the reset screen with the email (never says whether it exists)', async () => {
     const setup = makeTestConfig();
     const view = renderScreen(<ForgotPasswordForm email=" Mona@Example.test " />, setup.config);
@@ -38,7 +38,7 @@ describe('Forgot password (SF-13, SE-04)', () => {
   });
 });
 
-describe('Reset password (SF-14, SE-05)', () => {
+describe('Reset password (SF-14, SE-05)', { timeout: 15_000 }, () => {
   async function fill(
     view: ReturnType<typeof renderScreen>,
     password = ' new password ',

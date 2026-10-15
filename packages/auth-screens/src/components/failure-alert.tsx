@@ -9,8 +9,9 @@ import type { SubmitFailure } from '../submit-failure';
 
 /** The form-level alert of a failed submit; `WRONG_APP` points to the account's own site. */
 export function FailureAlert({ failure }: { readonly failure: SubmitFailure }) {
-  const { otherSites } = useAuthScreens();
+  const { otherSites, wrongAppMessage } = useAuthScreens();
   if (isApiError(failure.error, 'WRONG_APP')) {
+    if (wrongAppMessage !== undefined) return <FormAlert>{wrongAppMessage}</FormAlert>;
     const role = wrongAppRole(failure.error);
     const site = role !== null && Object.hasOwn(otherSites, role) ? otherSites[role as UserRole] : undefined;
     if (site !== undefined) {

@@ -49,6 +49,11 @@ export interface AuthScreensConfig {
   readonly navigate: (url: string) => void;
   /** The app's `Link`, so in-app links stay client-side navigations. */
   readonly Link: (props: AuthLinkProps) => ReactNode;
+  /**
+   * Wrong-app wording without a link, for apps whose spec words it so (admin: "This isn't an admin account.",
+   * spec 03 AD-01; agent: spec 04 AG-01). Used instead of `otherSites`.
+   */
+  readonly wrongAppMessage?: string;
   /** Extra line on the verify screen after registration (seller: review notice, spec 02 SE-02). */
   readonly verifyNote?: string;
 }

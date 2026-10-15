@@ -43,6 +43,7 @@ export const AUTH_COPY = {
   },
   passwordHint: 'At least 8 characters.',
   notices: {
+    invited: 'Your password is set. Please sign in.',
     'password-reset': 'Your password was changed. Please sign in.',
     'session-ended': 'Your session has ended. Please sign in again.',
     'email-not-verified': 'Please verify your email first.',

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
-import { AUTH_COPY, AuthCard, FailureAlert, useSubmitFailure } from '@nile/auth-screens';
+import { AUTH_COPY, AuthCard, FailureAlert, useSubmitFailure, useHydrated } from '@nile/auth-screens';
 import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '@nile/auth-screens/params';
 import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
@@ -31,6 +31,7 @@ const LINK = 'font-medium text-primary underline-offset-4 hover:underline';
 export function RegisterForm({ returnTo }: { readonly returnTo: string | null }) {
   const router = useRouter();
   const failure = useSubmitFailure();
+  const hydrated = useHydrated();
   /** The normalised email that is already registered, for the sign-in and reset links. */
   const [takenEmail, setTakenEmail] = useState<string | null>(null);
   const form = useForm<RegisterValues, unknown, z.output<typeof registerSchema>>({
@@ -141,7 +142,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
           type="submit"
           className="w-full"
           loading={form.formState.isSubmitting}
-          disabled={failure.blocked}
+          disabled={!hydrated || failure.blocked}
         >
           {REGISTER_COPY.submit}
         </Button>
