@@ -38,6 +38,22 @@ function serveQueues(placed: Schema<'SellerOrderDto'>[] = [], returning: Schema<
 
 beforeEach(() => {
   serveQueues();
+  server.use(
+    mockApi('get', '/seller/finance/balance', ({ reply }) => reply.ok({ balance: '0.00', updatedAt: null }), {
+      base: BFF_BASE,
+    }),
+  );
+});
+
+describe('overview balance (spec 02 SE-06 item 4, T-H5)', () => {
+  it('no earnings yet, with a link to the finance page', async () => {
+    serve('approved');
+    renderWithProviders(<Overview />);
+    expect(
+      await screen.findByText('No earnings yet. Earnings are added when an order is delivered.'),
+    ).toBeDefined();
+    expect(screen.getByRole('link', { name: 'View finance' }).getAttribute('href')).toBe('/finance');
+  });
 });
 
 describe('overview order queues (spec 02 SE-06, T-H4)', () => {

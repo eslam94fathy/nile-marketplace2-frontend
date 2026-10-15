@@ -5,14 +5,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Check, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useId } from 'react';
+import { BalanceCard } from '@/features/finance';
 import { profileQuery, useSellerAccess } from '@/features/profile';
 import { ROUTES } from '@/lib/routes';
 import { OVERVIEW_COPY as COPY } from '../copy';
 import { OrderQueue } from './order-queue';
 
 /**
- * SE-06 Overview (split decided 2026-10-15): the pending-approval checklist, the two order queues (T-H4) and
- * the shortcuts. The status banner comes from the shell; the balance card arrives with T-H5.
+ * SE-06 Overview (split decided 2026-10-15): the pending-approval checklist, the two order queues (T-H4),
+ * the balance card (T-H5) and the shortcuts. The status banner comes from the shell.
  */
 export function Overview() {
   const { data: profile } = useQuery(profileQuery());
@@ -22,6 +23,7 @@ export function Overview() {
       {profile?.status === 'pending_approval' ? <PendingChecklist /> : null}
       <OrderQueue queue="toConfirm" />
       <OrderQueue queue="returns" />
+      <BalanceCard variant="overview" />
       <Shortcuts />
     </div>
   );

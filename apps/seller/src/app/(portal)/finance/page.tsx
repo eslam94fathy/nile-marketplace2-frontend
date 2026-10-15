@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { FINANCE_TAB_PARAM, FinanceView } from '@/features/finance';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Finance' };
 
-export default async function FinancePage() {
+/** SE-16 Finance: the tab comes from `?tab=`; the data is fetched on the client. */
+export default async function FinancePage({ searchParams }: PageProps<'/finance'>) {
   await requireSession();
-  return <PlaceholderScreen title="Finance" task="T-H5" />;
+  const tab = (await searchParams)[FINANCE_TAB_PARAM];
+  return <FinanceView tab={typeof tab === 'string' ? tab : null} />;
 }

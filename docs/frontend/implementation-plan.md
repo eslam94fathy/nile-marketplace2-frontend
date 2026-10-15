@@ -368,6 +368,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H5 Seller finance
+- **Status (2026-10-15):** implemented; component tests green (no earnings vs a 0.00 balance with history, balance error; statement descriptions and links, signed amounts, newest first, unexpected entry type shown and reported, empty and error states; payouts and empty payouts; overview balance card); seller lint, type-check and build green. E2E smoke `e2e/seller/finance.spec.ts` written and type-checked, **not yet run** against the real backend. No date filter; unexpected entry types go to `console.warn` until T-I4 (decided 2026-10-15). Decisions: design 01 R-42.
 - **Scope:** balance, ledger statement, payouts list.
 - **Exclusions:** payout requests (no endpoint).
 - **Dependencies:** T-H1.
