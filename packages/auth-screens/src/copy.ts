@@ -33,6 +33,18 @@ export const AUTH_COPY = {
     newCode: 'Send a new code',
     newCodeIn: (seconds: number) => `Send a new code in ${seconds} s`,
   },
+  security: {
+    title: 'Security',
+    changePassword: 'Change password',
+    note: 'Changing your password signs you out on your other devices.',
+    currentPassword: 'Current password',
+    submit: 'Change password',
+    changed: 'Password changed.',
+    errors: {
+      INVALID_CURRENT_PASSWORD: 'Current password is incorrect.',
+      PASSWORD_UNCHANGED: 'Choose a password different from your current one.',
+    },
+  },
   fields: {
     email: 'Email',
     password: 'Password',

@@ -8,6 +8,7 @@ import { AuthScreensProvider } from '../config';
 import { makeTestConfig } from '../test/harness';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { ResetPasswordForm } from './reset-password-form';
+import { SecurityScreen } from './security-screen';
 import { SignInForm } from './sign-in-form';
 import { VerifyEmailForm } from './verify-email-form';
 
@@ -34,6 +35,19 @@ describe('server render (before hydration)', () => {
     ],
     ['forgot password', <ForgotPasswordForm key="c" email={null} />],
     ['reset password', <ResetPasswordForm key="d" email="a@b.test" codeSent={false} />],
+    [
+      'change password',
+      <SecurityScreen
+        key="e"
+        sessionClient={{
+          refresh: () => Promise.resolve('ok'),
+          onUnauthenticated: () => Promise.resolve(true),
+          signOut: () => Promise.resolve(),
+          start: () => () => undefined,
+          hasSession: () => true,
+        }}
+      />,
+    ],
   ])('%s: the submit button is disabled, so nothing can be submitted natively', (_, ui) => {
     expect(submitButton(serverHtml(ui))).toMatch(/\sdisabled=""/);
   });

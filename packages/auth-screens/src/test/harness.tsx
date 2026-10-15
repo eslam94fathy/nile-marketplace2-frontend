@@ -68,15 +68,17 @@ export function setupMswServer() {
 
 /** A handler for the app's auth route `/api/auth/<action>`, recording the bodies it received. */
 export function mockAuthRoute(
-  action: 'login' | 'verify-email',
+  action: 'login' | 'verify-email' | 'password-change',
   answer:
     | { ok: unknown }
+    | { noContent: true }
     | { error: ErrorCode; status: number; init?: ErrorBodyInit; headers?: Record<string, string> },
 ) {
   const bodies: unknown[] = [];
   const handler = http.post(`${ORIGIN}/api/auth/${action}`, async ({ request }) => {
     bodies.push(await request.json());
     if ('ok' in answer) return HttpResponse.json(okBody(answer.ok));
+    if ('noContent' in answer) return new HttpResponse(null, { status: 204 });
     return HttpResponse.json(errorBody(answer.error, answer.init), {
       status: answer.status,
       ...(answer.headers === undefined ? {} : { headers: answer.headers }),

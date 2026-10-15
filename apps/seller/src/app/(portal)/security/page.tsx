@@ -1,10 +1,12 @@
+import { AUTH_COPY } from '@nile/auth-screens';
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { Security } from '@/features/security';
 import { requireSession } from '@/lib/dal';
 
-export const metadata: Metadata = { title: 'Security' };
+export const metadata: Metadata = { title: AUTH_COPY.security.title };
 
+/** spec 02 SE-17. */
 export default async function SecurityPage() {
   await requireSession();
-  return <PlaceholderScreen title="Security" task="T-D7" />;
+  return <Security />;
 }

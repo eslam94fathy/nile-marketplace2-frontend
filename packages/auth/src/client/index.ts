@@ -14,6 +14,13 @@ export {
   type SignOutReason,
 } from './session-client';
 export { BFF_ROUTE_PREFIX } from '../config';
-export { acceptInvite, signIn, verifyEmailAndSignIn, wrongAppRole, type SignedInUser } from './auth-requests';
+export {
+  acceptInvite,
+  changePassword,
+  signIn,
+  verifyEmailAndSignIn,
+  wrongAppRole,
+  type SignedInUser,
+} from './auth-requests';
 export { safeReturnTo, type ReturnToOptions } from '../return-to';
 export { SessionExpiredBoundary, SessionManager, type SessionExpiredBoundaryProps } from './components';

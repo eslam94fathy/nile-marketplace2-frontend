@@ -4,6 +4,7 @@ export const ROUTES = {
   history: '/history',
   finance: '/finance',
   me: '/me',
+  security: '/security',
   login: '/login',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',

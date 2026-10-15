@@ -198,6 +198,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D7 Change password (all apps)
+- **Status (2026-10-15):** implemented and verified locally (852+ tests; lint, format, type-check, build of 4 apps green). E2E `e2e/storefront/security.spec.ts` passed against the real backend (production build on a spare port): change password → still signed in after a reload → sign out → old password refused → new password accepted; a wrong current password shown on its field. Decisions: design 01 R-26. Phase d complete.
 - **Scope:** security page: change password (BFF supplies the refresh token), notice that other sessions end.
 - **Exclusions:** "log out everywhere" (no endpoint, OQ-9).
 - **Dependencies:** T-D1.

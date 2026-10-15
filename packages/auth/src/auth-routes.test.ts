@@ -282,7 +282,7 @@ describe('CSRF on auth routes', () => {
   );
 
   it('answers 404 ROUTE_NOT_FOUND for an unknown action', async () => {
-    for (const action of ['password-change', 'constructor', '__proto__']) {
+    for (const action of ['change-password', 'constructor', '__proto__']) {
       const response = await setup().call(action);
       expect(response.status, action).toBe(404);
     }
@@ -403,6 +403,80 @@ describe('POST /api/auth/invite (storefront landing, SF-20)', () => {
   it('rejects unknown keys without calling the backend', async () => {
     const response = await setup('storefront').call('invite', {
       body: JSON.stringify({ ...INVITE, role: 'admin' }),
+    });
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('POST /api/auth/password-change', () => {
+  const CHANGE = { currentPassword: ' old pass ', newPassword: ' new password ' };
+
+  it('adds the Bearer token and the refresh token from the session; the session (cookie) stays as it is', async () => {
+    const tokens = tokensFor('seller');
+    let sent: { body: unknown; auth: string | null } | undefined;
+    server.use(
+      mockApi('post', '/auth/password/change', async ({ request, reply }) => {
+        sent = { body: await request.json(), auth: request.headers.get('Authorization') };
+        return reply.noContent();
+      }),
+    );
+    const { call, logs } = setup('seller');
+    const response = await call('password-change', {
+      body: JSON.stringify(CHANGE),
+      cookie: await sessionCookie('seller', tokens),
+    });
+    expect(response.status).toBe(204);
+    expect(sent).toEqual({
+      body: { ...CHANGE, refreshToken: tokens.refreshToken },
+      auth: `Bearer ${tokens.accessToken}`,
+    });
+    expect(setCookies(response)).toEqual([]);
+    await expectNoSecrets(response, logs, tokens);
+    for (const line of logs) expect(line).not.toContain(CHANGE.newPassword);
+  });
+
+  it.each<[ErrorCode, number]>([
+    ['INVALID_CURRENT_PASSWORD', 400],
+    ['PASSWORD_UNCHANGED', 422],
+    ['RATE_LIMITED', 429],
+  ])('passes %s through and keeps the session', async (code, status) => {
+    server.use(mockApi('post', '/auth/password/change', ({ reply }) => reply.error(status, code)));
+    const response = await setup().call('password-change', {
+      body: JSON.stringify(CHANGE),
+      cookie: await sessionCookie('storefront', tokensFor('storefront')),
+    });
+    expect(response.status).toBe(status);
+    expect(((await response.json()) as { error: { code: string } }).error.code).toBe(code);
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it('INVALID_REFRESH_TOKEN ends the session: 401 passed through, cookies cleared', async () => {
+    server.use(
+      mockApi('post', '/auth/password/change', ({ reply }) => reply.error(401, 'INVALID_REFRESH_TOKEN')),
+    );
+    const response = await setup().call('password-change', {
+      body: JSON.stringify(CHANGE),
+      cookie: await sessionCookie('storefront', tokensFor('storefront')),
+    });
+    expect(response.status).toBe(401);
+    expect(setCookies(response).every((c) => c.attributes.includes('Max-Age=0'))).toBe(true);
+  });
+
+  it('without a session, or with an expired access token: 401 UNAUTHENTICATED and no backend call', async () => {
+    const none = await setup().call('password-change', { body: JSON.stringify(CHANGE) });
+    expect(none.status).toBe(401);
+    const expired = await setup('storefront', { now: () => new Date('2026-10-14T09:00:00.000Z') }).call(
+      'password-change',
+      { body: JSON.stringify(CHANGE), cookie: await sessionCookie('storefront', tokensFor('storefront')) },
+    );
+    expect(expired.status).toBe(401);
+    expect(((await expired.json()) as { error: { code: string } }).error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('rejects unknown keys, e.g. a refreshToken from the client, without calling the backend', async () => {
+    const response = await setup().call('password-change', {
+      body: JSON.stringify({ ...CHANGE, refreshToken: 'x'.repeat(43) }),
+      cookie: await sessionCookie('storefront', tokensFor('storefront')),
     });
     expect(response.status).toBe(400);
   });

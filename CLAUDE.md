@@ -216,6 +216,9 @@ Sign-in screens shared in a new package `@nile/auth-screens` (apps give routes, 
 ### 14.1m Decided (2026-10-15, T-D6)
 Invite acceptance on the storefront `/invite` with the session revoked at once and no cookie · admin/agent wrong-app wording per specs 03/04 (no link) · admin shell shows the signed-in email and Sign out; agent Sign out on the `/me` placeholder until T-H12 · E2E test admin `e2e-admin@example.test` (password reset by the app's own flow on 2026-10-15; value given to the user) (design 01 R-25).
 
+### 14.1n Decided (2026-10-15, T-D7)
+One shared security screen (change password, sign out) in all four apps; the session survives its own password change; agent `/security` linked from the Me placeholder (design 01 R-26).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

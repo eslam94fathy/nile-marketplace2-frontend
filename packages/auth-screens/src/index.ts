@@ -2,6 +2,7 @@
 // wraps its sign-in pages in <AuthScreensProvider> with its routes, sites, API calls and Link.
 export { ForgotPasswordForm } from './components/forgot-password-form';
 export { ResetPasswordForm, type ResetPasswordFormProps } from './components/reset-password-form';
+export { SecurityScreen, type SecurityScreenProps } from './components/security-screen';
 export { SignInForm, type SignInFormProps } from './components/sign-in-form';
 export { VerifyEmailForm, type VerifyEmailFormProps } from './components/verify-email-form';
 export { AuthCard } from './components/auth-card';

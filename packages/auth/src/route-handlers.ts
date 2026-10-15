@@ -285,10 +285,45 @@ async function acceptInvite(request: NextRequest, ctx: RequestContext): Promise<
   return okResponse({ role: tokens.user.role, email: tokens.user.email }, ctx.correlationId);
 }
 
+const passwordChangeBodySchema = z.strictObject({ currentPassword: z.string(), newPassword: z.string() });
+
+/**
+ * Change password in any app (spec 01 SF-19 and the other apps' security screens). The BFF adds the session's
+ * refresh token, which the backend keeps alive while revoking every other session of the user (spec 03
+ * §4.9b), so the cookie stays as it is. An expired access token is answered with 401 UNAUTHENTICATED without a
+ * backend call (the browser refreshes and retries); INVALID_REFRESH_TOKEN ends the session here too.
+ */
+async function changePassword(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  const { session, invalidCookie } = await readSession(request, ctx);
+  if (session === null || accessTokenRemainingMs(session, ctx.now) <= 0)
+    return unauthenticated(ctx, invalidCookie);
+  const body = await parseBody(request, passwordChangeBodySchema, ctx);
+  if (!body.ok) return body.response;
+  try {
+    await unwrap(
+      backendClient(ctx, session.accessToken).POST('/api/v1/auth/password/change', {
+        body: {
+          currentPassword: body.value.currentPassword,
+          newPassword: body.value.newPassword,
+          refreshToken: session.refreshToken,
+        },
+      }),
+    );
+  } catch (error) {
+    if (!isApiError(error, 'INVALID_REFRESH_TOKEN')) throw error;
+    const response = apiErrorResponse(error, ctx.correlationId);
+    clearSessionCookies(response, ctx.cookieOptions);
+    return response;
+  }
+  ctx.log.info('PASSWORD_CHANGED', { userId: session.user.id });
+  return noContentResponse(ctx.correlationId);
+}
+
 const AUTH_ACTIONS = {
   login,
   'verify-email': verifyEmail,
   invite: acceptInvite,
+  'password-change': changePassword,
   refresh,
   logout,
 } as const satisfies Record<string, (request: NextRequest, ctx: RequestContext) => Promise<NextResponse>>;
