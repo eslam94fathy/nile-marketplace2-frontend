@@ -268,6 +268,9 @@ Category picker is the existing Select with full-path labels (`Fashion › Men`)
 ### 14.1ad Decided (2026-10-15, T-H5)
 No date filter on the seller statement in R1 · an unexpected ledger entry type on a seller statement is shown raw and reported with `console.warn` (type and id only) until T-I4 brings a client log sink · finance data is read on every visit, never polled (DQ-9) (design 01 R-42).
 
+### 14.1ae Decided (2026-10-15, T-H6)
+Admin Dashboard split per task: T-H6 builds the frame and `QueueCard`, each of T-H7, T-H9, T-H10 and T-H11 adds its queue · "Suspend" is never offered on the signed-in admin's own row (session user id passed from the server page) · the admin app uses the seller app's test harness and form/query packages (design 01 R-43).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

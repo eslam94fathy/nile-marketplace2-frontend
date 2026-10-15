@@ -380,6 +380,7 @@ Seller app (workflows S-1…S-6):
 Admin app (workflows AD-1…AD-7):
 
 ### T-H6 Admin shell and admin accounts
+- **Status (2026-10-15):** implemented (the shell navigation already existed from T-C3/T-D6); component tests green (rows and actions per status, no "Suspend" on yourself, tabs, invite incl. `EMAIL_ALREADY_REGISTERED`, resend incl. `USER_NOT_INVITED`, suspend reason rules, `CANNOT_SUSPEND_SELF` and `USER_INVALID_STATUS_TRANSITION`, reactivate, load failure; dashboard frame and queue card); admin lint, type-check and build green. The admin app got the seller app's test harness and form/query packages. E2E `e2e/admin/admins.spec.ts` (invite → accept → suspend → sign-in refused with `ACCOUNT_SUSPENDED`; own row) written and type-checked, **not yet run** against the real backend. Dashboard split per task (decided 2026-10-15). Decisions: design 01 R-43.
 - **Scope:** navigation; invite admin, list admins, resend invite, suspend (reason)/reactivate admins.
 - **Exclusions:** customer suspension and agent invite resend (OQ-7: no `userId` exposed; gap accepted for R1).
 - **Dependencies:** T-D6, T-C3.
