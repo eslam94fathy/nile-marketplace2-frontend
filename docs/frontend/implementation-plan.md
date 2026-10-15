@@ -328,6 +328,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 Seller app (workflows S-1…S-6):
 
 ### T-H1 Seller shell, status gating, profile, re-apply
+- **Status (2026-10-15):** implemented; component tests green (each of the four statuses in banner, overview and access rules; `SELLER_NOT_APPROVED` refetch + toast; profile changed-fields-only, whole pickup address, cleared landmark `null`, `BUSINESS_NAME_TAKEN`, `GOVERNORATE_NOT_FOUND`, `VALIDATION_FAILED`, load failure; re-apply confirm, cancel, `SELLER_INVALID_STATUS_TRANSITION`, other failure); seller lint, format, type-check and build green. E2E `e2e/seller/profile.spec.ts` (admin rejects via API → reason shown → edit → re-apply → waiting for approval, API agrees; pending overview) written and type-checked, **not yet run** against the real backend. Overview split with T-H4/T-H5 (decided 2026-10-15). Decisions: design 01 R-38.
 - **Scope:** status banner from `GET /seller/profile`; write actions disabled with explanation unless `approved`; profile edit; re-apply when `rejected`.
 - **Exclusions:** products, orders.
 - **Dependencies:** T-D5, T-C3.

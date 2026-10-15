@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { addMoney, formatMoney, formatMoneyRange, parseMoney, percentToRate, rateToPercent } from './money';
+import {
+  addMoney,
+  formatMoney,
+  formatMoneyRange,
+  formatRatePercent,
+  parseMoney,
+  percentToRate,
+  rateToPercent,
+} from './money';
 
 // Intl may separate "EGP" and the amount with a no-break space; compare on plain spaces.
 const plain = (value: string): string => value.replace(/\s/g, ' ');
@@ -76,6 +84,16 @@ describe('rates and percents', () => {
     ['0.0001', '0.01'],
   ])('rateToPercent(%s) = %s', (rate, percent) => {
     expect(rateToPercent(rate)).toBe(percent);
+  });
+
+  it.each([
+    ['0.1000', '10%'],
+    ['0.1250', '12.5%'],
+    ['0.0525', '5.25%'],
+    ['0', '0%'],
+    ['1.0000', '100%'],
+  ])('formatRatePercent(%s) = %s (spec 02 SE-07)', (rate, percent) => {
+    expect(formatRatePercent(rate)).toBe(percent);
   });
 
   it.each(['1.0001', '0.12345', '-0.1', '10', ''])('rateToPercent rejects %j', (rate) => {

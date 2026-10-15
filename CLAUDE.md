@@ -253,6 +253,9 @@ Order tabs live in the URL as `?status=<tab>` (all / awaiting-payment / in-progr
 ### 14.1y Decided (2026-10-15, T-G4)
 Cancel only when `canCancel`, idempotent with one key per intent, note optional and omitted when empty; "not cancellable" refetches and explains (design 01 R-37).
 
+### 14.1z Decided (2026-10-15, T-H1)
+Overview split: T-H1 builds the pending checklist and shortcuts, T-H4 the order lists, T-H5 the balance · what a seller may do comes from one helper (`sellerAccess` / `useSellerAccess`), and every seller write calls `useNotApprovedHandler` first · disabled controls stay visible with the banner's sentence · profile PATCH sends only changed fields, the pickup address always whole (design 01 R-38).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

@@ -18,3 +18,4 @@ export { AUTH_FIXTURE_NOW, authTokensFactory } from './factories/auth';
 export { addressFactory } from './factories/address';
 export { governorateFactory } from './factories/governorate';
 export { orderDetailFactory } from './factories/order';
+export { sellerProfileFactory } from './factories/seller';

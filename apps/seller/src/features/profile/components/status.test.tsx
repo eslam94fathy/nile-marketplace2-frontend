@@ -1,38 +1,23 @@
 // @vitest-environment jsdom
 import type { Schema } from '@nile/api';
-import { mockApi } from '@nile/test-utils';
+import { mockApi, sellerProfileFactory } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
-import { screen } from '@testing-library/react';
+import { Toaster } from '@nile/ui';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
 import { BusinessIdentity } from './business-identity';
 import { StatusBanner } from './status-banner';
 
+const pathname = vi.hoisted(() => ({ current: '/' }));
+vi.mock('next/navigation', () => ({ usePathname: () => pathname.current }));
+
 const server = setupMswServer();
 
-function profile(overrides: Partial<Schema<'SellerProfileDto'>> = {}): Schema<'SellerProfileDto'> {
-  return {
-    id: '01900000-0000-7000-8000-000000000001',
-    email: 'shop@example.test',
-    businessName: 'Nile Crafts',
-    contactPhone: '+201112345678',
-    pickupAddress: {
-      governorateId: '01900000-0000-7000-8000-000000000002',
-      city: 'Cairo',
-      area: 'Zamalek',
-      street: '26th of July St',
-      building: '12',
-      landmark: null,
-    },
-    status: 'pending_approval',
-    rejectionReason: null,
-    commissionRate: '0.1000',
-    approvedAt: null,
-    createdAt: '2026-10-14T08:00:00.000Z',
-    updatedAt: '2026-10-14T08:00:00.000Z',
-    ...overrides,
-  };
-}
+const profile = (overrides: Partial<Schema<'SellerProfileDto'>> = {}) =>
+  sellerProfileFactory({ businessName: 'Nile Crafts', ...overrides });
+
+const REJECTED = profile({ status: 'rejected', rejectionReason: 'Missing pickup details' });
 
 function serve(data: Schema<'SellerProfileDto'>) {
   server.use(mockApi('get', '/seller/profile', ({ reply }) => reply.ok(data), { base: BFF_BASE }));
@@ -43,6 +28,7 @@ const renderShellParts = () =>
     <>
       <BusinessIdentity />
       <StatusBanner />
+      <Toaster />
     </>,
   );
 
@@ -57,13 +43,23 @@ describe('seller status (spec 02 §2.1, §2.2)', () => {
     );
   });
 
-  it('rejected: the reason and a link to update the profile', async () => {
-    serve(profile({ status: 'rejected', rejectionReason: 'Missing pickup details' }));
+  it('rejected: the reason, Re-apply and a link to update the profile', async () => {
+    serve(REJECTED);
     renderShellParts();
     expect(
       await screen.findByText(/rejected: Missing pickup details\. Update your profile and re-apply\./),
     ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Re-apply' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Update your profile' }).getAttribute('href')).toBe('/profile');
+  });
+
+  it('rejected, on the profile page: no link to the page itself', async () => {
+    pathname.current = '/profile';
+    serve(REJECTED);
+    renderShellParts();
+    expect(await screen.findByRole('button', { name: 'Re-apply' })).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Update your profile' })).toBeNull();
+    pathname.current = '/';
   });
 
   it('suspended: products hidden, open orders continue', async () => {
@@ -86,12 +82,108 @@ describe('seller status (spec 02 §2.1, §2.2)', () => {
         base: BFF_BASE,
       }),
     );
-    const view = renderShellParts();
+    const view = renderWithProviders(
+      <>
+        <BusinessIdentity />
+        <StatusBanner />
+      </>,
+    );
     // While loading, the header shows a skeleton; after the failure nothing is rendered at all.
     expect(view.container.childElementCount).toBe(1);
     await vi.waitFor(() => {
       expect(view.container.childElementCount).toBe(0);
     });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+});
+
+describe('re-apply (spec 02 SE-07-A2)', () => {
+  it('asks first; the answer switches the badge and banner to "waiting for approval"', async () => {
+    serve(REJECTED);
+    let calls = 0;
+    server.use(
+      mockApi(
+        'post',
+        '/seller/profile/reapply',
+        ({ reply }) => {
+          calls += 1;
+          return reply.ok({ ...REJECTED, status: 'pending_approval' });
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    const view = renderShellParts();
+    await view.user.click(await screen.findByRole('button', { name: 'Re-apply' }));
+    const dialog = screen.getByRole('dialog', { name: 'Re-apply' });
+    expect(
+      within(dialog).getByText(
+        'Send your application for review again? Make sure your details are up to date.',
+      ),
+    ).toBeDefined();
+    expect(calls).toBe(0);
+    await view.user.click(within(dialog).getByRole('button', { name: 'Send for review' }));
+    expect(await screen.findByText('Your application was sent for review.')).toBeDefined();
+    expect(calls).toBe(1);
+    expect(screen.queryByRole('dialog', { name: 'Re-apply' })).toBeNull();
+    expect(screen.getByText('Waiting for approval')).toBeDefined();
+    expect(screen.getAllByRole('status')[0]?.textContent).toContain('Your account is waiting for approval.');
+  });
+
+  it('cancel sends nothing', async () => {
+    serve(REJECTED);
+    let calls = 0;
+    server.use(
+      mockApi(
+        'post',
+        '/seller/profile/reapply',
+        ({ reply }) => {
+          calls += 1;
+          return reply.ok(REJECTED);
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    const view = renderShellParts();
+    await view.user.click(await screen.findByRole('button', { name: 'Re-apply' }));
+    await view.user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(calls).toBe(0);
+  });
+
+  it('SELLER_INVALID_STATUS_TRANSITION: closes and refetches; the banner shows the new status', async () => {
+    serve(REJECTED);
+    server.use(
+      mockApi(
+        'post',
+        '/seller/profile/reapply',
+        ({ reply }) => {
+          // An admin approved meanwhile: the next profile read says so.
+          serve(profile({ status: 'approved', approvedAt: '2026-10-15T09:00:00.000Z' }));
+          return reply.error(409, 'SELLER_INVALID_STATUS_TRANSITION');
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    const view = renderShellParts();
+    await view.user.click(await screen.findByRole('button', { name: 'Re-apply' }));
+    await view.user.click(screen.getByRole('button', { name: 'Send for review' }));
+    expect(await screen.findByText('Approved')).toBeDefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Re-apply' })).toBeNull();
+  });
+
+  it('other failures keep the dialog open with the message', async () => {
+    serve(REJECTED);
+    server.use(
+      mockApi('post', '/seller/profile/reapply', ({ reply }) => reply.error(500, 'INTERNAL_ERROR'), {
+        base: BFF_BASE,
+      }),
+    );
+    const view = renderShellParts();
+    await view.user.click(await screen.findByRole('button', { name: 'Re-apply' }));
+    await view.user.click(screen.getByRole('button', { name: 'Send for review' }));
+    const dialog = screen.getByRole('dialog', { name: 'Re-apply' });
+    expect(await within(dialog).findByRole('alert')).toBeDefined();
+    expect(screen.getByText('Rejected')).toBeDefined();
   });
 });

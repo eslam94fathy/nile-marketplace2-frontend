@@ -1,11 +1,14 @@
-import { unwrap } from '@nile/api';
+import { unwrap, type Schema } from '@nile/api';
 import { queryKey } from '@nile/query';
 import { queryOptions } from '@tanstack/react-query';
 import { browserApi } from '@/lib/browser-api';
 
-// The seller's profile and status (design 02 §2.3 `profile`): header, status banner, later SE-06 and SE-07.
+// The seller's profile and status (design 02 §2.3 `profile`): header, status banner, SE-06 and SE-07.
 
 const PROFILE_STALE_TIME_MS = 60_000;
+
+export type SellerProfile = Schema<'SellerProfileDto'>;
+export type SellerProfilePatch = Schema<'UpdateSellerProfileDto'>;
 
 export const profileKeys = {
   profile: () => queryKey('seller', 'profile', 'detail'),
@@ -19,4 +22,14 @@ export function profileQuery() {
     staleTime: PROFILE_STALE_TIME_MS,
     refetchOnWindowFocus: true,
   });
+}
+
+/** SE-07-A1: allowed in any status, no re-approval [SPEC 05 S-7]. */
+export async function updateProfile(body: SellerProfilePatch): Promise<SellerProfile> {
+  return (await unwrap(browserApi.PATCH('/api/v1/seller/profile', { body }))).data;
+}
+
+/** SE-07-A2: `rejected` → `pending_approval` [SPEC 05 UC-SE-2]. */
+export async function reapply(): Promise<SellerProfile> {
+  return (await unwrap(browserApi.POST('/api/v1/seller/profile/reapply'))).data;
 }

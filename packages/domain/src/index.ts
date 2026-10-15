@@ -1,5 +1,13 @@
 export * from './enums';
-export { addMoney, formatMoney, formatMoneyRange, parseMoney, percentToRate, rateToPercent } from './money';
+export {
+  addMoney,
+  formatMoney,
+  formatMoneyRange,
+  formatRatePercent,
+  parseMoney,
+  percentToRate,
+  rateToPercent,
+} from './money';
 export { countdown, DISPLAY_TIME_ZONE, formatDate, formatDateTime, type Countdown } from './dates';
 export * from './labels';
 export * as fields from './fields';
