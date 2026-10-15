@@ -1,5 +1,4 @@
 // Public interface of @nile/query (design 01 §2, R-1). React-only helpers live here, not in @nile/api.
-// useIdempotentMutation arrives with the first idempotent screen (phase f).
 export {
   DEFAULT_GC_TIME_MS,
   DEFAULT_STALE_TIME_MS,
@@ -29,6 +28,14 @@ export {
   governoratesQuery,
   PUBLIC_REFERENCE_STALE_TIME_MS,
 } from './public-queries';
+export {
+  IN_PROGRESS_MAX_RETRIES,
+  IN_PROGRESS_RETRY_DELAY_MS,
+  stableJson,
+  useIdempotentMutation,
+  type IdempotentMutationOptions,
+  type IdempotentMutationResult,
+} from './idempotent-mutation';
 export { QueryProvider } from './provider';
 export { applyServerErrors, errorMessage, type ServerFieldMap, type SetFieldError } from './server-errors';
 export { dehydrate, HydrationBoundary } from '@tanstack/react-query';

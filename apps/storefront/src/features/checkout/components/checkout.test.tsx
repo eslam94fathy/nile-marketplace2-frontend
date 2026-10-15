@@ -1,22 +1,33 @@
 // @vitest-environment jsdom
 import type { Schema } from '@nile/api';
-import { addressFactory, fixtureId, governorateFactory, mockApi } from '@nile/test-utils';
+import type { ErrorCode } from '@nile/api';
+import {
+  addressFactory,
+  errorBody,
+  fixtureId,
+  governorateFactory,
+  mockApi,
+  orderDetailFactory,
+} from '@nile/test-utils';
 import { makeTestQueryClient, renderWithProviders } from '@nile/test-utils/react';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Address, Governorate } from '@/features/addresses';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
 import { CheckoutView } from './checkout-view';
 
 const replace = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push: vi.fn(), refresh: vi.fn() }) }));
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push, refresh: vi.fn() }) }));
 vi.mock('@/lib/use-has-session', () => ({ useHasSession: () => true }));
 
 const server = setupMswServer();
 
 beforeEach(() => {
   replace.mockReset();
+  push.mockReset();
 });
 
 const CAIRO = governorateFactory({ id: fixtureId(1), name: 'Cairo', deliveryFee: '45.00' });
@@ -282,5 +293,245 @@ describe('checkout: entry guard and states (spec 01 SF-07)', { timeout: 15_000 }
     renderWithProviders(<CheckoutView />);
     expect(await screen.findByText("Checkout couldn't be loaded.")).toBeDefined();
     expect(screen.getByRole('button', { name: /Try again/ })).toBeDefined();
+  });
+});
+
+// ---- T-F3: payment, review, Place order (spec 01 SF-07 §2–§3, SF-07-A1) ----
+
+const PLACED_ORDER = orderDetailFactory();
+
+interface Sent {
+  readonly body: Record<string, unknown>;
+  readonly key: string | null;
+}
+
+type Answer = () => Response | Promise<Response>;
+
+const placed: Answer = () =>
+  HttpResponse.json({ success: true, data: { order: PLACED_ORDER } }, { status: 201 });
+
+const failWith =
+  (status: number, code: ErrorCode): Answer =>
+  () =>
+    HttpResponse.json(errorBody(code), { status });
+
+/** `POST /checkout` answering in turn with each answer (the last one repeats); records bodies and keys. */
+function serveCheckout(...answers: Answer[]) {
+  const sent: Sent[] = [];
+  server.use(
+    http.post(`${BFF_BASE}/checkout`, async ({ request }) => {
+      sent.push({
+        body: (await request.json()) as Record<string, unknown>,
+        key: request.headers.get('Idempotency-Key'),
+      });
+      const answer = answers[Math.min(sent.length - 1, answers.length - 1)];
+      if (answer === undefined) throw new Error('no answer');
+      return answer();
+    }),
+  );
+  return sent;
+}
+
+async function chooseCod() {
+  const user = userEvent.setup();
+  renderWithProviders(<CheckoutView />);
+  await user.click(await screen.findByRole('radio', { name: /Cash on delivery/ }));
+  return user;
+}
+
+const placeButton = () => screen.getByRole('button', { name: /Place order|Placing your order/ });
+
+describe('checkout: payment, review and Place order (spec 01 SF-07)', { timeout: 20_000 }, () => {
+  it('no payment method preselected; card payment is shown but not offered yet (T-F4)', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    renderWithProviders(<CheckoutView />);
+    expect(await screen.findByRole('radio', { name: /Cash on delivery/ })).toHaveProperty('checked', false);
+    expect(screen.getByRole('radio', { name: /Pay by card \(Kashier\)/ })).toHaveProperty('disabled', true);
+    expect(placeButton()).toHaveProperty('disabled', true);
+    expect(
+      screen.getByText('Choose a delivery address and a payment method to place your order.'),
+    ).toBeDefined();
+  });
+
+  it('total = items total + delivery fee, exactly; the review groups items by seller', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    renderWithProviders(<CheckoutView />);
+    await screen.findByRole('radio', { name: /Cash on delivery/ });
+    expect(screen.getByText('Total').nextElementSibling?.textContent).toMatch(/545\.00/);
+    const group = screen.getByRole('region', { name: 'Sold by Nile Crafts' });
+    expect(within(group).getByText('Linen shirt')).toBeDefined();
+    expect(within(group).getByText('Qty 2')).toBeDefined();
+    expect(screen.queryByText(/separate parcels/)).toBeNull();
+  });
+
+  it('several sellers: one parcel per seller, one delivery fee', async () => {
+    const basket = cart();
+    const first = basket.sellers[0];
+    if (first === undefined) throw new Error('fixture');
+    serve({
+      basket: {
+        ...basket,
+        sellers: [first, { ...first, sellerId: fixtureId(0x601), businessName: 'Delta Home' }],
+      },
+      addresses: [addressFactory({ isDefault: true })],
+    });
+    renderWithProviders(<CheckoutView />);
+    expect(
+      await screen.findByText(
+        'Your order will be delivered in 2 separate parcels, one per seller. You pay one delivery fee.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('COD: sends exactly the documented body with a key, then opens the confirmation', async () => {
+    const home = addressFactory({ isDefault: true });
+    serve({ addresses: [home] });
+    const sent = serveCheckout(placed);
+    const user = await chooseCod();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith(`/checkout/confirmation/${PLACED_ORDER.id}`);
+    });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.body).toEqual({ addressId: home.id, paymentMethod: 'cod', expectedTotal: '545.00' });
+    expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    // The emptied cart must not bounce the shopper to /cart on the way out.
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('a retry after a failure reuses the same key (never two orders)', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const sent = serveCheckout(failWith(500, 'INTERNAL_ERROR'), placed);
+    const user = await chooseCod();
+    await user.click(placeButton());
+    expect(await screen.findByRole('alert')).toBeDefined();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(push).toHaveBeenCalled();
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[0]?.key).toBe(sent[1]?.key);
+  });
+
+  it('while placing: "Placing your order…" and a second click sends nothing', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const sent = serveCheckout(async () => {
+      await gate;
+      return placed();
+    });
+    const user = await chooseCod();
+    await user.click(placeButton());
+    const busy = await screen.findByRole('button', { name: /Placing your order…/ });
+    expect(busy).toHaveProperty('disabled', true);
+    await user.click(busy);
+    release();
+    await waitFor(() => {
+      expect(push).toHaveBeenCalled();
+    });
+    expect(sent).toHaveLength(1);
+  });
+
+  it('ORDER_TOTAL_CHANGED: refetches, shows the new total, places again only once confirmed, with a new key', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const sent = serveCheckout(failWith(409, 'ORDER_TOTAL_CHANGED'), placed);
+    const user = await chooseCod();
+    // The fee changed in the backend: the refetch brings it.
+    server.use(
+      mockApi('get', '/governorates', ({ reply }) => reply.ok([{ ...CAIRO, deliveryFee: '50.00' }, ASWAN]), {
+        base: BFF_BASE,
+      }),
+    );
+    await user.click(placeButton());
+    const dialog = await screen.findByRole('dialog', { name: 'Your total has changed' });
+    expect(
+      within(dialog).getByText(/^Prices or the delivery fee changed\. Your new total is .*550\.00\.$/),
+    ).toBeDefined();
+    expect(sent).toHaveLength(1);
+    await user.click(within(dialog).getByRole('button', { name: 'Place order' }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalled();
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[1]?.body.expectedTotal).toBe('550.00');
+    expect(sent[1]?.key).not.toBe(sent[0]?.key);
+  });
+
+  it('ORDER_TOTAL_CHANGED then "Go back": nothing more is sent', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const sent = serveCheckout(failWith(409, 'ORDER_TOTAL_CHANGED'));
+    const user = await chooseCod();
+    await user.click(placeButton());
+    const dialog = await screen.findByRole('dialog', { name: 'Your total has changed' });
+    await user.click(within(dialog).getByRole('button', { name: 'Go back' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(sent).toHaveLength(1);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('ADDRESS_NOT_FOUND: explains, refetches addresses and clears the selection', async () => {
+    const gone = addressFactory({ label: 'Home', isDefault: true });
+    const other = addressFactory({ label: 'Work' });
+    serve({ addresses: [gone, other] });
+    serveCheckout(failWith(422, 'ADDRESS_NOT_FOUND'));
+    const user = await chooseCod();
+    server.use(mockApi('get', '/me/addresses', ({ reply }) => reply.ok([other]), { base: BFF_BASE }));
+    await user.click(placeButton());
+    expect(await screen.findByText('This address no longer exists. Please choose another.')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByRole('radio', { name: /Home/ })).toBeNull();
+    });
+    expect(screen.getByRole('radio', { name: /Work/ })).toHaveProperty('checked', false);
+    expect(placeButton()).toHaveProperty('disabled', true);
+  });
+
+  it('GOVERNORATE_NOT_DELIVERABLE: explains and marks the address as not deliverable', async () => {
+    serve({ addresses: [addressFactory({ label: 'Home', isDefault: true })] });
+    serveCheckout(failWith(422, 'GOVERNORATE_NOT_DELIVERABLE'));
+    const user = await chooseCod();
+    server.use(
+      mockApi(
+        'get',
+        '/governorates',
+        ({ reply }) => reply.ok([{ ...CAIRO, deliveryFee: null, isDeliverable: false }]),
+        { base: BFF_BASE },
+      ),
+    );
+    await user.click(placeButton());
+    expect(await screen.findByText("We don't deliver to this area any more.")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByRole('radio', { name: /Home/ })).toHaveProperty('disabled', true);
+    });
+    expect(placeButton()).toHaveProperty('disabled', true);
+  });
+
+  it.each([
+    ['CART_EMPTY', 422, '/cart'],
+    ['CART_HAS_ISSUES', 409, '/cart?notice=unavailable'],
+    ['INSUFFICIENT_STOCK', 409, '/cart?notice=stock'],
+  ] as const)('%s → back to %s', async (code, status, target) => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    serveCheckout(failWith(status, code));
+    const user = await chooseCod();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith(target);
+    });
+  });
+
+  it('RATE_LIMITED: the countdown message, Place order blocked meanwhile', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    serveCheckout(() =>
+      HttpResponse.json(errorBody('RATE_LIMITED'), { status: 429, headers: { 'Retry-After': '30' } }),
+    );
+    const user = await chooseCod();
+    await user.click(placeButton());
+    expect(await screen.findByText(/Try again in 30 s/)).toBeDefined();
+    expect(placeButton()).toHaveProperty('disabled', true);
   });
 });

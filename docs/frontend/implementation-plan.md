@@ -262,6 +262,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F3 Checkout with cash on delivery (workflow C-6, COD path)
+- **Status (2026-10-15):** implemented and verified locally (991 tests incl. `expectedTotal` unit tests, `useIdempotentMutation` key rules, every Place order error of SF-07-A1 except `ORDER_PAYMENT_PENDING` (Kashier only, T-F4), same key on retry, new key after `ORDER_TOTAL_CHANGED`, no second request while placing, and the SF-08 confirmation; lint, format, type-check, build green). E2E `e2e/storefront/checkout-cod.spec.ts` passed against the real backend (production build on a spare port): saved default address preselected → Cash on delivery → one `POST /checkout` → confirmation → order in `GET /orders` with total = items total + fee → cart empty. Decisions: design 01 R-32.
 - **Scope:** review step (per-seller groups, items total, fee, total), `expectedTotal` computed with decimals, `POST /checkout` with one idempotency key per attempt intent, the full error-recovery table of workflow C-6, confirmation page.
 - **Exclusions:** Kashier (T-F4).
 - **Dependencies:** T-F2, T-B6 (OQ-15: computation recommended in api-inventory §10.4).

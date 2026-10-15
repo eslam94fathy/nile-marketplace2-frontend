@@ -17,6 +17,9 @@ export const ROUTES = {
   security: '/account/security',
 } as const;
 
+/** SF-18 Order detail. */
+export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
+
 /** Query parameter that carries the page to return to after sign-in (conventions §2). */
 export const RETURN_TO_PARAM = 'returnTo';
 /** Search text parameter (spec 01 SF-03). */

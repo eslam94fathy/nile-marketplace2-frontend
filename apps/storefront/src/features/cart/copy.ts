@@ -1,7 +1,11 @@
 // Cart copy (spec 01 §2.2 cart button, SF-05-A1, SF-06).
 export const CART_COPY = {
   title: 'Cart',
-  notices: { 'needs-attention': 'Some items in your cart need attention.' },
+  notices: {
+    'needs-attention': 'Some items in your cart need attention.',
+    unavailable: 'Some items are no longer available.',
+    stock: "Some items don't have enough stock any more.",
+  },
   cartLink: 'Cart',
   cartLinkWithCount: (count: number) => `Cart, ${count} ${count === 1 ? 'item' : 'items'}`,
   soldBy: (businessName: string) => `Sold by ${businessName}`,

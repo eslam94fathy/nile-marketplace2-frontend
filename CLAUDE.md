@@ -234,6 +234,9 @@ Cart shown is always the last `CartDto` from the API (totals never recomputed); 
 ### 14.1s Decided (2026-10-15, T-F2)
 Checkout always refetches governorates (fees feed the total); empty cart or `hasIssues` sends back to `/cart` (with a notice for issues); non-deliverable addresses shown but disabled; default preselected only when deliverable; the first address becomes the default (spec 04 C-3); address form shared with T-G2 (design 01 R-31).
 
+### 14.1t Decided (2026-10-15, T-F3)
+`useIdempotentMutation` in `@nile/query` (design 01 §6.1) · card payment shown disabled until T-F4 · Place order errors per SF-07-A1 (cart codes back to `/cart` with notices, `ORDER_TOTAL_CHANGED` re-confirmed with a new key) · confirmation from `GET /orders/{id}` only (design 01 R-32).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
