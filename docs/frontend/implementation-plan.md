@@ -463,6 +463,7 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 - **Exclusions / DoD:** no WAF/infra config here (T-I5); global DoD.
 
 ### T-I2 Accessibility audit
+- **Status (2026-10-16):** automated part done: axe after every component test (all 1496 pass), axe in every E2E feature spec, keyboard-only E2E per role written and type-checked (**not yet run**: they need the backend), code review for keyboard traps (none found). Screen-reader spot checks: checklist `docs/frontend/a11y-screen-reader-checklist.md`, **to be performed by a person**; findings go in its table. Decisions: design 01 R-51.
 - **Scope:** full axe pass, keyboard-only walkthrough of every workflow, screen-reader spot checks (NVDA/VoiceOver).
 - **Dependencies:** feature phases. **Files:** fixes across apps.
 - **Acceptance criteria:** zero serious/critical axe violations; every workflow completable by keyboard.

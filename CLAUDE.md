@@ -292,6 +292,9 @@ Agent app gets the admin app's test harness and approved form/query packages · 
 ### 14.1al Decided (2026-10-16, T-I1)
 CSP enforced after a report-only run: scripts nonce-only with `'strict-dynamic'`, styles `'self' 'unsafe-inline'` (Radix inline styles, by the §10 rule), `form-action 'self'` (Kashier not needed), no `upgrade-insecure-requests` · Zod runs `jitless` (no `eval` under the CSP) · static headers from `next.config.ts` on every path, `X-Frame-Options: DENY` added · every E2E test fails on a CSP violation (design 01 §10, R-50).
 
+### 14.1am Decided (2026-10-16, T-I2)
+`axe-core` (4.13.0) in `@nile/test-utils`: axe runs after **every** component test on the screen as the test left it and fails on serious/critical violations · keyboard-only E2E spec per role (`e2e/<app>/keyboard.spec.ts`, helpers in `e2e/fixtures/keyboard.ts`) · screen-reader spot checks by a person with `docs/frontend/a11y-screen-reader-checklist.md` (design 01 R-51).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -320,3 +323,4 @@ New ones go here as rows. When a decision is made, move it to §14.1.
 | `docs/frontend/implementation-plan.md` | Phased tasks with acceptance criteria and DoD |
 | `docs/frontend/spec/` | Business/screen specs per app: the source of truth for frontend behaviour once approved |
 | `docs/frontend/design/` | System design: packages, session and BFF, data flow, config, CI (`01`); allow-lists, query keys, mutations (`02`). Code must follow it once approved |
+| `docs/frontend/a11y-screen-reader-checklist.md` | Screen-reader spot checks (NVDA, VoiceOver) to perform and record |

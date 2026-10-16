@@ -61,12 +61,21 @@ export async function publishProduct(page: Page, productId: string) {
   await bff<Schema<'SellerProductDetailDto'>>(page, 'POST', `/seller/products/${productId}/activate`);
 }
 
-/** A published product with one active in-stock variant, created as the seller through the API. */
+/** A published product with one active in-stock variant, created as the seller through the API: its variant id. */
 export async function publishedVariant(
   backend: Accounts['backend'],
   token: string,
   suffix: string,
 ): Promise<string> {
+  return (await publishedProduct(backend, token, suffix)).variantId;
+}
+
+/** As `publishedVariant`, with the product's slug for its storefront page. */
+export async function publishedProduct(
+  backend: Accounts['backend'],
+  token: string,
+  suffix: string,
+): Promise<{ readonly variantId: string; readonly slug: string }> {
   const tree = expectData(
     await backend.request('GET', '/api/v1/categories'),
     200,
@@ -102,5 +111,5 @@ export async function publishedVariant(
     201,
   ) as Schema<'SellerVariantDto'>;
   expectData(await backend.request('POST', `/api/v1/seller/products/${product.id}/activate`, { token }), 200);
-  return variant.id;
+  return { variantId: variant.id, slug: product.slug };
 }
