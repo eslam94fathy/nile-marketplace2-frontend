@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { DeliverySettingsView } from '@/features/delivery';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Delivery settings' };
 
+/** AD-08 Governorates and agent share: fetched on the client. */
 export default async function DeliverySettingsPage() {
   await requireSession();
-  return <PlaceholderScreen title="Delivery settings" task="T-H9" />;
+  return <DeliverySettingsView />;
 }

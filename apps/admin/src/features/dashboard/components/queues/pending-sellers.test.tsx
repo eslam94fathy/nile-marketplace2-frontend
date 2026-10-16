@@ -4,7 +4,7 @@ import { renderWithProviders } from '@nile/test-utils/react';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
-import { Dashboard } from '../dashboard';
+import { PendingSellersQueue } from './pending-sellers';
 
 const server = setupMswServer();
 
@@ -23,7 +23,7 @@ describe('dashboard: sellers waiting for approval (spec 03 AD-02, T-H7)', () => 
         { base: BFF_BASE },
       ),
     );
-    renderWithProviders(<Dashboard />);
+    renderWithProviders(<PendingSellersQueue />);
     const card = await screen.findByRole('region', { name: 'Sellers waiting for approval' });
     expect((await within(card).findByRole('link', { name: 'Nile Crafts' })).getAttribute('href')).toBe(
       `/sellers/${seller.id}`,
@@ -50,7 +50,7 @@ describe('dashboard: sellers waiting for approval (spec 03 AD-02, T-H7)', () => 
         },
       ),
     );
-    renderWithProviders(<Dashboard />);
+    renderWithProviders(<PendingSellersQueue />);
     expect(await screen.findByText('Nothing waiting.')).toBeDefined();
   });
 });

@@ -1,0 +1,72 @@
+import { defineFactory, fixtureId } from '../factory';
+
+/** `AdminAgentDto`: an active agent who accepted the invite, off shift, no work. Ids start at 10000. */
+export const adminAgentFactory = defineFactory<'AdminAgentDto'>((sequence) => ({
+  id: fixtureId(10000 + sequence),
+  email: `agent${sequence}@example.test`,
+  fullName: `Agent ${sequence}`,
+  phone: '+201012345678',
+  homeGovernorateId: fixtureId(9700),
+  status: 'active',
+  userStatus: 'active',
+  onShift: false,
+  activeShipmentCount: 0,
+  lastAssignedAt: null,
+  createdAt: '2026-10-14T08:00:00.000Z',
+}));
+
+/** `AdminShipmentDto` with its history: an unassigned COD shipment picked up in governorate 9700. Ids from 11000. */
+export const adminShipmentFactory = defineFactory<'AdminShipmentDto'>((sequence) => ({
+  id: fixtureId(11000 + sequence),
+  orderId: fixtureId(11500 + sequence),
+  sellerOrderId: fixtureId(11800 + sequence),
+  orderNumber: `NM-2026-${String(sequence).padStart(6, '0')}`,
+  agentId: null,
+  status: 'unassigned',
+  paymentMethod: 'cod',
+  pickup: {
+    businessName: 'Nile Crafts',
+    phone: '+201112345678',
+    governorateId: fixtureId(9700),
+    city: 'Cairo',
+    area: 'Zamalek',
+    street: '26th of July St',
+    building: '12',
+    landmark: null,
+  },
+  dropoff: {
+    recipientName: 'Mona Adel',
+    recipientPhone: '+201001234567',
+    governorateId: fixtureId(9701),
+    governorateName: 'Alexandria',
+    city: 'Alexandria',
+    area: 'Smouha',
+    street: 'Victor Emmanuel',
+    building: '7',
+    floor: '3',
+    apartment: null,
+    landmark: null,
+  },
+  codItemsAmount: '250.00',
+  codFeeAmount: '50.00',
+  amountToCollect: '300.00',
+  carriesDeliveryFee: true,
+  codCollectedAmount: null,
+  sellerOrderCancelledAt: null,
+  attemptCount: 0,
+  attempts: [],
+  assignedAt: null,
+  pickedUpAt: null,
+  deliveredAt: null,
+  createdAt: '2026-10-15T08:00:00.000Z',
+  history: [
+    {
+      fromStatus: null,
+      toStatus: 'unassigned',
+      actorRole: 'system',
+      actorUserId: null,
+      reason: null,
+      createdAt: '2026-10-15T08:00:00.000Z',
+    },
+  ],
+}));

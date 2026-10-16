@@ -277,6 +277,9 @@ Admin sellers list opens on Pending (oldest first) and has the created date rang
 ### 14.1ag Decided (2026-10-15, T-H8)
 Category editor as tree + panel with the selection in the URL (`?category=`) · the tree is read again after every write · "Add subcategory" hidden at depth 3 and disabled under an inactive category; activation disabled under an inactive parent · attribute and option codes never editable · default sort order one after the largest sibling (design 01 R-45).
 
+### 14.1ah Decided (2026-10-16, T-H9)
+Agent keys owned by `features/lookups` (names per unique id 5 min, picker, assignable) so one prefix refreshes every agent view · assign dialog: active agents minus the current one, pickup governorate + on shift first, one "Assign to" button each · `AGENT_HAS_ACTIVE_SHIPMENTS` links to the in-page active shipments · AD-11 finance shortcuts `/finance/remittances?agent=` and `/finance/payouts?payeeType=agent&payeeId=` for T-H11 to honour · AD-15 placeholder page so AD-13 links are typed · shared admin `FormDialog` (design 01 R-46).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

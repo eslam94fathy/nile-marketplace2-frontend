@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ShipmentsList } from '@/features/shipments';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Shipments' };
 
-export default async function ShipmentsPage() {
+/** AD-12 Shipments: filters come from the URL; the list is fetched on the client. */
+export default async function ShipmentsPage({ searchParams }: PageProps<'/delivery/shipments'>) {
   await requireSession();
-  return <PlaceholderScreen title="Shipments" task="T-H9" />;
+  return <ShipmentsList params={await searchParams} />;
 }

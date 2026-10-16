@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { AgentsList } from '@/features/agents';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Agents' };
 
-export default async function AgentsPage() {
+/** AD-09 Agents: filters come from the URL; the list is fetched on the client. */
+export default async function AgentsPage({ searchParams }: PageProps<'/delivery/agents'>) {
   await requireSession();
-  return <PlaceholderScreen title="Agents" task="T-H9" />;
+  return <AgentsList params={await searchParams} />;
 }

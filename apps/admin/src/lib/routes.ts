@@ -33,5 +33,29 @@ export const sellerPath = (sellerId: string) => `${ROUTES.sellers}/${sellerId}` 
 export const ownerAccountsPath = (ownerId: string, accountType: string) =>
   `${ROUTES.financeAccounts}?owner=${ownerId}&type=${accountType}` as const;
 
+/** AD-10 New agent. */
+export const NEW_AGENT_PATH = `${ROUTES.agents}/new` as const;
+
+/** AD-11 Agent. */
+export const agentPath = (agentId: string) => `${ROUTES.agents}/${agentId}` as const;
+
+/** AD-13 Shipment. */
+export const shipmentPath = (shipmentId: string) => `${ROUTES.shipments}/${shipmentId}` as const;
+
+/** AD-12 on the All tab filtered to one agent (AD-11 "All of this agent's shipments"). */
+export const agentShipmentsPath = (agentId: string) =>
+  `${ROUTES.shipments}?status=all&agent=${agentId}` as const;
+
+/** AD-15 Order (T-H10). */
+export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
+
+/**
+ * AD-20 and AD-21 prefilled for one agent (AD-11 shortcuts). The parameter names are fixed here for T-H11 to
+ * honour [PROPOSED, design 01 R-46].
+ */
+export const agentRemittancePath = (agentId: string) => `${ROUTES.remittances}?agent=${agentId}` as const;
+export const agentPayoutPath = (agentId: string) =>
+  `${ROUTES.payouts}?payeeType=agent&payeeId=${agentId}` as const;
+
 /** The storefront's search filtered to one seller (spec 01: `/search?seller=`), for AD-05. */
 export const STOREFRONT_SELLER_SEARCH_PATH = (sellerId: string) => `/search?seller=${sellerId}` as const;
