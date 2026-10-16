@@ -5,6 +5,7 @@ import 'server-only';
 export { APP_ROLES, BFF_ROUTE_PREFIX, DEVICE_NAMES, type AuthAppConfig } from './config';
 export { cookieNames, type CookieNames } from './cookies';
 export { createDal, type CurrentSession, type Dal } from './dal';
+export { CSP_REPORT_ONLY } from './headers';
 export { safeReturnTo, type ReturnToOptions } from './return-to';
 export {
   createRouteGuard,

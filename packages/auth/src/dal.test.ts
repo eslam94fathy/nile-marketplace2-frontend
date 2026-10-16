@@ -36,6 +36,7 @@ const config = (overrides: Partial<RouteGuardConfig> = {}): RouteGuardConfig => 
   homePath: '/',
   isProtectedPath: () => true,
   signedInRedirectPaths: ['/login'],
+  csp: { development: false, reportOnly: false },
   now: () => NOW,
   ...overrides,
 });

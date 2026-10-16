@@ -14,6 +14,7 @@ const config = (overrides: Partial<RouteGuardConfig> = {}): RouteGuardConfig => 
   homePath: '/',
   isProtectedPath: (pathname) => !PORTAL_PUBLIC.some((p) => pathname === p || pathname.startsWith(`${p}/`)),
   signedInRedirectPaths: ['/login', '/register'],
+  csp: { development: false, reportOnly: false },
   now: () => NOW,
   ...overrides,
 });
@@ -134,5 +135,39 @@ describe('route guard (proxy.ts)', () => {
     expect(location(await run('/account/orders/1', undefined, storefront))).toBe(
       `${APP_ORIGIN}/login?returnTo=%2Faccount%2Forders%2F1`,
     );
+  });
+});
+
+describe('page CSP (design 01 §10, T-I1)', () => {
+  const nonceOf = (policy: string | null) => /'nonce-([^']+)'/.exec(policy ?? '')?.[1];
+
+  it('a fresh nonce per request, on the response and on the request Next.js renders with', async () => {
+    const first = await run('/login');
+    const second = await run('/login');
+    const policy = first.headers.get('Content-Security-Policy');
+    const nonce = nonceOf(policy);
+    expect(nonce).toMatch(/^[A-Za-z0-9+/]{22}==$/);
+    expect(nonceOf(second.headers.get('Content-Security-Policy'))).not.toBe(nonce);
+    expect(forwarded(first, 'x-nonce')).toBe(nonce);
+    expect(forwarded(first, 'content-security-policy')).toBe(policy);
+    expect(policy).toContain(`script-src 'self' 'nonce-${nonce ?? ''}' 'strict-dynamic'`);
+    expect(policy).toContain("frame-ancestors 'none'");
+    expect(policy).not.toContain('unsafe-eval');
+  });
+
+  it('redirects carry the policy too', async () => {
+    const response = await run('/orders');
+    expect(location(response)).not.toBeNull();
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+  });
+
+  it('report-only sends the report-only header instead', async () => {
+    const response = await run(
+      '/login',
+      undefined,
+      config({ csp: { development: false, reportOnly: true } }),
+    );
+    expect(response.headers.get('Content-Security-Policy')).toBeNull();
+    expect(response.headers.get('Content-Security-Policy-Report-Only')).toContain("'strict-dynamic'");
   });
 });

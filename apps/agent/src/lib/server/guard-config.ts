@@ -1,5 +1,5 @@
 import 'server-only';
-import type { RouteGuardConfig } from '@nile/auth/server';
+import { CSP_REPORT_ONLY, type RouteGuardConfig } from '@nile/auth/server';
 import { HOME_PATH, isProtectedPath, LOGIN_PATH, SIGNED_IN_REDIRECT_PATHS } from '@/lib/access';
 import { APP } from '@/lib/app';
 import { serverEnv } from '@/lib/env/server';
@@ -18,6 +18,7 @@ export function guardConfig(): RouteGuardConfig {
       homePath: HOME_PATH,
       isProtectedPath,
       signedInRedirectPaths: SIGNED_IN_REDIRECT_PATHS,
+      csp: { development: process.env.NODE_ENV === 'development', reportOnly: CSP_REPORT_ONLY },
     };
   }
   return cached;

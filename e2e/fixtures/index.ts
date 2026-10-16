@@ -8,12 +8,17 @@ import { appUrl, type E2eAppName } from '../apps';
 // the test's browser a real session in that app through its BFF (one account per role and worker, a fresh
 // sign-in per test: sharing session cookies between tests would replay rotated refresh tokens).
 
+/** How Chromium reports a blocked (or report-only) resource in the console. */
+const CSP_VIOLATION = /Content Security Policy/i;
+
 interface RoleFixtures {
   /** Signs the test's browser context in to `app` with an account of that app's role. */
   readonly signIn: (app: E2eAppName) => Promise<Account>;
   readonly customer: Account;
   readonly seller: Account & { readonly sellerId: string };
   readonly agent: Account & { readonly agentId: string };
+  /** Automatic (T-I1): fails the test when the browser reports a CSP violation on any of our pages. */
+  readonly cspGuard: undefined;
 }
 
 interface WorkerFixtures {
@@ -24,6 +29,17 @@ interface WorkerFixtures {
 }
 
 export const test = base.extend<RoleFixtures, WorkerFixtures>({
+  cspGuard: [
+    async ({ page }, provide) => {
+      const violations: string[] = [];
+      page.on('console', (message) => {
+        if (CSP_VIOLATION.test(message.text())) violations.push(`${page.url()}: ${message.text()}`);
+      });
+      await provide(undefined);
+      expect(violations, 'Content Security Policy violations').toEqual([]);
+    },
+    { auto: true },
+  ],
   accounts: [
     // eslint-disable-next-line no-empty-pattern -- Playwright reads fixture dependencies from this pattern
     async ({}, provide) => {

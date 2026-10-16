@@ -454,6 +454,7 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 ## Phase i — Hardening & Release
 
 ### T-I1 Security headers and CSP
+- **Status (2026-10-16):** implemented; report-only run done before enforcing (violations found and fixed, then none), CSP enforced. Unit tests (policy, static headers, nonce randomness; guard: fresh nonce per request on response and forwarded request, redirects, report-only header) green; E2E: automatic CSP-violation guard on every test, per-app hardening suite (headers, nonce on server scripts, `/api/*`, CSRF, tampered and cross-role sessions). The 16 backend-free hardening tests and the storefront component/token specs ran green against local production builds; the cross-role session test and the rest of the suite (under the new guard) need the backend run. Repo type-check, lint, format, all unit tests and all four builds green. Decisions: design 01 §10, R-50.
 - **Scope:** nonce-based CSP via `proxy.ts`, HSTS, frame, referrer, permissions policies per app; CSRF and session abuse tests.
 - **Dependencies:** all feature phases.
 - **Files:** `apps/*/src/proxy.ts`, `packages/auth/src/headers.ts`.

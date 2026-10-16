@@ -1,3 +1,4 @@
+import './zod-config';
 export * from './enums';
 export {
   addMoney,

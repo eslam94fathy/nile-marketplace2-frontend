@@ -289,6 +289,9 @@ Payee search on AD-21 is a search field with a result list and "Choose" buttons 
 ### 14.1ak Decided (2026-10-16, T-H12)
 Agent app gets the admin app's test harness and approved form/query packages · every screen but Me waits for the profile and shows the inactive message instead of content; any `AGENT_INACTIVE` re-reads the profile · "Open in maps" is the universal Google Maps search link, opened only by the agent's tap · COD delivery sends the API amount after a required tick box; an amount change makes a new intent · active list tabs in the URL (`?tab=`) (design 01 R-49).
 
+### 14.1al Decided (2026-10-16, T-I1)
+CSP enforced after a report-only run: scripts nonce-only with `'strict-dynamic'`, styles `'self' 'unsafe-inline'` (Radix inline styles, by the §10 rule), `form-action 'self'` (Kashier not needed), no `upgrade-insecure-requests` · Zod runs `jitless` (no `eval` under the CSP) · static headers from `next.config.ts` on every path, `X-Frame-Options: DENY` added · every E2E test fails on a CSP violation (design 01 §10, R-50).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

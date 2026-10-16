@@ -2,6 +2,13 @@ import type { BffApp } from '@nile/api';
 import { NextResponse, type NextRequest } from 'next/server';
 import { APP_ROLES } from './config';
 import { clearSessionCookies, cookieNames } from './cookies';
+import {
+  contentSecurityPolicy,
+  createNonce,
+  CSP_HEADER,
+  CSP_REPORT_ONLY_HEADER,
+  NONCE_HEADER,
+} from './headers';
 import { safeReturnTo } from './return-to';
 import { unsealSession, type SessionKeyRing, type SessionV1 } from './session';
 
@@ -24,6 +31,13 @@ export interface RouteGuardConfig {
   isProtectedPath: (pathname: string) => boolean;
   /** Pages a signed-in user is sent away from (sign-in, registration). */
   signedInRedirectPaths: readonly string[];
+  /** The page CSP (design 01 §10, T-I1). */
+  csp: {
+    /** `next dev` relaxes the policy for React's debugging aids (`unsafe-eval`, inline dev styles). */
+    development: boolean;
+    /** Report violations without blocking: the T-I1 evidence run before enforcing. */
+    reportOnly: boolean;
+  };
   /** Tests only: fixed clock. */
   now?: () => Date;
 }
@@ -54,7 +68,8 @@ const isUnder = (pathname: string, path: string) => pathname === path || pathnam
  * `proxy.ts`: `export const proxy = createRouteGuard(guardConfig)`. Signed out on a protected page → sign-in
  * with `returnTo`; signed in on a sign-in page → `returnTo` or home. The cookie is decrypted locally (no
  * backend call, no refresh); an unusable cookie is deleted, so a stale one can't cause a redirect loop
- * (decided 2026-10-14, design 01 R-22).
+ * (decided 2026-10-14, design 01 R-22). Every page response carries a fresh CSP nonce (T-I1): set on the
+ * forwarded request, where Next.js reads it for its own scripts and styles, and on the response.
  */
 export function createRouteGuard(getConfig: () => RouteGuardConfig) {
   return async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -64,6 +79,9 @@ export function createRouteGuard(getConfig: () => RouteGuardConfig) {
     const session = raw === undefined || raw === '' ? null : await sessionFromCookie(raw, config);
     const { pathname } = request.nextUrl;
     const currentPath = currentPathOf(request.nextUrl);
+    const nonce = createNonce();
+    const csp = contentSecurityPolicy({ nonce, development: config.csp.development });
+    const cspHeader = config.csp.reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_HEADER;
 
     let response: NextResponse;
     if (session === null && config.isProtectedPath(pathname)) {
@@ -78,9 +96,13 @@ export function createRouteGuard(getConfig: () => RouteGuardConfig) {
       // Always overwritten, so a client can't supply its own value.
       const headers = new Headers(request.headers);
       headers.set(PATHNAME_HEADER, currentPath);
+      headers.set(NONCE_HEADER, nonce);
+      // Next.js extracts the nonce from the request's policy, whichever of the two headers it is.
+      headers.set(CSP_HEADER, csp);
       response = NextResponse.next({ request: { headers } });
     }
 
+    response.headers.set(cspHeader, csp);
     if (raw !== undefined && session === null) {
       clearSessionCookies(response, { names, secure: config.cookieSecure });
     }
