@@ -70,3 +70,55 @@ export const adminShipmentFactory = defineFactory<'AdminShipmentDto'>((sequence)
     },
   ],
 }));
+
+/** `AgentProfileDto`: the signed-in agent, active and on shift with one shipment. Ids start at 12000. */
+export const agentProfileFactory = defineFactory<'AgentProfileDto'>((sequence) => ({
+  id: fixtureId(12000 + sequence),
+  email: `agent${sequence}@example.test`,
+  fullName: `Agent ${sequence}`,
+  phone: '+201012345678',
+  homeGovernorateId: fixtureId(9700),
+  status: 'active',
+  onShift: true,
+  activeShipmentCount: 1,
+}));
+
+/** `AgentShipmentDto`: a COD parcel assigned to the agent (300.00 to collect, fee included). Ids from 12500. */
+export const agentShipmentFactory = defineFactory<'AgentShipmentDto'>((sequence) => ({
+  id: fixtureId(12500 + sequence),
+  sellerOrderId: fixtureId(12800 + sequence),
+  orderNumber: `NM-2026-${String(sequence).padStart(6, '0')}`,
+  status: 'assigned',
+  paymentMethod: 'cod',
+  pickup: {
+    businessName: 'Nile Crafts',
+    phone: '+201112345678',
+    governorateId: fixtureId(9700),
+    city: 'Cairo',
+    area: 'Zamalek',
+    street: '26th of July St',
+    building: '12',
+    landmark: null,
+  },
+  dropoff: {
+    recipientName: 'Mona Adel',
+    recipientPhone: '+201001234567',
+    governorateId: fixtureId(9701),
+    governorateName: 'Giza',
+    city: 'Giza',
+    area: 'Dokki',
+    street: 'Tahrir St',
+    building: '7',
+    floor: '3',
+    apartment: '12',
+    landmark: null,
+  },
+  codItemsAmount: '250.00',
+  codFeeAmount: '50.00',
+  amountToCollect: '300.00',
+  attemptCount: 0,
+  attempts: [],
+  assignedAt: '2026-10-16T08:00:00.000Z',
+  pickedUpAt: null,
+  deliveredAt: null,
+}));

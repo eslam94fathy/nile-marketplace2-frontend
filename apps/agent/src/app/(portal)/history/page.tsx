@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { History } from '@/features/shipments';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'History' };
 
-export default async function HistoryPage() {
+/** AG-06 History: the date range comes from the URL. */
+export default async function HistoryPage({ searchParams }: PageProps<'/history'>) {
   await requireSession();
-  return <PlaceholderScreen title="History" task="T-H12" />;
+  return <History params={await searchParams} />;
 }

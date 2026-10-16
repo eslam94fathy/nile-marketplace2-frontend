@@ -1,16 +1,17 @@
 'use client';
 
-import { cn, isActivePath, Label, MAIN_CONTENT_ID, Switch } from '@nile/ui';
+import { cn, isActivePath, MAIN_CONTENT_ID } from '@nile/ui';
 import { History, Package, User, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { InactiveBanner, ShiftSwitch } from '@/features/profile';
 import { APP } from '@/lib/app';
 import { ROUTES } from '@/lib/routes';
 
 // Agent shell (spec 04 §2.1): mobile-first, one hand. Top bar with the shift switch, bottom navigation with
-// 48 px targets; on desktop the same layout in a narrow centred column. The shift switch is a disabled
-// stand-in until T-H12 wires `PATCH /agent/availability`.
+// 48 px targets; on desktop the same layout in a narrow centred column. The inactive banner sits under the
+// top bar (spec 04 §2.2).
 
 const NAV = [
   { href: ROUTES.shipments, label: 'Shipments', icon: Package },
@@ -20,19 +21,6 @@ const NAV = [
 ] as const;
 
 const NAV_LABEL = 'Delivery app';
-const OFF_SHIFT = 'Off shift';
-
-function ShiftSwitch() {
-  const id = useId();
-  return (
-    <div className="flex items-center gap-2">
-      <Label htmlFor={id} className="text-sm">
-        {OFF_SHIFT}
-      </Label>
-      <Switch id={id} checked={false} disabled />
-    </div>
-  );
-}
 
 function BottomNav() {
   const pathname = usePathname();
@@ -74,6 +62,7 @@ export function AgentShell({ children }: { readonly children: ReactNode }) {
         </Link>
         <ShiftSwitch />
       </header>
+      <InactiveBanner />
       {/* Bottom padding keeps the last content above the fixed navigation. */}
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 p-4 pb-24 outline-none">
         {children}

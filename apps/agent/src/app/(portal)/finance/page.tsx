@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { FinanceView } from '@/features/finance';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Finance' };
 
-export default async function FinancePage() {
+/** AG-07 Finance: the tab and date range come from the URL. */
+export default async function FinancePage({ searchParams }: PageProps<'/finance'>) {
   await requireSession();
-  return <PlaceholderScreen title="Finance" task="T-H12" />;
+  return <FinanceView params={await searchParams} />;
 }

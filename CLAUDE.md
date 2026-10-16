@@ -286,6 +286,9 @@ OQ-16: admin seller-order cancel reasons Cancelled by the customer / Cancelled b
 ### 14.1aj Decided (2026-10-16, T-H11)
 Payee search on AD-21 is a search field with a result list and "Choose" buttons (no Combobox dependency; the searchable Combobox stays deferred) · money actions in two steps (form → summary) with one idempotency key per body · `*_EXCEEDS_BALANCE` reads the balance again (never parsed from the message) · paid at as Cairo `datetime-local`, sent as UTC ISO, future refused before sending · the parameter names fixed by the T-H7/T-H9/T-H10 links are honoured (design 01 R-48).
 
+### 14.1ak Decided (2026-10-16, T-H12)
+Agent app gets the admin app's test harness and approved form/query packages · every screen but Me waits for the profile and shows the inactive message instead of content; any `AGENT_INACTIVE` re-reads the profile · "Open in maps" is the universal Google Maps search link, opened only by the agent's tap · COD delivery sends the API amount after a required tick box; an amount change makes a new intent · active list tabs in the URL (`?tab=`) (design 01 R-49).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

@@ -442,6 +442,7 @@ Admin app (workflows AD-1…AD-7):
 Agent app (FQ-2 = yes; workflows A-1…A-4):
 
 ### T-H12 Agent app
+- **Status (2026-10-16):** implemented; component tests per transition (picked up without a key; start delivery; COD delivered with the required tick, the API amount, the same key on retry; `COD_AMOUNT_MISMATCH` with the new amount and a new intent; card delivered with an empty body; failed attempt with reason required, consequences and note omitted; hand back only when cancelled after pickup, the return note otherwise; stale transition re-read; not assigned any more; read-only finished shipments), AG-04 tabs, cards, empty and off-shift states, 30 s polling option, inactive gate and `AGENT_INACTIVE` re-read; AG-03 on/off with confirmation and inactive; AG-02; AG-06; AG-07 balances, both statements, hand-ins, empty) green; repo type-check, lint, format, all unit tests and agent build green. E2E `e2e/agent/delivery.spec.ts` (full COD delivery at 360 px with axe checks) written and type-checked, **not yet run** against the real backend; the shell E2E now expects a working shift switch. Decisions: design 01 R-49.
 - **Scope:** profile/status, shift toggle, active shipments, shipment detail with call/navigation links, picked-up / out-for-delivery / delivered (COD amount equal to `amountToCollect`) / failed attempt / returned, history, finance.
 - **Exclusions:** offline mode, maps, push notifications (no API support).
 - **Dependencies:** T-D6, T-C3 (polling 30 s while visible; `AGENT_INACTIVE` handled by code, OQ-12).

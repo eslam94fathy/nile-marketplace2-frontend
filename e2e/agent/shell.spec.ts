@@ -16,7 +16,8 @@ test('bottom navigation reaches every section with large targets', async ({ page
   }
 });
 
-test('shift switch is shown (disabled until T-H12)', async ({ page }) => {
+test('the shift switch shows the current shift and can be used (AG-03)', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('switch', { name: 'Off shift' })).toBeDisabled();
+  const toggle = page.getByRole('switch', { name: /^(On|Off) shift$/ });
+  await expect(toggle).toBeEnabled();
 });

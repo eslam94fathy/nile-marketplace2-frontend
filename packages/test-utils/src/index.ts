@@ -18,7 +18,12 @@ export { AUTH_FIXTURE_NOW, authTokensFactory } from './factories/auth';
 export { addressFactory } from './factories/address';
 export { adminListItemFactory, adminSellerDetailFactory } from './factories/admin';
 export { adminOrderDetailFactory, adminPaymentFactory, refundFactory } from './factories/admin-orders';
-export { adminAgentFactory, adminShipmentFactory } from './factories/delivery';
+export {
+  adminAgentFactory,
+  adminShipmentFactory,
+  agentProfileFactory,
+  agentShipmentFactory,
+} from './factories/delivery';
 export {
   financeAccountFactory,
   ledgerEntryFactory,

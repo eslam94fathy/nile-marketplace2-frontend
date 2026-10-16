@@ -12,3 +12,6 @@ export const ROUTES = {
 
 /** Sign-in screens: never a `returnTo` destination. */
 export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPassword] as const;
+
+/** AG-05 Shipment. */
+export const shipmentPath = (shipmentId: string) => `/shipments/${shipmentId}` as const;
