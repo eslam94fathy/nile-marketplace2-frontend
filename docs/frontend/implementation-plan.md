@@ -430,6 +430,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H11 Finance
+- **Status (2026-10-16):** implemented; unit tests (account, statement, remittance, payout and reference URL ⇄ API mappings incl. the earlier links; Cairo `datetime-local` ⇄ ISO in winter and summer; `moneyGreaterThan`) and component tests (AD-18 default query, owners, "Nile", red negatives, row links, owner filter and non-zero toggle; AD-19 header, signed amounts, reference links, type filter, not found; AD-20 list names, record with cash shown, warning, summary, note omitted, same key on retry, `REMITTANCE_EXCEEDS_BALANCE` with the fresh balance; AD-21 list names, payee search and choose, owed shown, ISO paid-at, future refused before sending, `PAYOUT_ALREADY_RECORDED`, `PAYOUT_EXCEEDS_BALANCE`; AD-22 form → URL, invalid id, account names, empty; dashboard queue 4) green; repo type-check, lint, format, all unit tests and admin build green. E2E `e2e/admin/finance.spec.ts` (delivered COD order → agent holds cash → recorded received → cash back to zero) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-48.
 - **Scope:** accounts list/detail/statement, reference lookup, COD remittance form, payout form (`paidAt` not in the future), lists.
 - **Exclusions:** —
 - **Dependencies:** T-H6.

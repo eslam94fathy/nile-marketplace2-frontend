@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { Remittances } from '@/features/finance';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'COD remittances' };
 
-export default async function CODRemittancesPage() {
-  await requireSession();
-  return <PlaceholderScreen title="COD remittances" task="T-H11" />;
+/** AD-20 COD remittances: filters from the URL; the signed-in admin's id lets "confirmed by" say "you". */
+export default async function RemittancesPage({ searchParams }: PageProps<'/finance/remittances'>) {
+  const { user } = await requireSession();
+  return <Remittances params={await searchParams} currentUserId={user.id} />;
 }

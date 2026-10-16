@@ -283,6 +283,9 @@ Agent keys owned by `features/lookups` (names per unique id 5 min, picker, assig
 ### 14.1ai Decided (2026-10-16, T-H10)
 OQ-16: admin seller-order cancel reasons Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed · order number searched exactly on "Find" · refund reasons filtered with a checkbox group (`reason[in]`) · one refunds table with Record on AD-15, AD-16, AD-17, idempotency key per refund + reference · AD-15 "Ledger entries" → `/finance/lookup?referenceType=seller_order&referenceId=` for T-H11 to honour (design 01 R-47).
 
+### 14.1aj Decided (2026-10-16, T-H11)
+Payee search on AD-21 is a search field with a result list and "Choose" buttons (no Combobox dependency; the searchable Combobox stays deferred) · money actions in two steps (form → summary) with one idempotency key per body · `*_EXCEEDS_BALANCE` reads the balance again (never parsed from the message) · paid at as Cairo `datetime-local`, sent as UTC ISO, future refused before sending · the parameter names fixed by the T-H7/T-H9/T-H10 links are honoured (design 01 R-48).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

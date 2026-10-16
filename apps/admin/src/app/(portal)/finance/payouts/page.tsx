@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { Payouts } from '@/features/finance';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Payouts' };
 
-export default async function PayoutsPage() {
-  await requireSession();
-  return <PlaceholderScreen title="Payouts" task="T-H11" />;
+/** AD-21 Payouts: filters from the URL; the signed-in admin's id lets "recorded by" say "you". */
+export default async function PayoutsPage({ searchParams }: PageProps<'/finance/payouts'>) {
+  const { user } = await requireSession();
+  return <Payouts params={await searchParams} currentUserId={user.id} />;
 }

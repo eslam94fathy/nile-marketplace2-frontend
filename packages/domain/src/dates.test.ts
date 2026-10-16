@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { cairoDayBounds, countdown, formatDate, formatDateTime, isCalendarDay } from './dates';
+import {
+  cairoDayBounds,
+  cairoLocalFromMs,
+  cairoLocalToIso,
+  countdown,
+  formatDate,
+  formatDateTime,
+  isCalendarDay,
+} from './dates';
 
 describe('formatDateTime', () => {
   it('shows Cairo time as "14 Oct 2026, 10:30"', () => {
@@ -101,5 +109,24 @@ describe('cairoDayBounds (Cairo calendar days for createdAt filters)', () => {
     expect(isCalendarDay('2026-02-28')).toBe(true);
     expect(isCalendarDay('2026-02-30')).toBe(false);
     expect(isCalendarDay('2026-2-3')).toBe(false);
+  });
+});
+
+describe('Cairo local date-time (AD-Q-7)', () => {
+  it('winter (UTC+2) and summer (UTC+3) wall times → UTC instants', () => {
+    expect(cairoLocalToIso('2026-01-15T10:30')).toBe('2026-01-15T08:30:00.000Z');
+    expect(cairoLocalToIso('2026-07-15T10:30')).toBe('2026-07-15T07:30:00.000Z');
+  });
+
+  it('refuses malformed or impossible values', () => {
+    expect(cairoLocalToIso('2026-02-30T10:00')).toBeNull();
+    expect(cairoLocalToIso('2026-01-15 10:30')).toBeNull();
+    expect(cairoLocalToIso('')).toBeNull();
+  });
+
+  it('an instant as Cairo wall time, round-tripping', () => {
+    const now = Date.parse('2026-10-16T09:05:42.000Z');
+    expect(cairoLocalFromMs(now)).toMatch(/^2026-10-16T1[12]:05$/);
+    expect(cairoLocalToIso(cairoLocalFromMs(now))).toBe('2026-10-16T09:05:00.000Z');
   });
 });

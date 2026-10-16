@@ -126,3 +126,24 @@ export function isCalendarDay(value: string): boolean {
   const at = new Date(Date.UTC(Number(year), Number(month) - 1, Number(date)));
   return at.toISOString().slice(0, 10) === value;
 }
+
+const LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+/**
+ * A Cairo wall-clock time as `<input type="datetime-local">` gives it (`2026-10-14T10:30`) → the UTC instant
+ * as ISO (`…Z`, an offset the backend accepts), or null when it isn't a real date and time (AD-Q-7).
+ */
+export function cairoLocalToIso(local: string): string | null {
+  const match = LOCAL_DATE_TIME_PATTERN.exec(local);
+  if (match === null) return null;
+  const [, year = '', month = '', day = '', hour = '', minute = ''] = match;
+  const wall = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+  const check = new Date(wall).toISOString().slice(0, 16);
+  if (check !== local) return null;
+  return new Date(cairoWallToUtc(wall)).toISOString();
+}
+
+/** An instant as Cairo wall-clock time for `<input type="datetime-local">` (`2026-10-14T10:30`). */
+export function cairoLocalFromMs(utcMs: number): string {
+  return new Date(utcMs + cairoOffsetMs(utcMs)).toISOString().slice(0, 16);
+}

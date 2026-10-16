@@ -3,20 +3,18 @@
 import { PageHeader } from '@nile/ui';
 import type { ComponentType } from 'react';
 import { DASHBOARD_COPY as COPY } from '../copy';
+import { AgentsHoldingCodQueue } from './queues/agents-holding-cod';
 import { AwaitingCardPaymentQueue } from './queues/awaiting-card-payment';
 import { PendingSellersQueue } from './queues/pending-sellers';
 import { RefundsToRecordQueue } from './queues/refunds-to-record';
 import { UnassignedShipmentsQueue } from './queues/unassigned-shipments';
 
-/**
- * The work queues, in spec 03 AD-02 order: pending sellers (T-H7), unassigned shipments (T-H9), refunds to
- * record and orders awaiting card payment (T-H10), agents holding COD cash (T-H11). Each task appends its
- * queue component here.
- */
+/** The five work queues, in spec 03 AD-02 order, each added by its task (T-H7, T-H9, T-H10, T-H11). */
 export const DASHBOARD_QUEUES: readonly ComponentType[] = [
   PendingSellersQueue,
   UnassignedShipmentsQueue,
   RefundsToRecordQueue,
+  AgentsHoldingCodQueue,
   AwaitingCardPaymentQueue,
 ];
 

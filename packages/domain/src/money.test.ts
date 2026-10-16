@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  moneyGreaterThan,
   addMoney,
   formatMoney,
   formatMoneyRange,
@@ -131,5 +132,13 @@ describe('ratePercentValue (prefilling a percent input)', () => {
     ['0.0525', '5.25'],
   ])('%s → %s', (rate, value) => {
     expect(ratePercentValue(rate)).toBe(value);
+  });
+});
+
+describe('moneyGreaterThan', () => {
+  it('compares exactly, with different scales and signs', () => {
+    expect(moneyGreaterThan('100.01', '100')).toBe(true);
+    expect(moneyGreaterThan('100', '100.00')).toBe(false);
+    expect(moneyGreaterThan('0.10', '-5.00')).toBe(true);
   });
 });

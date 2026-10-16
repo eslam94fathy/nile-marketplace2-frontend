@@ -35,6 +35,11 @@ export function addMoney(...values: readonly string[]): string {
     .toFixed(MONEY_DECIMALS);
 }
 
+/** Whether money string `a` is more than `b`, compared exactly (e.g. an amount typed against a balance). */
+export function moneyGreaterThan(a: string, b: string): boolean {
+  return parseMoney(a).greaterThan(parseMoney(b));
+}
+
 /** `EGP 1,250.00` (Intl `en-EG` output), formatted from the string so no precision is lost. */
 export function formatMoney(value: string): string {
   // Intl formats numeric strings exactly (no float conversion); normalise to 2 decimals first.

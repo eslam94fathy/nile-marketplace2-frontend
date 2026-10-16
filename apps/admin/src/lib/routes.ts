@@ -27,8 +27,8 @@ export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPass
 export const sellerPath = (sellerId: string) => `${ROUTES.sellers}/${sellerId}` as const;
 
 /**
- * AD-18 filtered to one owner's account (AD-05 "Finance account"). The parameter names are fixed here for
- * T-H11 to honour [PROPOSED, design 01 R-44].
+ * AD-18 filtered to one owner's account (AD-05 "Finance account"). The parameter names are fixed here
+ * and honoured by T-H11 (design 01 R-44, R-48).
  */
 export const ownerAccountsPath = (ownerId: string, accountType: string) =>
   `${ROUTES.financeAccounts}?owner=${ownerId}&type=${accountType}` as const;
@@ -62,18 +62,23 @@ export const paymentPath = (paymentId: string) => `/payments/${paymentId}` as co
 
 /**
  * AD-22 prefilled with a seller order's ledger reference (AD-15 "Ledger entries"). The parameter names are
- * fixed here for T-H11 to honour [PROPOSED, design 01 R-47].
+ * fixed here and honoured by T-H11 (design 01 R-47, R-48).
  */
 export const sellerOrderLedgerPath = (sellerOrderId: string) =>
   `${ROUTES.referenceLookup}?referenceType=seller_order&referenceId=${sellerOrderId}` as const;
 
 /**
- * AD-20 and AD-21 prefilled for one agent (AD-11 shortcuts). The parameter names are fixed here for T-H11 to
- * honour [PROPOSED, design 01 R-46].
+ * AD-20 and AD-21 prefilled for one agent (AD-11 shortcuts). The parameter names are fixed here and honoured by
+ * T-H11 (design 01 R-46, R-48).
  */
 export const agentRemittancePath = (agentId: string) => `${ROUTES.remittances}?agent=${agentId}` as const;
 export const agentPayoutPath = (agentId: string) =>
   `${ROUTES.payouts}?payeeType=agent&payeeId=${agentId}` as const;
+export const sellerPayoutPath = (sellerId: string) =>
+  `${ROUTES.payouts}?payeeType=seller&payeeId=${sellerId}` as const;
+
+/** AD-19 Account statement. */
+export const accountPath = (accountId: string) => `${ROUTES.financeAccounts}/${accountId}` as const;
 
 /** The storefront's search filtered to one seller (spec 01: `/search?seller=`), for AD-05. */
 export const STOREFRONT_SELLER_SEARCH_PATH = (sellerId: string) => `/search?seller=${sellerId}` as const;

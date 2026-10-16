@@ -9,3 +9,4 @@ export {
   type AdminAgent,
 } from './agents';
 export { useActorLabel, useGovernorateName, YOU } from './hooks';
+export { useSellerNames } from './sellers';

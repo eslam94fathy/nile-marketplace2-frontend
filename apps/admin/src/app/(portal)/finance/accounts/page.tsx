@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { AccountsList } from '@/features/finance';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Finance accounts' };
 
-export default async function FinanceAccountsPage() {
+/** AD-18 Finance accounts: filters come from the URL; the list is fetched on the client. */
+export default async function FinanceAccountsPage({ searchParams }: PageProps<'/finance/accounts'>) {
   await requireSession();
-  return <PlaceholderScreen title="Finance accounts" task="T-H11" />;
+  return <AccountsList params={await searchParams} />;
 }

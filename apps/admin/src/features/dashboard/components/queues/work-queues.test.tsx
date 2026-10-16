@@ -12,8 +12,9 @@ const server = setupMswServer();
 const PAGE = { nextCursor: null, hasMore: false, limit: 5 };
 
 describe('dashboard: refunds and card payments (spec 03 AD-02, T-H10)', () => {
-  it('queues 3 and 5 in spec order (queue 4, COD cash, arrives with T-H11)', () => {
+  it('queues 3 and 5 in spec order', () => {
     expect(DASHBOARD_QUEUES.indexOf(RefundsToRecordQueue)).toBe(2);
+    expect(DASHBOARD_QUEUES.indexOf(AwaitingCardPaymentQueue)).toBe(4);
     expect(DASHBOARD_QUEUES.at(-1)).toBe(AwaitingCardPaymentQueue);
   });
 

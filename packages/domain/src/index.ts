@@ -7,10 +7,13 @@ export {
   parseMoney,
   percentToRate,
   ratePercentValue,
+  moneyGreaterThan,
   rateToPercent,
 } from './money';
 export {
   cairoDayBounds,
+  cairoLocalFromMs,
+  cairoLocalToIso,
   countdown,
   DISPLAY_TIME_ZONE,
   formatDate,
