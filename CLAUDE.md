@@ -274,6 +274,9 @@ Admin Dashboard split per task: T-H6 builds the frame and `QueueCard`, each of T
 ### 14.1af Decided (2026-10-15, T-H7)
 Admin sellers list opens on Pending (oldest first) and has the created date range as specified (Cairo days via `cairoDayBounds` in `@nile/domain`) · rates are typed as percents (`fields.percentRate`) and sent as fractions with decimal arithmetic · seller status-history actors: registration and re-apply are the seller, every other change an admin [VERIFIED backend] · AD-05 links to `/finance/accounts?owner=&type=` for T-H11 to honour (design 01 R-44).
 
+### 14.1ag Decided (2026-10-15, T-H8)
+Category editor as tree + panel with the selection in the URL (`?category=`) · the tree is read again after every write · "Add subcategory" hidden at depth 3 and disabled under an inactive category; activation disabled under an inactive parent · attribute and option codes never editable · default sort order one after the largest sibling (design 01 R-45).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

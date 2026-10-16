@@ -400,6 +400,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H8 Catalog structure
+- **Status (2026-10-15):** implemented; unit tests (path, inherited attributes by depth and order, effective count, depth limit, default sort order, form bodies and patches) and component tests (tree selection in the URL and the click-to-select regression, expand/collapse, inactive marking, prompt and unknown id, load failure; panel depth-3 rule, inactive-parent rules, details patch and slug warning, field errors, deactivate confirmation and `CATEGORY_IN_USE`, `CATEGORY_NOT_FOUND` reload; create with every category error; attribute and option create/edit/delete with every error; codes never editable; 5-attribute warning) green; admin lint, type-check and build green. E2E `e2e/admin/catalog.spec.ts` (category → attribute → option → a seller creates a product and variant with it) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-45.
 - **Scope:** category tree editor (create, rename, slug, order, activate/deactivate), attributes and options CRUD with the constraints of workflow AD-3.
 - **Exclusions:** moving categories, deleting categories (not in API).
 - **Dependencies:** T-H6.
