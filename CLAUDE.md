@@ -280,6 +280,9 @@ Category editor as tree + panel with the selection in the URL (`?category=`) · 
 ### 14.1ah Decided (2026-10-16, T-H9)
 Agent keys owned by `features/lookups` (names per unique id 5 min, picker, assignable) so one prefix refreshes every agent view · assign dialog: active agents minus the current one, pickup governorate + on shift first, one "Assign to" button each · `AGENT_HAS_ACTIVE_SHIPMENTS` links to the in-page active shipments · AD-11 finance shortcuts `/finance/remittances?agent=` and `/finance/payouts?payeeType=agent&payeeId=` for T-H11 to honour · AD-15 placeholder page so AD-13 links are typed · shared admin `FormDialog` (design 01 R-46).
 
+### 14.1ai Decided (2026-10-16, T-H10)
+OQ-16: admin seller-order cancel reasons Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed · order number searched exactly on "Find" · refund reasons filtered with a checkbox group (`reason[in]`) · one refunds table with Record on AD-15, AD-16, AD-17, idempotency key per refund + reference · AD-15 "Ledger entries" → `/finance/lookup?referenceType=seller_order&referenceId=` for T-H11 to honour (design 01 R-47).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -290,7 +293,6 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-1 | Backend sees the BFF's IP for every web user (shared rate limits) | Rec: trusted client-IP header + shared secret, honoured by the backend only for rate-limit keys (api-inventory §10.4). Backend change; **blocks production** |
 | OQ-2 | Kashier return URL | Rec: `<storefront>/checkout/payment-return` (env value in the backend) |
 | TC-1 | Storefront design pages `/design/tokens` and `/design/components` are served in every build (not linked, `noindex`) | Remove or gate it before release (T-I) |
-| OQ-16 | Admin wording for seller-order `cancelReason` (spec 02 §5.2 is seller-worded: "Cancelled by you") | Rec: Cancelled by the customer / Cancelled by the seller / Not confirmed within 24 hours / Card payment failed / Card payment not completed. Needed by phase h (AD-15) |
 
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
 | SF-JSONLD | Spec 01 SF-05 [PROPOSED] asks for JSON-LD `Product`; the usual way is a `<script type="application/ld+json">` with `dangerouslySetInnerHTML`, which CLAUDE.md §7 forbids with API data | Rec: allow one exception: JSON-LD built from typed fields, `JSON.stringify` with `<` escaped as `\u003c`, in one reviewed helper. Alternative: drop JSON-LD from SF-05 |

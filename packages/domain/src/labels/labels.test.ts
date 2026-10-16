@@ -64,6 +64,7 @@ const cases: [string, readonly string[], Readonly<Record<string, string>>][] = [
   ['SellerOrderStatus seller', SELLER_ORDER_STATUSES, SELLER_ORDER_STATUS_LABELS.seller],
   ['SellerOrderStatus admin', SELLER_ORDER_STATUSES, SELLER_ORDER_STATUS_LABELS.admin],
   ['SellerOrderCancelReason seller', SELLER_ORDER_CANCEL_REASONS, SELLER_ORDER_CANCEL_REASON_LABELS.seller],
+  ['SellerOrderCancelReason admin', SELLER_ORDER_CANCEL_REASONS, SELLER_ORDER_CANCEL_REASON_LABELS.admin],
   ['ItemCancelReason', ITEM_CANCEL_REASONS, ITEM_CANCEL_REASON_LABELS],
   ['PaymentMethod', PAYMENT_METHODS, PAYMENT_METHOD_LABELS],
   ['PaymentStatus', PAYMENT_STATUSES, PAYMENT_STATUS_LABELS],

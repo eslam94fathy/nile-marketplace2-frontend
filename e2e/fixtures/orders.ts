@@ -22,9 +22,19 @@ export async function signInThroughForm(page: Page, email: string, password: str
  * One in-stock item (`variantId`, or the first one found), a deliverable default address, then
  * `POST /checkout` (COD) as the customer.
  */
-export async function placeCodOrder(
+export function placeCodOrder(
   backend: Accounts['backend'],
   token: string,
+  chosenVariantId?: string,
+): Promise<Schema<'OrderDetailDto'>> {
+  return placeOrder(backend, token, 'cod', chosenVariantId);
+}
+
+/** As `placeCodOrder` with the payment method given (`kashier` needs the backend's fake gateway in E2E). */
+export async function placeOrder(
+  backend: Accounts['backend'],
+  token: string,
+  paymentMethod: 'cod' | 'kashier',
   chosenVariantId?: string,
 ): Promise<Schema<'OrderDetailDto'>> {
   const list = await backend.request('GET', '/api/v1/products?limit=40&inStock[eq]=true');
@@ -70,7 +80,7 @@ export async function placeCodOrder(
     idempotencyKey: randomUUID(),
     body: {
       addressId: address.data.id,
-      paymentMethod: 'cod',
+      paymentMethod,
       expectedTotal: addMoney(itemsTotal, fee),
     },
   });

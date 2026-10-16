@@ -420,6 +420,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H10 Orders, payments and refund queue
+- **Status (2026-10-16):** implemented; unit tests (order tabs, exact number, customer and Cairo-day filters with URL round-trip; refund tabs, reasons as `[in]` in a fixed order, invalid values dropped; admin cancel-reason labels) and component tests (AD-14 default query, rows, exact search on Find, customer filter; AD-15 content, links, neutral cancel reason, payment deadline, no actions, not found; AD-16 default query, reason filter in the URL, recorded rows with actor, record with the Kashier instruction and the same idempotency key on retry, `REFUND_ALREADY_RECORDED`; AD-17 references, refunds, events, not found; payment summary "No payment record"; dashboard queues 3 and 5) green; repo type-check, lint, format, all unit tests and admin build green. E2E `e2e/admin/refunds.spec.ts` (late Kashier payment → refund to record → recorded, needs `NILE_BACKEND_DIR` and `KASHIER_PAYMENT_TTL_MINUTES=1`) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-47.
 - **Scope:** orders list/detail with histories, payment view, refunds work queue, record refund with idempotency key.
 - **Exclusions:** admin order cancellation (S-9, not in API).
 - **Dependencies:** T-H6.

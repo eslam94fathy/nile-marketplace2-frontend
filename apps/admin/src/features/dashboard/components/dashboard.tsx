@@ -3,7 +3,9 @@
 import { PageHeader } from '@nile/ui';
 import type { ComponentType } from 'react';
 import { DASHBOARD_COPY as COPY } from '../copy';
+import { AwaitingCardPaymentQueue } from './queues/awaiting-card-payment';
 import { PendingSellersQueue } from './queues/pending-sellers';
+import { RefundsToRecordQueue } from './queues/refunds-to-record';
 import { UnassignedShipmentsQueue } from './queues/unassigned-shipments';
 
 /**
@@ -11,7 +13,12 @@ import { UnassignedShipmentsQueue } from './queues/unassigned-shipments';
  * record and orders awaiting card payment (T-H10), agents holding COD cash (T-H11). Each task appends its
  * queue component here.
  */
-export const DASHBOARD_QUEUES: readonly ComponentType[] = [PendingSellersQueue, UnassignedShipmentsQueue];
+export const DASHBOARD_QUEUES: readonly ComponentType[] = [
+  PendingSellersQueue,
+  UnassignedShipmentsQueue,
+  RefundsToRecordQueue,
+  AwaitingCardPaymentQueue,
+];
 
 /** AD-02 Dashboard: a grid of work-queue cards, each polled every 60 s while visible. */
 export function Dashboard({ queues = DASHBOARD_QUEUES }: { readonly queues?: readonly ComponentType[] }) {

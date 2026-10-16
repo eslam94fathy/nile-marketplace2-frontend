@@ -68,7 +68,7 @@ export const SELLER_ORDER_STATUS_LABELS = {
   },
 } as const satisfies Readonly<Record<'customer' | 'seller' | 'admin', Labels<SellerOrderStatus>>>;
 
-/** Seller view: spec 02 §5.2. The admin wording is not specified yet (CLAUDE.md §14.3). */
+/** Seller view: spec 02 §5.2. Admin view: neutral wording decided 2026-10-16 (OQ-16). */
 export const SELLER_ORDER_CANCEL_REASON_LABELS = {
   seller: {
     customer_cancelled: 'Cancelled by the customer',
@@ -77,7 +77,14 @@ export const SELLER_ORDER_CANCEL_REASON_LABELS = {
     payment_failed: 'The customer’s card payment failed',
     payment_expired: 'The customer didn’t complete the card payment',
   },
-} as const satisfies Readonly<Record<'seller', Labels<SellerOrderCancelReason>>>;
+  admin: {
+    customer_cancelled: 'Cancelled by the customer',
+    seller_cancelled: 'Cancelled by the seller',
+    seller_acceptance_timeout: 'Not confirmed within 24 hours',
+    payment_failed: 'Card payment failed',
+    payment_expired: 'Card payment not completed',
+  },
+} as const satisfies Readonly<Record<'seller' | 'admin', Labels<SellerOrderCancelReason>>>;
 
 /** Spec 02 SE-15 A4. */
 export const ITEM_CANCEL_REASON_LABELS = {

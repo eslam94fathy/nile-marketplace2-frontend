@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { OrdersList } from '@/features/orders';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Orders' };
 
-export default async function OrdersPage() {
+/** AD-14 Orders: filters come from the URL; the list is fetched on the client. */
+export default async function OrdersPage({ searchParams }: PageProps<'/orders'>) {
   await requireSession();
-  return <PlaceholderScreen title="Orders" task="T-H10" />;
+  return <OrdersList params={await searchParams} />;
 }

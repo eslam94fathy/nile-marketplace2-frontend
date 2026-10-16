@@ -46,8 +46,26 @@ export const shipmentPath = (shipmentId: string) => `${ROUTES.shipments}/${shipm
 export const agentShipmentsPath = (agentId: string) =>
   `${ROUTES.shipments}?status=all&agent=${agentId}` as const;
 
-/** AD-15 Order (T-H10). */
+/** AD-15 Order. */
 export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
+
+/** AD-14 on the All tab filtered to one customer (AD-15 "Other orders of this customer"). */
+export const customerOrdersPath = (customerId: string) =>
+  `${ROUTES.orders}?status=all&customer=${customerId}` as const;
+
+/** AD-12 on the All tab filtered to one order (AD-15). */
+export const orderShipmentsPath = (orderId: string) =>
+  `${ROUTES.shipments}?status=all&order=${orderId}` as const;
+
+/** AD-17 Payment. */
+export const paymentPath = (paymentId: string) => `/payments/${paymentId}` as const;
+
+/**
+ * AD-22 prefilled with a seller order's ledger reference (AD-15 "Ledger entries"). The parameter names are
+ * fixed here for T-H11 to honour [PROPOSED, design 01 R-47].
+ */
+export const sellerOrderLedgerPath = (sellerOrderId: string) =>
+  `${ROUTES.referenceLookup}?referenceType=seller_order&referenceId=${sellerOrderId}` as const;
 
 /**
  * AD-20 and AD-21 prefilled for one agent (AD-11 shortcuts). The parameter names are fixed here for T-H11 to
