@@ -75,6 +75,7 @@ Inputs:
 ### Phase j — Release 2 foundation (`phase/j-r2-foundation`)
 
 #### T-J0 Release 2 discovery and spec / design updates
+- **Status (2026-10-23):** approved with every recommendation: `api-inventory.md` §11, `workflows.md` §6, spec 00 §12 (v1.1), spec 01 §10 (v1.2), spec 02 §8, spec 03 §7, spec 04 §7 (v1.1 each), design 01 §15 and design 02 §5 (v1.1), CLAUDE.md §1/§2/§4/§5/§7/§9 rule text for FR2-Q1…Q4. Open questions: SF-Q-13…20, SE-Q-9…14, AD-Q-10…17, AG-Q-7…8, DQ-10…14.
 - **Scope:** `api-inventory.md` v2 (new operations, errors, enums, OpenAPI defects), `workflows.md` v2 (new workflows per role), spec 00 conventions (images, realtime freshness, notification centre, upload states), specs 01–04 new screens per §3 below with their own SF/SE/AD/AG questions, design 01 (media, realtime, push, CSP, env keys) and design 02 (allow-lists, query keys, mutations, realtime invalidation map), CLAUDE.md §1/§4/§7 changes that follow from §4.
 - **Exclusions:** code.
 - **Acceptance:** every new operation mapped to a screen or marked "not used in R2"; every [OPEN] item has options and a recommendation; you approve the documents.

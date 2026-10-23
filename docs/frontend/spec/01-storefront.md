@@ -1,6 +1,6 @@
 # Spec 01 — Storefront (visitor + customer)
 
-Status: **v1.1 APPROVED (2026-10-15).** v1.0 (2026-10-14) approved by the user with every recommendation in §9 (SF-Q-1…SF-Q-12) and every [PROPOSED] item; SF-Q-12 adds "Buy again" (SF-18-A3). v1.1 (approved 2026-10-15): SF-01 has no search box of its own (the header's search box is on every page). Changes from now on need explicit approval and a version bump.
+Status: **v1.1 APPROVED (2026-10-15); v1.2 APPROVED (2026-10-23): §10 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** v1.0 (2026-10-14) approved by the user with every recommendation in §9 (SF-Q-1…SF-Q-12) and every [PROPOSED] item; SF-Q-12 adds "Buy again" (SF-18-A3). v1.1 (approved 2026-10-15): SF-01 has no search box of its own (the header's search box is on every page). Changes from now on need explicit approval and a version bump.
 Conventions: `00-conventions.md` (notation, states, default error handling, forms, lists, formatting). Backend specs cited as [SPEC 03] … [SPEC 12] = `../nile-marketplace2/docs/spec/<nn>-*.md`.
 App: `apps/storefront`, dev port 4100. Access roles: public, `customer`.
 
@@ -571,3 +571,258 @@ Storefront-specific messages are listed in each screen; everything else uses `00
 | SF-Q-12 | After an expired/failed card payment the order is cancelled and the cart is already empty | **Show the cancelled order with a "Buy again" button that adds its still-purchasable items back via `POST /cart/items` one by one, reporting any that fail (Rec, uses only existing endpoints; not in R1 scope unless you approve)** · nothing: the shopper re-adds items manually |
 
 All [PROPOSED] items in this spec were accepted with v1.0.
+
+---
+
+## 10. Release 2 [v1.2 APPROVED 2026-10-23, T-J0]
+
+Backend inputs at `ecbcd19`: specs 04 §8, 05 §8, 06 §8–§9, 08 §8, 09 §8, 10 §8, 13 §8, 14, 15, 16, 17, 18, 19. Conventions: `00-conventions.md` §12. Plan: `release-2-plan.md` (phase k). Workflows: `workflows.md` §6.
+
+### 10.1 Scope changes
+- **Now in scope:** product and category images; ratings and reviews (read, write, edit, delete); wishlist; coupons at checkout; returns and refund visibility; support tickets; notification centre, notification preferences and Web Push; public seller page; live updates.
+- **§1 "Out of scope" rows removed:** "Product images, reviews, ratings, wishlist, coupons, returns" (now R2), "Who/why a seller order was cancelled" (the customer DTO now has `cancelReason` [VERIFIED]; the admin's free text stays internal [SPEC 09 OR-19]).
+- **Still out of scope:** reporting reviews (RV-7), back-in-stock / price-drop alerts (WL-3), public coupon list (PR-5), live agent location, customer ↔ seller chat [SPEC 00 §10.7].
+
+### 10.2 Route map additions
+
+| Route | Screen | Access | Render |
+|---|---|---|---|
+| `/s/[sellerId]` | SF-22 Seller page | public | server + client listing |
+| `/account/wishlist` | SF-23 Wishlist | customer | shell + client |
+| `/account/reviews` | SF-24 My reviews (tabs To review / Written) | customer | shell + client |
+| `/account/reviews/write?item=<orderItemId>` | SF-25 Write a review | customer | shell + client |
+| `/account/reviews/[reviewId]/edit` | SF-25 Edit a review | customer | shell + client |
+| `/account/orders/[orderId]/return?sellerOrder=<id>` | SF-26 Request a return | customer | shell + client |
+| `/account/returns` | SF-27 Returns | customer | shell + client |
+| `/account/returns/[returnId]` | SF-28 Return detail | customer | shell + client |
+| `/account/support` | SF-29 Support tickets | customer | shell + client |
+| `/account/support/new` | SF-30 New ticket | customer | shell + client |
+| `/account/support/[ticketId]` | SF-31 Ticket thread | customer | shell + client |
+| `/account/notifications` | SF-32 Notifications | customer | shell + client |
+| `/account/notifications/settings` | SF-33 Notification settings | customer | shell + client |
+
+Account navigation becomes: Profile · Orders · Returns · Reviews · Wishlist · Addresses · Notifications · Help & support · Security (SF-Q-13).
+
+### 10.3 Changes to existing screens
+
+**Header (§2.2):** + bell (conventions §12.4) and a heart link to the wishlist for signed-in customers; the logo is the brand's horizontal logo (T-J2).
+
+**SF-01 / SF-02 categories:** category tiles show the category `image` (placeholder when `null`).
+
+**SF-04 Product listing:**
+- Card gains the primary image (above the name; square crop `object-fit: cover` [PROPOSED]), the rating (conventions §12.8, hidden when `count = 0`), and the wishlist heart (SF-23-A1).
+- New filter "Rating": radio "4 stars & up", "3 stars & up", "Any" → URL `rating=4|3` ↔ `rating[gte]=4|3` (only `1..5` integers accepted, else dropped).
+- New sort "Top rated" → `sort=rating` ↔ `-rating` (unrated products last [SPEC 06 §9.3]).
+- "Sold by" links to `/s/<sellerId>` (SF-22) instead of `/search?seller=` (that URL keeps working).
+
+**SF-05 Product detail:**
+1. Gallery before the name: main image (`large` in the srcset, eager, high priority) + thumbnails in API order; choosing a variant whose `imageId` is set shows that image [SPEC 06 §8.1]; the lightbox opens from the main image. No images → placeholder.
+2. Under the name: rating summary linking to the reviews section.
+3. "Sold by {businessName}" → `/s/<sellerId>`, with the seller rating when `ratingCount > 0`.
+4. Wishlist heart next to "Add to cart".
+5. Reviews section (SF-05-R, below the description):
+   - Data: `GET /products/{id}/reviews/summary` and `GET /products/{id}/reviews` (`limit=5`, then "Show more reviews" loads 10 at a time) (SF-Q-15).
+   - Summary: average, count, a distribution bar per star (text "5 stars: 8 reviews", not colour only).
+   - Filters: star chips (`rating[in]`), "With photos" (`hasImages[eq]=true`); sort Newest (`-createdAt`, default), Highest rated (`-rating`), Lowest rated (`rating`).
+   - Review: stars, title, body (plain text), reviewer "Mona A.", variant options ("Colour: Red"), date, "Edited" when `editedAt`, photos (thumbnails → lightbox), seller reply block "Reply from {businessName}" with its date.
+   - Empty: "No reviews yet." No "write a review" button here: reviews start from a delivered order (SF-24).
+   - Both review reads failing never break the product page: the section shows its own error block.
+6. JSON-LD (if SF-JSONLD is approved): `aggregateRating` only when `count > 0`; `image` the primary `large` URL.
+
+**SF-06 Cart / SF-07 Checkout items:** each line shows its `image` (thumb).
+
+**SF-07 Checkout — coupon (SF-07-C):**
+- In section 3 "Review", a "Have a coupon?" disclosure with a code field (trimmed, upper-cased, `^[A-Z0-9-]{4,32}$`; invalid → "Enter a valid coupon code.") and "Apply" (SF-Q-14).
+- Apply → `POST /cart/coupon-preview { code }` → show "Coupon {code} applied" with "Remove", the discount line "Coupon {code} −{discountTotal}", per-seller discounts in the seller groups, and the new items total `itemsTotalAfterDiscount`.
+- Total = `itemsTotalAfterDiscount` + delivery fee (decimal); this is the `expectedTotal`, and `couponCode` is sent with the checkout (`release-2-plan` B-7).
+- The preview is redone automatically when the cart changes before submit (it reflects the cart at preview time [SPEC 19 PR-1]).
+- Preview and checkout errors:
+
+| Code | Message (shown under the coupon field; the coupon is removed) |
+|---|---|
+| `COUPON_NOT_FOUND` | "This coupon code doesn't exist." |
+| `COUPON_INACTIVE` | "This coupon can't be used any more." |
+| `COUPON_NOT_ACTIVE_YET` | "This coupon isn't active yet." |
+| `COUPON_EXPIRED` | "This coupon has expired." |
+| `COUPON_LIMIT_REACHED` | "This coupon has been fully used." |
+| `COUPON_CUSTOMER_LIMIT_REACHED` | "You've already used this coupon the maximum number of times." |
+| `COUPON_NOT_APPLICABLE` | "This coupon doesn't apply to the items in your cart." |
+| `COUPON_MIN_SUBTOTAL_NOT_MET` | "Add {missing} more of eligible items to use this coupon." (`missing` from the error details [SPEC 19 §1.2]; without it: "Your eligible items don't reach this coupon's minimum.") |
+| `RATE_LIMITED` | "Too many attempts. Try again in {n} s." |
+
+  A coupon error **at checkout** removes the coupon, recomputes the total without it and asks the shopper to place the order again (new body → new key).
+
+**SF-08 / SF-18 order views:**
+- Items show their `image` (the snapshot at checkout [SPEC 09 §8.3]).
+- Totals show "Coupon {code} −{discountTotal}" when `coupon` is set; item lines show the paid line total (`paidTotal`) with the original struck through when `discountAmount > 0`.
+- SF-18 seller order: when `cancelReason = admin_cancelled`: "Cancelled by Nile."; other reasons per §10.6; "{returnedQuantity} returned" on items.
+- SF-18 refunds block (`refunds[]`): "Refund {amount} — {status label} — {date}".
+- SF-18 copy change: the card note "Refunds for card payments are processed by our team." becomes "Card refunds go back to your card automatically. Your bank may take a few days to show them." (`paymentStatus` `paid` or `partially_refunded` with a cancellation) [SPEC 10 §8.1].
+- SF-18 actions: "Return items" on a delivered seller order (SF-26 entry, SF-Q-18); "Write a review" next to each item listed in `GET /me/reviewable-items` (SF-Q-16); "Get help with this order" → SF-30 with the order preselected.
+- SF-18 live: refetch on `order.updated`, `seller_order.updated`, `shipment.updated`, `payment.updated`, `return.updated` for this order; the 30 s poll while `pending_payment` stays only when no socket is connected.
+
+**SF-09 Kashier return:** waits for `payment.updated` of the order (up to 30 s) and falls back to `GET /orders/{id}` every 5 s; the 2-minute stop rule stays [SPEC 15 RT-4].
+
+### SF-22 Seller page
+
+Route: `/s/[sellerId]` · Access: public · Render: server (`GET /sellers/{sellerId}`, cache 5 min) + client listing (SF-04 with `sellerId[eq]` fixed)
+Content: business name (h1), rating ("No reviews yet" when 0), "Selling on Nile since {Month YYYY}" (`memberSince`), then the product listing with its filters (no seller filter).
+`SELLER_NOT_FOUND` (not approved or unknown) → SF-21 "This seller isn't available."
+SEO: `<title>{businessName} | Nile`, indexable, canonical `/s/<id>`.
+Acceptance: an unapproved seller's page returns 404; the listing never shows another seller's products.
+
+### SF-23 Wishlist
+
+Route: `/account/wishlist` · Data: `GET /me/wishlist` (`limit=20`, load more), `GET /me/wishlist/product-ids` (session-wide, stale 5 min).
+Content: product cards (SF-04 card) with "Remove"; `available = false` → card greyed with "No longer available" and no product link except "Remove" [SPEC 04 WL-2]; `inStock = false` → "Out of stock".
+Empty: "Your wishlist is empty. Tap the heart on a product to save it here."
+**SF-23-A1 Heart** (cards, product page): accessible toggle button "Save to wishlist" / "Remove from wishlist" (`aria-pressed`).
+- Signed out → `/login?returnTo=<page>&wishlist=<productId>`; after sign-in the product is added once and a toast says "Saved to your wishlist." (SF-Q-17).
+- Signed in: optimistic toggle → `PUT` / `DELETE /me/wishlist/{productId}` (both idempotent, retried once on network failure); failure → revert + toast.
+- `WISHLIST_LIMIT_REACHED` → revert + "Your wishlist is full (200 items). Remove something to save this."; `PRODUCT_NOT_FOUND` → revert + "This product isn't available any more."
+Acceptance: hearts reflect `product-ids` on every listing; a toggle never leaves the heart in a state different from the server after the response.
+
+### SF-24 My reviews
+
+Route: `/account/reviews?tab=to-review|written` (default `to-review` when it has items, else `written`).
+**To review:** `GET /me/reviewable-items` (load more): product image and name, variant options, order number, "Delivered {date}", "Review by {reviewWindowEndsAt}", button "Write a review" → SF-25. Empty: "Nothing to review right now. Products you receive can be reviewed for 60 days."
+**Written:** `GET /me/reviews` (load more): product (link when available), stars, title, body excerpt, date, status — `hidden` shows "Hidden by Nile" with "This review isn't shown on the product page." [SPEC 17 MyReviewDto], seller reply when present; actions "Edit" (only `canEdit`), "Delete".
+A link `?review=<id>` (from a notification) scrolls to and highlights that review.
+**Delete:** confirmation "Delete your review of {product}? You can write a new one while the review period is open." → `DELETE /me/reviews/{id}` → `204` → invalidate both tabs. `REVIEW_NOT_FOUND` → refetch.
+
+### SF-25 Write / edit a review
+
+Routes: `/account/reviews/write?item=<orderItemId>`, `/account/reviews/[reviewId]/edit`.
+Write data: the item from `GET /me/reviewable-items` (by `orderItemId`; not in the list → "This item can't be reviewed." + link to SF-24). Edit data: `GET /me/reviews/{id}`; `canEdit = false` → read-only with "Reviews can be edited for 30 days after posting."
+Fields:
+
+| Field | Rule |
+|---|---|
+| Rating | required, 1..5 (radio group, conventions §12.8) |
+| Title | optional, trimmed, 1..120 |
+| Review | optional, trimmed, 1..2000, counter |
+| Photos | optional, up to 4, `review_image` (conventions §12.2) |
+
+Submit:
+- Write → `POST /reviews { orderItemId, rating, title?, body?, imageMediaIds? }` (empty optional fields omitted) → `201` → SF-24 Written tab, toast "Thanks, your review is published."
+- Edit → `PATCH /me/reviews/{id}` with only the changed fields (cleared title/body → `null`; `imageMediaIds` sent whole when the photos changed) → `200`. Save disabled without a change.
+- No idempotency key (the unique rule makes a retry harmless [SPEC 17 §4.2]).
+Errors: `REVIEW_ALREADY_EXISTS` → "You've already reviewed this product." + link to Written; `REVIEW_NOT_ALLOWED` → "This item can't be reviewed."; `REVIEW_WINDOW_CLOSED` → "The review period for this item has ended."; `REVIEW_EDIT_WINDOW_CLOSED` → "This review can no longer be edited."; `MEDIA_NOT_ATTACHABLE` → conventions §12.2.
+Acceptance: a review can't be submitted while a photo is uploading; edit sends only changed fields.
+
+### SF-26 Request a return
+
+Route: `/account/orders/[orderId]/return?sellerOrder=<id>` · Data: `GET /orders/{orderId}` and `GET /orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items`.
+Read errors: `RETURN_WINDOW_CLOSED` → "The return period for this order ended on {date}."; `RETURN_NOT_ALLOWED` → "This part of your order can't be returned."; `RETURN_PICKUP_UNAVAILABLE` → "We can't collect returns from your area right now."; `RETURN_ALREADY_OPEN` (on submit) → link to the open return.
+Steps on one page:
+1. **Items:** each returnable item (image, name, options, "Paid {paidUnitAmount} each") with a quantity stepper 0..`returnable`; at least one item > 0.
+2. **Reason** (one, radio): Damaged · Wrong item · Not as described · Changed my mind. Note under "Changed my mind": "The return delivery fee of {returnFee} is taken from your refund." Seller-fault reasons: "Returning is free for you."
+3. **Details:** description (optional, 1..1000); photos 0..4, **at least 1** for the three seller-fault reasons ("Add at least one photo showing the problem.").
+4. **Refund to** (COD orders only; card orders: "Your refund goes back to your card."): radio Mobile wallet (phone field, Egyptian mobile, conventions §5) · InstaPay (address 3..100, trimmed). Note: "We use this only to send your refund, then delete it."
+5. **Summary:** items value, minus the return fee for "Changed my mind", "Estimated refund {amount}" (computed for display with `decimal.js` from the read's `paidUnitAmount` × quantities − fee; the server's `refundAmount` in the response is authoritative [PROPOSED]); "The original delivery fee isn't refunded."; "An agent will collect the items from your address after the seller approves."
+Submit → `POST /returns` (Idempotency-Key, one per body) → `201 ReturnDto` → SF-28, toast "Return {returnNumber} requested."
+Errors: `RETURN_QUANTITY_INVALID` → refetch returnable items, mark the items; `RETURN_PHOTOS_REQUIRED` → photos field; `RETURN_AMOUNT_TOO_LOW` → "Your refund would be zero after the return fee, so this return isn't possible."; `VALIDATION_FAILED` on `refundPayout.*` → those fields; `MEDIA_NOT_ATTACHABLE` → conventions §12.2.
+Acceptance: the payout section appears exactly for COD orders; the estimate never replaces the API's amount once the return exists.
+
+### SF-27 Returns
+
+Route: `/account/returns?status=open|closed` · Data: `GET /returns` (`status[in]` open: `requested,rejected,escalated,approved,picked_up,received,disputed`; closed: `completed,refused,cancelled,pickup_failed`).
+Row: return number, order number, status badge (§10.6), items count, "Requested {date}", refund amount ("Estimated" until `completed`). Empty: "You have no returns."
+
+### SF-28 Return detail
+
+Route: `/account/returns/[returnId]` · Data: `GET /returns/{id}` (`RETURN_NOT_FOUND` → SF-21); live on `return.updated`.
+Content: header (number, status badge, order link), what happens next (one sentence per status, §10.6), deadline when present (conventions §12.10), items (image, name, options, quantity, paid amount), reason and description, photos (private, conventions §12.1), fee and payer, refund (estimated / final amount, refund status label, date), rejection reason when `rejected`, refusal text when `refused`, timeline.
+Actions:
+- **Cancel return** — `requested` or `approved` (before pickup): confirm "Cancel this return?" → `POST /returns/{id}/cancel` → `200`. `RETURN_INVALID_STATUS_TRANSITION` → refetch + "The agent has already collected the items, so this return can't be cancelled."
+- **Escalate** — `rejected` before `escalationDeadlineAt`: dialog "Ask Nile to review the seller's decision" + note (3..500, required) → `POST /returns/{id}/escalate` → `200`. `RETURN_ESCALATION_WINDOW_CLOSED` → refetch + "The time to ask for a review has passed." Also offers "Contact support" (SF-30, category `return`, order preselected) [SPEC 18 RE-3].
+
+### SF-29 Support tickets
+
+Route: `/account/support?status=open|closed` · Data: `GET /support/tickets` (`status[in]` open: `open,awaiting_admin,awaiting_user,resolved`; closed: `closed`), sort `-lastMessageAt`.
+Row: ticket number, subject, category, status badge, linked order number, last activity (relative), unread dot (`hasUnread`, text "New reply"). Button "New ticket". Empty: "You haven't contacted support yet."
+
+### SF-30 New ticket
+
+Route: `/account/support/new?order=<orderId>&sellerOrder=<id>&category=<c>`
+Fields: Category (required; customer categories: Order, Payment, Delivery, Return, Account, Other — not `seller_onboarding`), Order (optional select of recent orders; prefilled from the URL; a seller order only through the URL), Subject (3..150), Message (1..4000), Photos (0..3, `support_attachment`).
+Submit → `POST /support/tickets` (Idempotency-Key) → `201` → SF-31.
+Errors: `SUPPORT_OPEN_TICKET_LIMIT_REACHED` → "You have 20 open tickets. Please wait for replies before opening another."; `ORDER_NOT_FOUND` / `SELLER_ORDER_NOT_FOUND` → order field "Choose one of your orders."; `SUPPORT_CATEGORY_NOT_ALLOWED` → category field.
+
+### SF-31 Ticket thread
+
+Route: `/account/support/[ticketId]` · Data: `GET /support/tickets/{id}`, `GET …/messages` (infinite, older on demand); `POST …/read` on open and on each new message while visible; `ticket.subscribe` while open.
+Content: header (number, subject, status badge, category, order link), thread (conventions §12.7), composer.
+- `resolved`: note "Marked as solved. Reply within 7 days to reopen it."
+- `closed`: composer replaced by "This ticket is closed. Open a new ticket if you still need help." + button.
+Send → `POST …/messages` (Idempotency-Key) → append. `SUPPORT_TICKET_CLOSED` → refetch, show the closed state.
+Acceptance: an internal note can never appear (the API doesn't send them); unread clears after viewing.
+
+### SF-32 Notifications / SF-33 Notification settings
+As conventions §12.4–§12.6 with the storefront link map. SF-33 also hosts "Turn on notifications on this device" and, when on, "Turn off on this device" (unregister).
+
+### 10.4 Acceptance across Release 2 (storefront)
+1. Every new screen has loading, empty, error and signed-out states (signed out → login with `returnTo`).
+2. No amount on a discount, return or refund is computed on the client except the checkout total and the return estimate (labelled).
+3. Private images are never cached beyond their query or put in links.
+4. A live update never discards a form the shopper is filling in.
+
+### 10.5 Non-functional additions
+- Performance: the LCP image on product and category pages is prioritised; budgets (T-I3) re-run with images in phase o.
+- SEO: `/s/<id>` indexable; account pages `noindex` as before; JSON-LD per SF-JSONLD.
+- Polling: SF-09 per RT-4 (5 s fallback); SF-18 30 s only without a socket; unread count every 60 s only without a socket.
+
+### 10.6 Copy
+
+**Seller order cancel reason, customer view** (`cancelReason`):
+
+| Value | Text |
+|---|---|
+| `customer_cancelled` | Cancelled by you |
+| `seller_cancelled` | Cancelled by the seller |
+| `seller_acceptance_timeout` | Cancelled: the seller didn't confirm in time |
+| `payment_failed`, `payment_expired` | Cancelled: payment not completed |
+| `admin_cancelled` | Cancelled by Nile |
+
+[VERIFIED enum: `CustomerSellerOrderDto.cancelReason`]
+
+**Payment (§7.3) changes:** `partially_refunded` → "Partly refunded", `refunded` → "Refunded" (replace the `_manually` rows).
+
+**Return status** (`ReturnStatus`) — label · what happens next:
+
+| Value | Label | Next |
+|---|---|---|
+| `requested` | Waiting for the seller | The seller has until {deadline} to respond. If they don't, your return is approved. |
+| `rejected` | Rejected by the seller | You can ask Nile to review this until {deadline}. |
+| `escalated` | Under review by Nile | We'll let you know our decision. |
+| `approved` | Approved | An agent will collect the items from your address. |
+| `picked_up` | On its way to the seller | The seller will check the items when they arrive. |
+| `received` | Being checked by the seller | Your refund starts once the seller confirms (by {deadline}). |
+| `disputed` | Under review by Nile | The seller raised a problem with the returned items. We'll decide and let you know. |
+| `completed` | Completed | Your refund of {amount} is on its way. |
+| `refused` | Closed without refund | {refusal text} |
+| `cancelled` | Cancelled | – |
+| `pickup_failed` | Pickup failed | We couldn't collect the items. Contact support if you still want to return them. |
+
+Refusal text: `seller_rejected` "The seller rejected the return and it wasn't escalated in time." · `admin_rejected` "Nile reviewed the return and couldn't accept it." · `dispute_upheld` "Nile reviewed the seller's report and the return wasn't refunded."
+Return reasons: Damaged · Wrong item · Not as described · Changed my mind. Payout: Mobile wallet · InstaPay. Refund status (`refund.status`): `pending` Refund scheduled · `processing` Refund in progress · `succeeded` Refunded · `manual` Being processed by our team.
+
+**Ticket status, user view:** `open` Sent · `awaiting_admin` Waiting for support · `awaiting_user` Support replied · `resolved` Solved · `closed` Closed.
+**Ticket category:** Order · Payment · Delivery · Return · Account · Other (sellers also: Seller account).
+**Review status (author):** `published` Published · `hidden` Hidden by Nile.
+**Notification category:** Orders · Deliveries · Support · Offers.
+
+**Error messages** not given in the screens: `REVIEW_NOT_FOUND` / `RETURN_NOT_FOUND` / `SUPPORT_TICKET_NOT_FOUND` → not-found page (route) or refetch + "This item no longer exists."; `NOTIFICATION_NOT_FOUND` → silently refetch the list; `PUSH_ENDPOINT_NOT_ALLOWED` → "This browser's notification service isn't supported."
+
+### 10.7 Questions (Release 2)
+
+| # | Question | Options (recommendation first) |
+|---|---|---|
+| SF-Q-13 | Account navigation with nine entries | **Side navigation on desktop, a single "Account" menu page on phones (Rec)** · tabs |
+| SF-Q-14 | Where the coupon is entered | **Checkout review step only (Rec: the API previews against the cart and the code is sent at checkout; the cart stores nothing [SPEC 19 PR-1])** · also on the cart page, carried to checkout in the URL |
+| SF-Q-15 | Reviews on the product page | **5 first, "Show more reviews" loads 10 more (Rec)** · a separate reviews page |
+| SF-Q-16 | Where "Write a review" appears | **SF-24 "To review" tab plus a button on each eligible item of SF-18 (Rec)** · SF-24 only |
+| SF-Q-17 | Heart tapped while signed out | **Sign in, come back, the product is saved automatically with a toast (Rec)** · sign in and come back, the shopper taps again (as "Add to cart", FQ-6) |
+| SF-Q-18 | When "Return items" is shown on SF-18 | **On delivered seller orders whose delivery date is within the return window (14 days, a config constant kept equal to the backend's `RETURN_WINDOW_DAYS`, like SF-Q-5); SF-26 is authoritative (Rec)** · on every delivered seller order, SF-26 explains when it's too late |
+| SF-Q-19 | Return estimate on SF-26 | **Show an estimate computed from the API's paid unit amounts, labelled "Estimated" (Rec)** · show nothing until the return is created |
+| SF-Q-20 | Notification settings | **Own page `/account/notifications/settings` linked from the bell and the notifications page (Rec)** · inside Profile |

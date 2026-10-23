@@ -1,6 +1,6 @@
 # Design 02 — Data layer: BFF allow-lists, queries, mutations
 
-Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Companion of `01-system-design.md`.
+Status: **v1.0 APPROVED (2026-10-14); v1.1 APPROVED (2026-10-23): §5 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Companion of `01-system-design.md`.
 Generated parts (§1) come from the OpenAPI snapshot (sha256 prefix `4b4e399d39b9b3da`, backend `4ad89a6`) and are regenerated with the snapshot; the BFF code reads the same data from `packages/api/src/allow-lists.ts`, which a unit test compares against this table.
 
 ---
@@ -302,3 +302,315 @@ Notation: key segments after the scope; `stale` = `staleTime`; `poll` = `refetch
 | Seller marks ready | shipment creation and auto-assignment | Admin "Unassigned" queue polls (60 s) |
 | Delivered | ledger entries, balances | Finance screens refetch on visit; "Balances update a few moments after a delivery." note on AG-07/SE-16 [PROPOSED] |
 | Card payment webhook | order `placed` | SF-09 polls |
+
+---
+
+## 5. Release 2 [v1.1 APPROVED 2026-10-23, T-J0]
+
+Inputs: `api-inventory.md` §11, specs 00 §12, 01 §10, 02 §8, 03 §7, 04 §7, design 01 §15. T-J1 regenerates the allow-lists from the pulled snapshot and replaces the "backend source" marks.
+
+### 5.1 BFF allow-list additions per app
+
+Generated from the R2-P5 container's OpenAPI (new operations only) plus the R2-P6/P7 operations read from the backend source. Not reachable through any proxy, as before: the auth routes (the new `GET /api/auth/realtime-token` is an auth action, design 01 §15.2).
+
+#### storefront (+38 operations)
+
+| Method | Path | Session | Idempotency-Key | Source |
+|---|---|---|---|---|
+| POST | `/cart/coupon-preview` | Bearer from session | – | backend source |
+| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
+| GET | `/me/reviewable-items` | Bearer from session | – | VERIFIED |
+| GET | `/me/reviews` | Bearer from session | – | VERIFIED |
+| GET | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
+| PATCH | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
+| DELETE | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
+| GET | `/me/wishlist` | Bearer from session | – | VERIFIED |
+| PUT | `/me/wishlist/{productId}` | Bearer from session | – | VERIFIED |
+| DELETE | `/me/wishlist/{productId}` | Bearer from session | – | VERIFIED |
+| GET | `/me/wishlist/product-ids` | Bearer from session | – | VERIFIED |
+| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
+| GET | `/orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items` | Bearer from session | – | backend source |
+| GET | `/products/{productId}/reviews` | none (public) | – | VERIFIED |
+| GET | `/products/{productId}/reviews/summary` | none (public) | – | VERIFIED |
+| GET | `/push/config` | Bearer from session | – | VERIFIED |
+| GET | `/returns` | Bearer from session | – | backend source |
+| POST | `/returns` | Bearer from session | required, from client | backend source |
+| GET | `/returns/{returnId}` | Bearer from session | – | backend source |
+| POST | `/returns/{returnId}/cancel` | Bearer from session | – | backend source |
+| POST | `/returns/{returnId}/escalate` | Bearer from session | – | backend source |
+| POST | `/reviews` | Bearer from session | – | VERIFIED |
+| GET | `/sellers/{sellerId}` | none (public) | – | VERIFIED |
+| GET | `/support/tickets` | Bearer from session | – | VERIFIED |
+| POST | `/support/tickets` | Bearer from session | required, from client | VERIFIED |
+| GET | `/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
+| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
+| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
+| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
+
+#### seller (+35 operations)
+
+| Method | Path | Session | Idempotency-Key | Source |
+|---|---|---|---|---|
+| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
+| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
+| GET | `/push/config` | Bearer from session | – | VERIFIED |
+| GET | `/seller/coupons` | Bearer from session | – | backend source |
+| POST | `/seller/coupons` | Bearer from session | – | backend source |
+| GET | `/seller/coupons/{couponId}` | Bearer from session | – | backend source |
+| PATCH | `/seller/coupons/{couponId}` | Bearer from session | – | backend source |
+| GET | `/seller/finance/holds` | Bearer from session | – | backend source |
+| POST | `/seller/products/{productId}/images` | Bearer from session | – | VERIFIED |
+| PATCH | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – | VERIFIED |
+| DELETE | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – | VERIFIED |
+| PUT | `/seller/products/{productId}/images/order` | Bearer from session | – | VERIFIED |
+| GET | `/seller/returns` | Bearer from session | – | backend source |
+| GET | `/seller/returns/{returnId}` | Bearer from session | – | backend source |
+| POST | `/seller/returns/{returnId}/approve` | Bearer from session | – | backend source |
+| POST | `/seller/returns/{returnId}/confirm-receipt` | Bearer from session | required, from client | backend source |
+| POST | `/seller/returns/{returnId}/dispute` | Bearer from session | – | backend source |
+| POST | `/seller/returns/{returnId}/reject` | Bearer from session | – | backend source |
+| GET | `/seller/reviews` | Bearer from session | – | VERIFIED |
+| POST | `/seller/reviews/{reviewId}/reply` | Bearer from session | – | VERIFIED |
+| GET | `/support/tickets` | Bearer from session | – | VERIFIED |
+| POST | `/support/tickets` | Bearer from session | required, from client | VERIFIED |
+| GET | `/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
+| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
+| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
+| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
+
+#### admin (+51 operations)
+
+| Method | Path | Session | Idempotency-Key | Source |
+|---|---|---|---|---|
+| GET | `/admin/audit-log` | Bearer from session | – | VERIFIED |
+| GET | `/admin/audit-log/{entryId}` | Bearer from session | – | VERIFIED |
+| PUT | `/admin/categories/{categoryId}/image` | Bearer from session | – | VERIFIED |
+| DELETE | `/admin/categories/{categoryId}/image` | Bearer from session | – | VERIFIED |
+| GET | `/admin/coupons` | Bearer from session | – | backend source |
+| POST | `/admin/coupons` | Bearer from session | – | backend source |
+| GET | `/admin/coupons/{couponId}` | Bearer from session | – | backend source |
+| PATCH | `/admin/coupons/{couponId}` | Bearer from session | – | backend source |
+| POST | `/admin/coupons/{couponId}/block` | Bearer from session | – | backend source |
+| POST | `/admin/coupons/{couponId}/unblock` | Bearer from session | – | backend source |
+| GET | `/admin/customers` | Bearer from session | – | VERIFIED |
+| GET | `/admin/customers/{customerId}` | Bearer from session | – | VERIFIED |
+| GET | `/admin/dashboard` | Bearer from session | – | VERIFIED |
+| POST | `/admin/orders/{orderId}/cancel` | Bearer from session | required, from client | VERIFIED |
+| GET | `/admin/payments/refunds/{refundId}` | Bearer from session | – | backend source |
+| POST | `/admin/payments/refunds/{refundId}/retry` | Bearer from session | – | backend source |
+| GET | `/admin/products/{productId}` | Bearer from session | – | VERIFIED |
+| POST | `/admin/products/{productId}/block` | Bearer from session | – | VERIFIED |
+| POST | `/admin/products/{productId}/unblock` | Bearer from session | – | VERIFIED |
+| GET | `/admin/returns` | Bearer from session | – | backend source |
+| GET | `/admin/returns/{returnId}` | Bearer from session | – | backend source |
+| POST | `/admin/returns/{returnId}/decide` | Bearer from session | – | backend source |
+| POST | `/admin/returns/{returnId}/resolve-dispute` | Bearer from session | required, from client | backend source |
+| GET | `/admin/reviews` | Bearer from session | – | VERIFIED |
+| GET | `/admin/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
+| POST | `/admin/reviews/{reviewId}/hide` | Bearer from session | – | VERIFIED |
+| POST | `/admin/reviews/{reviewId}/reply/hide` | Bearer from session | – | VERIFIED |
+| POST | `/admin/reviews/{reviewId}/reply/unhide` | Bearer from session | – | VERIFIED |
+| POST | `/admin/reviews/{reviewId}/unhide` | Bearer from session | – | VERIFIED |
+| POST | `/admin/seller-orders/{sellerOrderId}/cancel` | Bearer from session | required, from client | VERIFIED |
+| GET | `/admin/support/tickets` | Bearer from session | – | VERIFIED |
+| GET | `/admin/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
+| POST | `/admin/support/tickets/{ticketId}/assign` | Bearer from session | – | VERIFIED |
+| POST | `/admin/support/tickets/{ticketId}/close` | Bearer from session | – | VERIFIED |
+| GET | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
+| POST | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
+| POST | `/admin/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
+| POST | `/admin/support/tickets/{ticketId}/resolve` | Bearer from session | – | VERIFIED |
+| GET | `/admin/users` | Bearer from session | – | VERIFIED |
+| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
+| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
+| GET | `/push/config` | Bearer from session | – | VERIFIED |
+
+#### agent (+9 operations)
+
+| Method | Path | Session | Idempotency-Key | Source |
+|---|---|---|---|---|
+| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
+| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
+| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
+| GET | `/push/config` | Bearer from session | – | VERIFIED |
+
+The R1 user actions (`/admin/users/{userId}/suspend`, `/reactivate`, `/resend-invite`) are already on the admin allow-list; AD-24 starts using them for customers and agents (AD-Q-10).
+
+### 5.2 Query registry additions
+
+Notation as §2. "Live" names the realtime messages that invalidate the key (§5.3); without a socket the listed polling applies.
+
+#### Shared (`@nile/notifications`, `@nile/support-screens`, `@nile/media`; scope = the app's)
+
+| Key | Endpoint | stale / poll | Live |
+|---|---|---|---|
+| `notifications.unreadCount` | `GET /me/notifications/unread-count` | 0; poll 60 s without socket | `notification.created` |
+| `notifications.list(filter)` | `GET /me/notifications` | 0, infinite | `notification.created` |
+| `notifications.preferences` | `GET /me/notification-preferences` | 5 min | – |
+| `push.config` | `GET /push/config` | Infinity (per session) | – |
+| `media.detail(mediaId)` | `GET /media/{mediaId}` | 0; polled by `waitForMedia` only | `media.updated` |
+| `support.list(filter)` | `GET /support/tickets` (admin: `/admin/support/tickets`) | 0, infinite | `support.ticket_updated`, `support.message_created` |
+| `support.detail(ticketId)` | `GET /support/tickets/{id}` (admin variant) | 0 | `support.ticket_updated` (that id) |
+| `support.messages(ticketId)` | `GET …/{id}/messages` | 0, infinite (newest first, reversed in the view) | `support.message_created` (that id); poll 10 s without socket while open |
+
+#### Storefront (scope `storefront`)
+
+| Key | Endpoint | stale | Used by | Live |
+|---|---|---|---|---|
+| `sellers.public(sellerId)` | `GET /sellers/{sellerId}` | 5 min (server `revalidate: 300`) | SF-22 | – |
+| `reviews.summary(productId)` | `GET /products/{id}/reviews/summary` | 5 min | SF-05 | – |
+| `reviews.list(productId, params)` | `GET /products/{id}/reviews` | 1 min, infinite | SF-05 | – |
+| `wishlist.ids` | `GET /me/wishlist/product-ids` | 5 min (session-wide) | hearts | – |
+| `wishlist.list` | `GET /me/wishlist` | 0, infinite | SF-23 | – |
+| `myReviews.reviewable` | `GET /me/reviewable-items` | 1 min, infinite | SF-18, SF-24, SF-25 | `seller_order.updated` (delivered) |
+| `myReviews.list` / `.detail(id)` | `GET /me/reviews`, `/me/reviews/{id}` | default | SF-24, SF-25 | – |
+| `coupon.preview(code, cartVersion)` | `POST /cart/coupon-preview` (read-like `POST`, called through `useQuery` with `retry: false`) | 0 | SF-07 | – |
+| `returns.returnable(orderId, sellerOrderId)` | `GET /orders/{o}/seller-orders/{so}/returnable-items` | 0 | SF-26 | – |
+| `returns.list(status[])` / `.detail(id)` | `GET /returns`, `/returns/{id}` | default | SF-27, SF-28 | `return.updated` |
+| `orders.detail(orderId)` (R1 key) | – | – | SF-18 | `order.updated`, `seller_order.updated`, `shipment.updated`, `payment.updated`, `return.updated` (that order) |
+
+#### Seller (scope `seller`)
+
+| Key | Endpoint | stale | Used by | Live |
+|---|---|---|---|---|
+| `returns.list(tab)` / `.detail(id)` | `GET /seller/returns`, `/seller/returns/{id}` | default | SE-06, SE-18, SE-19 | `return.updated` |
+| `reviews.list(params)` | `GET /seller/reviews` | default, infinite | SE-20 | `notification.created` of type `review_received` [PROPOSED] |
+| `coupons.list(status)` / `.detail(id)` | `GET /seller/coupons`, `/seller/coupons/{id}` | default | SE-21…SE-23 | – |
+| `finance.holds` | `GET /seller/finance/holds` | 0 (read on every visit, DQ-9) | SE-16 | – |
+| `orders.*` (R1 keys) | – | – | SE-06, SE-14, SE-15 | `seller_order.placed`, `seller_order.updated` |
+
+#### Admin (scope `admin`)
+
+| Key | Endpoint | stale | Used by | Live |
+|---|---|---|---|---|
+| `dashboard` | `GET /admin/dashboard` | 60 s (matches the server cache) | AD-02 | – |
+| `users.list(params)` | `GET /admin/users` | default, infinite | AD-24 | – |
+| `customers.list(params)` / `.detail(id)` | `GET /admin/customers*` | default | AD-25, AD-26 | – |
+| `products.detail(id)` | `GET /admin/products/{id}` | 0 | AD-27 | – |
+| `reviews.list(params)` / `.detail(id)` | `GET /admin/reviews*` | default | AD-30, AD-31 | – |
+| `returns.list(params)` / `.detail(id)` | `GET /admin/returns*` | default | AD-02, AD-32, AD-33 | `return.updated` (escalated, disputed) |
+| `refunds.detail(id)` | `GET /admin/payments/refunds/{id}` | 0, `gcTime` 0 (holds COD payout details: never kept after leaving AD-34) | AD-34 | – |
+| `coupons.list(params)` / `.detail(id)` | `GET /admin/coupons*` | default | AD-35…AD-37 | – |
+| `audit.list(params)` / `.detail(id)` | `GET /admin/audit-log*` | default | AD-38, AD-39 | – |
+
+#### Agent (scope `agent`)
+R1 shipment keys gain the `kind` parameter; live: `shipment.assigned`, `shipment.unassigned`, `shipment.updated`; the 30 s polling only without a socket.
+
+### 5.3 Realtime invalidation map (per app, `@nile/realtime` `invalidationMap`)
+
+| Message | storefront | seller | admin | agent |
+|---|---|---|---|---|
+| `order.updated` | `orders.list`, `orders.detail(orderId)` | – | – | – |
+| `seller_order.placed` | – | `orders.list` | – | – |
+| `seller_order.updated` | `orders.detail(orderId)`, `orders.list`, `myReviews.reviewable` | `orders.list`, `orders.detail(sellerOrderId)` | – | – |
+| `shipment.updated` | `orders.detail(orderId)` | – | – | `shipments.list`, `shipments.detail(shipmentId)` |
+| `shipment.assigned` / `shipment.unassigned` | – | – | – | `shipments.list`, `shipments.detail(shipmentId)`, `profile` (active count) |
+| `payment.updated` | `orders.detail(orderId)`, `orders.list` | – | – | – |
+| `return.updated` | `returns.list`, `returns.detail(returnId)`, `orders.detail(orderId)` | `returns.list`, `returns.detail(returnId)`, `orders.detail(sellerOrderId)`, `finance.*` | `returns.list`, `returns.detail(returnId)` | – |
+| `media.updated` | `media.detail(mediaId)` | same | same | – |
+| `support.ticket_updated` | `support.list`, `support.detail(ticketId)` | same | same + `dashboard` | – |
+| `support.message_created` | `support.messages(ticketId)`, `support.list` | same | same | – |
+| `notification.created` | `notifications.*` | `notifications.*` | `notifications.*` | `notifications.*` |
+| `session.ended` | handled by the connection (design 01 §15.3), no invalidation | | | |
+| after any (re)connect | every active query of the scope | same | same | same |
+
+### 5.4 Mutation catalogue additions
+
+#### Shared
+
+| Mutation | Endpoint | Idem | Cache effect |
+|---|---|---|---|
+| Request upload / complete | `POST /media/uploads`, `/media/uploads/{id}/complete` | – (never auto-retried after a definite answer) | none (tile state) |
+| Mark notification read / all read | `POST /me/notifications/{id}/read`, `/read-all` | – | set `notifications.list` item / all `read: true`; inv `notifications.unreadCount` |
+| Save preferences | `PUT /me/notification-preferences` (changed categories only) | – | set `notifications.preferences` |
+| Register / unregister push | `POST /me/push-subscriptions`, `/unregister` | – | none |
+| Open ticket | `POST /support/tickets` | Idem | inv `support.list`; navigate to the thread |
+| Post message (user / admin) | `POST …/tickets/{id}/messages` | Idem (one key per message intent) | append to `support.messages(id)`; inv `support.detail(id)`, `support.list` |
+| Mark ticket read | `POST …/tickets/{id}/read` | – | inv `support.list` (unread mark) |
+
+#### Storefront
+
+| Mutation | Endpoint | Idem | Cache effect |
+|---|---|---|---|
+| Wishlist add / remove | `PUT` / `DELETE /me/wishlist/{productId}` | – (idempotent; retried once on network failure) | optimistic `wishlist.ids`; inv `wishlist.list` |
+| Write review | `POST /reviews` | – (unique rule) | inv `myReviews.*`, `reviews.*(productId)` |
+| Edit / delete review | `PATCH` / `DELETE /me/reviews/{id}` | – | set / remove `myReviews.detail(id)`; inv `myReviews.list`, `myReviews.reviewable`, `reviews.*(productId)` |
+| Checkout (R1) | `POST /checkout` + `couponCode` | Idem (new key when the coupon or total changes) | as R1 |
+| Request return | `POST /returns` | Idem | set `returns.detail(id)`; inv `returns.list`, `returns.returnable(…)`, `orders.detail(orderId)` |
+| Cancel / escalate return | `POST /returns/{id}/cancel`, `/escalate` | – (state-guarded) | set `returns.detail(id)`; inv `returns.list` |
+
+#### Seller
+
+| Mutation | Endpoint | Idem | Cache effect |
+|---|---|---|---|
+| Add / edit / reorder / remove image | `POST`, `PATCH`, `PUT …/order`, `DELETE /seller/products/{id}/images*` | – | set the images of `products.detail(id)` from the response (add, reorder); inv `products.detail(id)`, `products.list` (edit, remove) |
+| Approve / reject return | `POST /seller/returns/{id}/approve`, `/reject` | – | inv `returns.detail(id)`, `returns.list`, `overview` |
+| Confirm receipt | `POST …/confirm-receipt` | Idem | inv `returns.*`, `finance.*`, `products.*` (restocked) |
+| Dispute | `POST …/dispute` | – | inv `returns.*` |
+| Reply to review | `POST /seller/reviews/{id}/reply` | – | replace the row in `reviews.list` |
+| Create / edit coupon | `POST /seller/coupons`, `PATCH …/{id}` | – | set `coupons.detail(id)`; inv `coupons.list` |
+
+#### Admin
+
+| Mutation | Endpoint | Idem | Cache effect |
+|---|---|---|---|
+| Cancel seller order / order | `POST /admin/seller-orders/{id}/cancel`, `/admin/orders/{id}/cancel` | Idem | set `orders.detail(orderId)`; inv `orders.list`, `shipments.*`, `refunds.*` |
+| Block / unblock product | `POST /admin/products/{id}/block`, `/unblock` | – | set `products.detail(id)` |
+| Category image set / remove | `PUT` / `DELETE /admin/categories/{id}/image` | – | inv `categories.adminTree` |
+| Assign / resolve / close ticket | `POST /admin/support/tickets/{id}/assign`, `/resolve`, `/close` | – | set `support.detail(id)`; inv `support.list` |
+| Hide / show review or reply | `POST /admin/reviews/{id}/hide`, `/unhide`, `/reply/hide`, `/reply/unhide` | – | set `reviews.detail(id)`; inv `reviews.list` |
+| Decide return / resolve dispute | `POST /admin/returns/{id}/decide`, `/resolve-dispute` | – / Idem | inv `returns.*`, `dashboard` |
+| Record / retry refund | `POST /admin/payments/refunds/{id}/record`, `/retry` | Idem / – | set `refunds.detail(id)`; inv `refunds.list`, `payments.*`, `orders.detail` |
+| Create / edit / block / unblock coupon | `POST /admin/coupons`, `PATCH`, `/block`, `/unblock` | – | set `coupons.detail(id)`; inv `coupons.list` |
+| Suspend / reactivate customer, resend invite | R1 user endpoints | – | inv `users.list`, `customers.*` |
+
+#### Agent
+
+| Mutation | Endpoint | Idem | Cache effect |
+|---|---|---|---|
+| Return pickup: picked up / failed attempt / handed to the seller | `POST /agent/shipments/{id}/picked-up`, `/failed-attempt`, `/delivered` (empty body) | – / Idem / Idem (as R1) | set `shipments.detail(id)`; inv `shipments.list`, `profile` |
+
+### 5.5 Asynchronous effects the UI must expect (Release 2) [SPEC]
+
+| After | Updated later by the backend worker | UI rule |
+|---|---|---|
+| Upload completed | image processed (`ready` / `failed`, 1–3 s) | `waitForMedia` (socket or polling, design 01 §15.4) |
+| Review created / edited / hidden | product and seller rating projections | Ratings on cards may lag a few seconds; no polling |
+| Return approved | return shipment created and auto-assigned | Return detail shows "Approved" until `return.updated` |
+| Return completed | refund created; Kashier refund job (minutes, retries); ledger bookings | Return / order show the refund status as the API gives it; finance screens read on visit |
+| Seller order delivered | hold row; release after 14 days (job) | SE-16 "On hold" reads on visit |
+| Admin cancel | Kashier refund flagged and sent automatically | AD-15 refunds block refetched after the cancel; later states arrive by refetch |
+| Push notification | sent by the worker after the in-app row | The bell (in-app) is the source of truth |
+| Dashboard | cached 60 s server-side | "Figures from {generatedAt}" |

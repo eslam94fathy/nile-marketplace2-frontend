@@ -25,6 +25,8 @@ Read this whole file before every task. These rules are binding. If a rule confl
 | API types / client | `openapi-typescript` + `openapi-fetch`, generated from a committed OpenAPI snapshot |
 | Session crypto | `jose` (encrypted session cookie) |
 | Money | `decimal.js` (never JS `number` for money) |
+| Realtime (R2) | `socket.io-client` **4.8.4** (exact; the backend's version), imported only by `@nile/realtime` |
+| Push (R2) | Standard Web Push through a hand-written service worker per app (`public/sw.js`, no library) |
 | Tests | Vitest, Testing Library, MSW, Playwright, `@axe-core/playwright` |
 | Lint / format | ESLint **9.39.5** (see TB-1) with `eslint-config-next` core-web-vitals (react, react-hooks, jsx-a11y, import, @next/next), `typescript-eslint` strict + stylistic type-checked, `@tanstack/eslint-plugin-query` (from T-B5), import boundaries (as packages appear); Prettier 3. Shared config: `@nile/config/eslint` |
 | TypeScript | **6.0.x** (typescript-eslint supports TypeScript < 6.1; TypeScript 7 would break type-aware linting) |
@@ -49,6 +51,10 @@ packages/
   ui/           # shadcn/ui components, tokens, theme, data table
   config/       # tsconfig, eslint, prettier, vitest presets
   test-utils/   # MSW handlers, factories, render helpers
+  media/        # (R2) image upload state machine, waitForMedia
+  realtime/     # (R2) socket connection, dedupe, invalidation map, ticket rooms
+  notifications/   # (R2) bell, notification list, preferences, push subscription (shared screens)
+  support-screens/ # (R2) ticket list, new ticket, thread (storefront, seller, admin)
 e2e/            # Playwright, per role, against the real backend
 docs/frontend/  # discovery docs, spec/, design/
 ```
@@ -78,6 +84,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 ## 4. Authentication and session (architecture §5)
 
 - **Tokens never reach browser JavaScript.** Access and refresh tokens live only in an encrypted, `HttpOnly; Secure; SameSite=Lax; Path=/` cookie named `__Host-nile_<app>_session`, read and written only by the app's server code.
+  - **One exception (R2, FR2-Q1):** the socket handshake needs the access token. `GET /api/auth/realtime-token` (CSRF-checked, `no-store`, never refreshes) returns the current access token, which only `@nile/realtime` holds, in memory, for the handshake: never in storage, React state, the query cache, logs or error reports. The refresh token never leaves the server (design 01 §15.2).
 - The browser calls the backend **only** through the app's BFF routes (`/api/auth/*`, `/api/bff/*`). Each app's BFF has a path/method **allow-list** for its role.
 - **Refresh is serialised:** only `POST /api/auth/refresh` refreshes; browsers serialise it across tabs (Web Locks); Server Components never refresh. Reuse of an old refresh token revokes the whole session (backend has no grace window).
 - Each app accepts only its own role at login; another role's token is discarded at once.
@@ -93,7 +100,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Lists: `useInfiniteQuery` on `meta.nextCursor`.
 - Retries: queries retry only on network errors and `5xx`; mutations never auto-retry unless idempotent with the same key.
 - Mutations update the cache from the response when the API returns the resource, otherwise invalidate precise keys.
-- Polling only where a spec says so, only while the tab is visible.
+- Polling only where a spec says so, only while the tab is visible. From R2 a realtime message invalidates the keys of the app's invalidation map (design 02 §5.3) and polling runs only while no socket is connected; after a reconnect everything on screen is refetched. Socket messages are hints, never data.
 - Clear the whole cache on logout (`clearPrivateQueries` keeps only `public` keys).
 - TanStack Query 5.104+: never `prefetchQuery`/`fetchQuery`/`fetchInfiniteQuery`/`isServer` (deprecated; lint fails). Use `queryClient.query(options)` (add `.catch(noop)` for a prefetch that must not throw), `queryClient.infiniteQuery(options)`, `environmentManager.isServer()`.
 
@@ -111,7 +118,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Accessibility target WCAG 2.2 AA: keyboard-complete, visible focus, labelled controls, correct landmarks, no colour-only meaning. axe: zero serious/critical violations.
 - Plain-text API content (e.g. product descriptions) is rendered as text, never as HTML. No `dangerouslySetInnerHTML` with API data.
 - Copy for enum values and error codes comes from central maps (`packages/domain/labels`, error-message map), never inline literals.
-- No product images in R1 (backend has none).
+- Images (R2) come as `ImageDto` and render with `<NileImage>` from `packages/ui` (`srcset` of the API widths, intrinsic size, brand placeholder for `null`); no `next/image` optimiser. Private image URLs (support attachments, return photos) expire: never stored, logged or put in links. Files go from the browser to object storage only through `@nile/api` `storageUpload`, never through the BFF.
 
 ## 8. Money, dates, numbers
 
@@ -122,7 +129,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 ## 9. Security
 
 1. Patched Next.js; `npm audit` in CI.
-2. Nonce-based CSP from `proxy.ts`, no `unsafe-inline` scripts, `frame-ancestors 'none'`, HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
+2. Nonce-based CSP from `proxy.ts`, no `unsafe-inline` scripts, `frame-ancestors 'none'`, HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`. R2 adds only env-configured origins: media (`img-src`, uploads in `connect-src`), the realtime `wss:` origin, `worker-src 'self'`, `manifest-src 'self'` (design 01 §15.7).
 3. `Cache-Control: no-store` on every authenticated response; no authenticated data in any shared cache.
 4. Redirect targets (`returnTo`) accept only same-origin relative paths. External URLs from the API (Kashier `checkoutUrl`) are used only after checking `https:`.
 5. No feature is "secured" only by hiding it in the UI.
@@ -291,6 +298,9 @@ Agent app gets the admin app's test harness and approved form/query packages · 
 
 ### 14.1ao Decided (2026-10-23, Release 2 plan)
 `docs/frontend/release-2-plan.md` approved with every recommendation (FR2-Q1…FR2-Q9), against backend `main` `ecbcd19`: the socket gets the access token from a same-origin BFF route `GET /api/auth/realtime-token`, held in memory for the handshake only, never stored; the refresh token stays server-side (written exception to §4 in T-J0) · web app manifest with brand icons in every app, still no offline mode · own `<NileImage>` with `srcset` from the API widths, no `next/image` optimiser; §7 "no product images" lifted · per-app notification link map, unknown links shown without a link · tokens re-based on the brand palette (primary teal `#1F6F80`, navy for headings/header, gold decorative only), token page re-approved in T-J2 · no chart dependency (table + inline SVG bars) · new customer pages under `/account/*`, seller page `/s/[sellerId]` · FR2-Q8 changed by the user the same day: phase i stays unmerged for now and phase j branches from `main` without T-I1…T-I3 (see TB-4) · uploads start as files are picked, submit waits until all are `ready` · phases j (foundation), k (storefront), l (seller), m (admin), n (agent), o (R2 hardening).
+
+### 14.1ap Decided (2026-10-23, T-J0)
+Release 2 specs and design approved with every recommendation and [PROPOSED] item: spec 00 v1.1 §12, spec 01 v1.2 §10 (SF-Q-13…20), spec 02 v1.1 §8 (SE-Q-9…14), spec 03 v1.1 §7 (AD-Q-10…17), spec 04 v1.1 §7 (AG-Q-7…8), design 01 v1.1 §15 (DQ-10…14, R-53…R-57), design 02 v1.1 §5, `api-inventory.md` §11, `workflows.md` §6 · notable: customer pages under `/account/*`, coupon on the checkout review step only, heart while signed out saves after sign-in, image reorder by menu (no drag and drop), customer suspension and invite resend from the admin user directory (AD-4 reversed), no admin product search (entry from orders, reviews, seller store), dashboard without timed polling, socket closed after 5 min hidden, shared `@nile/notifications` and `@nile/support-screens` packages, push tested by a manual checklist.
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
