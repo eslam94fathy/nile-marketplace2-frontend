@@ -470,6 +470,7 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 - **Tests:** axe in all E2E specs. **Exclusions / DoD:** formal certification excluded; global DoD.
 
 ### T-I3 Performance
+- **Status (2026-10-16):** tooling and budgets in place (Lighthouse CI from `npm run perf`, nightly `perf.yml`); bundle analysis done with fixes (−59 KB compressed JavaScript per storefront page); polling and rate-limit review written (`docs/frontend/performance.md`). Local lab numbers on backend-free pages are above the LCP and TBT budgets on this machine (noisy, indicative); **the acceptance verdict on catalog, product and cart needs the first nightly (or local) run with the backend**. Decisions: design 01 R-52.
 - **Scope:** Web Vitals budgets for storefront (LCP < 2.5 s, INP < 200 ms, CLS < 0.1 on a mid-range mobile profile), bundle analysis, query/polling cost review against backend rate limits.
 - **Dependencies:** phases e–g. **Files:** config + targeted fixes.
 - **Acceptance criteria:** Lighthouse CI budgets green on catalog, product, cart pages.

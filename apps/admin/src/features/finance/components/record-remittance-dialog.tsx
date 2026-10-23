@@ -10,7 +10,7 @@ import { Field, Input, Notice, Select, Textarea, toast } from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { agentKeys, agentPickerQuery } from '@/features/lookups';
 import { createRemittance, financeKeys, ownerAccountQuery, type CreateRemittanceBody } from '../api';
 import { FINANCE_COPY as COPY } from '../copy';

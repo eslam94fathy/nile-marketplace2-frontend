@@ -17,7 +17,7 @@ import { applyServerErrors } from '@nile/query';
 import { Button, Field, FormAlert, PasswordInput } from '@nile/ui';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { publicEnv } from '@/lib/env/public';
 import { INVITE_COPY } from '../copy';
 import { goToSignIn } from '../lib/navigation';

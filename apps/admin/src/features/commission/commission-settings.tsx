@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError, unwrap } from '@nile/api';
 // useSubmitFailure only: FailureAlert needs the sign-in screens' provider, which portal pages don't have.
 import { useSubmitFailure } from '@nile/auth-screens';
-import { fields, formatDateTime, formatRatePercent, ratePercentValue } from '@nile/domain';
+import { formatDateTime, formatRatePercent, ratePercentValue, percentRate } from '@nile/domain';
 import { queryKey } from '@nile/query';
 import {
   Button,
@@ -20,7 +20,7 @@ import {
 import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { browserApi } from '@/lib/browser-api';
 
 // AD-06 Default commission (spec 03): the rate new sellers get; existing sellers keep theirs [SPEC 05].
@@ -58,7 +58,7 @@ function settingsQuery() {
   });
 }
 
-const schema = z.object({ rate: fields.percentRate });
+const schema = z.object({ rate: percentRate });
 
 /** AD-06: shows the current default and changes it after a confirmation (it affects future sellers only). */
 export function CommissionSettings() {

@@ -1,5 +1,5 @@
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 import type { AdminAgent } from '@/features/lookups';
 import type { CreateAgentBody, UpdateAgentBody } from './api';
 

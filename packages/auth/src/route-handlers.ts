@@ -12,7 +12,7 @@ import {
 } from '@nile/api';
 import type { Logger } from '@nile/logger';
 import type { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import * as z from 'zod';
 import { APP_ROLES, BFF_ROUTE_PREFIX, DEVICE_NAMES, type AuthAppConfig } from './config';
 import { clearSessionCookies, cookieNames, writeSessionCookies } from './cookies';
 import { checkCsrf } from './csrf';

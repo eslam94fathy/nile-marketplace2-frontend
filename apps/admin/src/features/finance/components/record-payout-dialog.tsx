@@ -17,7 +17,7 @@ import { Field, Input, Label, Notice, Select, toast } from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { useAgentNames, useSellerNames } from '@/features/lookups';
 import { createPayout, financeKeys, ownerAccountQuery, type CreatePayoutBody } from '../api';
 import { FINANCE_COPY as COPY } from '../copy';

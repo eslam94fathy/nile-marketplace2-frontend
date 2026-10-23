@@ -20,3 +20,7 @@ test-results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Lighthouse CI (T-I3)
+.lighthouseci/
+lighthouse-report/

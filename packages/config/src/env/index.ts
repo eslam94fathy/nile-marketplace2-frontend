@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /**
  * Environment schemas shared by the four apps (CLAUDE.md §11, design 01 §9).

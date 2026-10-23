@@ -1,0 +1,115 @@
+# Performance (T-I3, design 01 R-52): Lighthouse CI budgets on the storefront's home, a category listing, a
+# product page and the cart (mobile profile, 3 runs, median), against the backend pinned in backend.lock.json
+# with its sample catalog. Same throwaway backend stack as contract.yml; no backend file is changed.
+# Needs the repository secret BACKEND_REPO_TOKEN (read-only token for the backend repository, DQ-6).
+name: Performance
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # nightly, after the contract run
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # Job values win over the apps' .env.local files (written by dev:env for the default local ports).
+      NILE_API_BASE_URL: http://localhost:3000
+      MAILPIT_URL: http://localhost:8025
+      E2E_ADMIN_EMAIL: e2e-admin@example.test
+      # Throwaway stack that lives only for this job: not a secret.
+      E2E_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Pinned backend
+        id: backend
+        run: |
+          echo "repo=$(jq -r .repo backend.lock.json)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(jq -r .commit backend.lock.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Check the backend token
+        env:
+          BACKEND_REPO_TOKEN: ${{ secrets.BACKEND_REPO_TOKEN }}
+        run: |
+          if [ -z "$BACKEND_REPO_TOKEN" ]; then
+            echo "::error::Repository secret BACKEND_REPO_TOKEN is missing (read-only token for ${{ steps.backend.outputs.repo }}, design 01 DQ-6)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ steps.backend.outputs.repo }}
+          ref: ${{ steps.backend.outputs.commit }}
+          token: ${{ secrets.BACKEND_REPO_TOKEN }}
+          path: backend
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Backend .env
+        working-directory: backend
+        run: |
+          cat > .env <<'EOF'
+          PAYMENT_GATEWAY=fake
+          EMAIL_PROVIDER=mailpit
+          INVITE_URL_BASE=http://localhost:4100/invite
+          KASHIER_REDIRECT_URL=http://localhost:4100/checkout/payment-return
+          RATE_LIMIT_STRICT_AUTH_POINTS=1000
+          EOF
+          node scripts/dev-env.js
+
+      - name: Backend stack
+        working-directory: backend
+        run: |
+          docker compose up -d --build --wait postgres redis rabbitmq mailpit api worker
+          timeout 60 sh -c 'until curl -fsS "$NILE_API_BASE_URL/health/ready" > /dev/null; do sleep 2; done'
+
+      - name: Seed (sample catalog, test admin)
+        working-directory: backend
+        run: |
+          npm ci
+          npm run seed:dev
+          docker compose run --rm --no-deps api node dist/seed-admin.js --email "$E2E_ADMIN_EMAIL"
+
+      - name: Install
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Build the storefront
+        run: |
+          npm run dev:env
+          npm run build -w @nile/storefront
+
+      - name: Lighthouse CI
+        run: npm run perf
+
+      - name: Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: |
+            lighthouse-report/
+            .lighthouseci/
+          if-no-files-found: ignore
+
+      - name: Backend logs
+        if: failure()
+        working-directory: backend
+        run: docker compose logs --no-color --tail 300 api worker

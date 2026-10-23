@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 import { AUTH_COPY } from './copy';
 
 // One schema per form (CLAUDE.md §6), from the shared field rules that mirror the backend DTOs. Passwords are

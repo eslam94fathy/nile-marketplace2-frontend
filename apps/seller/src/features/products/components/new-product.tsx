@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { profileQuery, useNotApprovedHandler, useSellerAccess } from '@/features/profile';
 import { browserApi } from '@/lib/browser-api';
 import { productPath, ROUTES } from '@/lib/routes';

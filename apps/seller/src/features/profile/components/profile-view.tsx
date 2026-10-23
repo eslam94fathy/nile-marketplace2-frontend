@@ -23,7 +23,7 @@ import {
 } from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { browserApi } from '@/lib/browser-api';
 import { profileKeys, profileQuery, updateProfile, type SellerProfile } from '../api';
 import { PROFILE_PAGE_COPY as COPY } from '../copy';

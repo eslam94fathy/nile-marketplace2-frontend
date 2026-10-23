@@ -1,5 +1,5 @@
 import { AGENT_STATUSES, type AgentStatus } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // AD-09 filters, URL ⇄ API: `?status=&shift=&governorate=&name=`. Invalid values are dropped, never sent
 // (R-28). No status is the Active tab (spec 03 AD-09 lists it first); `status=all` is every status.

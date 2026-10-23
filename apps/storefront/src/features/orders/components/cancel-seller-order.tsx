@@ -10,7 +10,7 @@ import { Button, ConfirmDialog, Field, FormAlert, Textarea, toast } from '@nile/
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { browserApi } from '@/lib/browser-api';
 import { orderKeys, type Order } from '../api';
 import { ORDERS_COPY } from '../copy';

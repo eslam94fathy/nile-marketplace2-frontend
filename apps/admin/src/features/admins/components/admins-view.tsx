@@ -29,7 +29,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { ROUTES } from '@/lib/routes';
 import {
   adminKeys,

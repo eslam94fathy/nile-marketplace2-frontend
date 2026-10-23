@@ -24,6 +24,7 @@ export {
 } from './dates';
 export * from './labels';
 export * as fields from './fields';
+export { percentRate } from './rate-field';
 export { sellerOrderActions, type SellerOrderAction } from './status/seller-order';
 export {
   agentShipmentActions,

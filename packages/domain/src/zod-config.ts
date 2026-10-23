@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 // The page CSP allows no `eval` (design 01 §10, T-I1). Zod 4 otherwise probes `Function("")` and compiles
 // object parsers with it: blocked, that falls back silently but reports a violation on every page. Without

@@ -1,5 +1,5 @@
 import { cairoDayBounds, isCalendarDay, SELLER_STATUSES, type SellerStatus } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // AD-04 filters, URL ⇄ API: `?status=&name=&governorate=&from=&to=`. Invalid values are dropped, never sent
 // (R-28). No status is the "Pending" tab (the work queue, oldest first: decided 2026-10-15, as seller orders);

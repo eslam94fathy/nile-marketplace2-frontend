@@ -4,7 +4,7 @@ import { categoryAttributesQuery } from '@nile/query';
 import { Button, Field, FormAlert, Input, Select, Textarea, UI_COPY } from '@nile/ui';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { browserApi } from '@/lib/browser-api';
 import type { CategoryNode } from '../api';
 import { PRODUCTS_COPY as COPY } from '../copy';

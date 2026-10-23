@@ -9,7 +9,7 @@ import { Button, FormAlert, toast } from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useNotApprovedHandler, useSellerAccess } from '@/features/profile';
 import { browserApi } from '@/lib/browser-api';
 import { productKeys, updateProduct, type SellerProduct } from '../api';

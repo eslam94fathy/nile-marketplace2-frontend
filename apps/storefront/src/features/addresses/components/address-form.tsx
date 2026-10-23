@@ -8,7 +8,7 @@ import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Checkbox, Field, FormAlert, Input, PhoneInput, Select } from '@nile/ui';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { createAddress, updateAddress, type Address, type Governorate } from '../api';
 import { ADDRESS_COPY } from '../copy';
 import { isDeliverable } from '../lib/address-text';

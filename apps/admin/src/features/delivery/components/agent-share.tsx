@@ -4,16 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
 // useSubmitFailure only: FailureAlert needs the sign-in screens' provider, which portal pages don't have.
 import { useSubmitFailure } from '@nile/auth-screens';
-import { fields, formatDateTime, formatRatePercent, ratePercentValue } from '@nile/domain';
+import { formatDateTime, formatRatePercent, ratePercentValue, percentRate } from '@nile/domain';
 import { Button, ConfirmDialog, ErrorState, Field, FormAlert, Input, Skeleton, toast } from '@nile/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { deliveryKeys, deliverySettingsQuery, setAgentFeeShareRate, type DeliverySettings } from '../api';
 import { DELIVERY_COPY as COPY } from '../copy';
 
-const schema = z.object({ rate: fields.percentRate });
+const schema = z.object({ rate: percentRate });
 
 /** AD-08 item 1: the agent's share of the delivery fee, changed after a confirmation [SPEC 11 UC-DE-7]. */
 export function AgentShare() {

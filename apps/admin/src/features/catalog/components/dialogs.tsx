@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
 import { Field, Input, toast } from '@nile/ui';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import {
   createAttribute,
   createCategory,

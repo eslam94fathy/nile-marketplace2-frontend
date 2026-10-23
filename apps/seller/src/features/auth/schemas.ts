@@ -1,7 +1,7 @@
 import type { Schema } from '@nile/api';
 import { confirmationMatches } from '@nile/auth-screens';
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Seller registration (spec 02 SE-02), mirroring `RegisterSellerDto` and `PickupAddressInput`. Passwords are
 // never trimmed; the email is trimmed and lower-cased; the phone becomes E.164.

@@ -4,6 +4,7 @@
   "private": true,
   "description": "Design system: tokens, Tailwind theme, shadcn/ui components owned here",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./cn": "./src/cn.ts",

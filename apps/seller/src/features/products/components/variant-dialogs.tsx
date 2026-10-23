@@ -20,7 +20,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch, type FieldPath } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useNotApprovedHandler } from '@/features/profile';
 import {
   createVariant,

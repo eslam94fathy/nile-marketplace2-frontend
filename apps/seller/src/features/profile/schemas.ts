@@ -1,5 +1,5 @@
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 import type { SellerProfile, SellerProfilePatch } from './api';
 
 // SE-07-A1 Business details, mirroring `UpdateSellerProfileDto` and `PickupAddressInput` (same rules as SE-02).

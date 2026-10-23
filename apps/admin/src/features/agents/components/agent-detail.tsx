@@ -33,7 +33,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import {
   adminGovernoratesQuery,
   agentKeys,

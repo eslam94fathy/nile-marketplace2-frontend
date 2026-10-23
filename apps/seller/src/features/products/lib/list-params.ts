@@ -1,5 +1,5 @@
 import { PRODUCT_STATUSES, type ProductStatus } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // SE-08 filters, URL ⇄ API (spec 02 SE-08): `?status=&category=&name=`. Values that aren't valid are dropped,
 // never sent (R-28): the API would refuse them, and a bad link should still show the list.

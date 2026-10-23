@@ -131,6 +131,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 - TS flags: `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `noFallthroughCasesInSwitch`.
 - No `any` (use `unknown` and narrow); no non-null `!` on data that can be missing.
+- Zod: `import * as z from 'zod'` (`import type * as z` for types), never `import { z }`: Turbopack keeps every Zod locale for the named form (T-I3, −59 KB per page). Workspace packages declare `sideEffects`.
 - Server Components by default; `"use client"` only for interactive leaves.
 - No magic strings: routes, query keys, cookie/header names, storage keys, polling intervals and labels are constants.
 - Naming: files `kebab-case.tsx`, components `PascalCase`, hooks `useX`, constants `UPPER_SNAKE_CASE`.
@@ -168,6 +169,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Backend helpers for local and E2E work: `npm run seed:dev` (sample data), Mailpit at `http://localhost:8025` (OTP and invite emails), `PAYMENT_GATEWAY=fake` + `npm run dev:kashier-webhook` (signed Kashier webhooks).
 - E2E runs need `ACCESS_TOKEN_TTL_MINUTES=2` in the backend's own `.env` (session refresh test, design 01 R-21).
 - Card payment E2E (T-F4) needs the backend with `PAYMENT_GATEWAY=fake`, `NILE_BACKEND_DIR` in the shell (the built backend checkout, whose `scripts/dev-kashier-webhook.js` signs the webhook; skipped without it), and `KASHIER_PAYMENT_TTL_MINUTES=1` in the backend's `.env` for the expired path (skipped with a longer window) (design 01 R-33).
+- Performance run (T-I3): `npm run build -w @nile/storefront`, then `npm run perf` with the same backend and `E2E_*` settings as E2E (Lighthouse CI; reports in `lighthouse-report/`).
 - Contract and E2E runs need `NILE_API_BASE_URL`, `MAILPIT_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` in the shell, and a test admin seeded once in the backend (`docker compose run --rm --no-deps api node dist/seed-admin.js --email e2e-admin@example.test`; the first run accepts its invite with `E2E_ADMIN_PASSWORD`). The backend allows about 10 sign-ups/sign-ins per 5 min per IP locally: raise `RATE_LIMIT_STRICT_AUTH_POINTS` in the backend's own `.env` for repeated runs (design 01 §12.3).
 - Backend env values the web apps rely on locally: `INVITE_URL_BASE=http://localhost:4100/invite`, `KASHIER_REDIRECT_URL=http://localhost:4100/checkout/payment-return` (to be set by the user in the backend's `.env`).
 
@@ -295,6 +297,9 @@ CSP enforced after a report-only run: scripts nonce-only with `'strict-dynamic'`
 ### 14.1am Decided (2026-10-16, T-I2)
 `axe-core` (4.13.0) in `@nile/test-utils`: axe runs after **every** component test on the screen as the test left it and fails on serious/critical violations · keyboard-only E2E spec per role (`e2e/<app>/keyboard.spec.ts`, helpers in `e2e/fixtures/keyboard.ts`) · screen-reader spot checks by a person with `docs/frontend/a11y-screen-reader-checklist.md` (design 01 R-51).
 
+### 14.1an Decided (2026-10-16, T-I3)
+`@lhci/cli` approved (dev only; Lighthouse overridden to 13.5.0) · budgets LCP < 2.5 s, CLS < 0.1, TBT < 200 ms (INP stand-in) on home, category, product (signed out) and cart (signed in), mobile profile, median of 3 · `npm run perf` and nightly `perf.yml` · Zod namespace imports and `sideEffects` declarations (design 01 R-52, `docs/frontend/performance.md`).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -324,3 +329,4 @@ New ones go here as rows. When a decision is made, move it to §14.1.
 | `docs/frontend/spec/` | Business/screen specs per app: the source of truth for frontend behaviour once approved |
 | `docs/frontend/design/` | System design: packages, session and BFF, data flow, config, CI (`01`); allow-lists, query keys, mutations (`02`). Code must follow it once approved |
 | `docs/frontend/a11y-screen-reader-checklist.md` | Screen-reader spot checks (NVDA, VoiceOver) to perform and record |
+| `docs/frontend/performance.md` | Budgets, how to run Lighthouse CI, bundle findings, polling and rate-limit review |

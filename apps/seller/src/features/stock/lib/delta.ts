@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import type { StockLevel } from '../api';
 
 // SE-12 arithmetic on whole units (stock counts are integers, not money). The backend accepts a delta when
