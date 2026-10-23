@@ -46,6 +46,6 @@ describe('error code catalogue', () => {
   it('keeps client-only codes apart from backend codes', () => {
     const backend = new Set<string>(BACKEND_ERROR_CODES);
     for (const code of CLIENT_ERROR_CODES) expect(backend.has(code)).toBe(false);
-    expect(BACKEND_ERROR_CODES).toHaveLength(109);
+    expect(BACKEND_ERROR_CODES).toHaveLength(171);
   });
 });

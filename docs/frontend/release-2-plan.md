@@ -81,6 +81,7 @@ Inputs:
 - **Acceptance:** every new operation mapped to a screen or marked "not used in R2"; every [OPEN] item has options and a recommendation; you approve the documents.
 
 #### T-J1 Contract adoption and breaking fixes
+- **Status (2026-10-23):** implemented; format, lint, type-check, `api:check`, 1529 unit/component tests and the build of the four apps green locally. Not yet run: the live contract suite (`npm run test:contract`, needs the E2E settings) and E2E. Snapshot pinned to `ecbcd19` (217 operations; served by the backend built from `dev-realistic-seed`, which changes no route or DTO). Found on the way and recorded: `StockMovementType` `return_restock`, error codes `KASHIER_TOTAL_ZERO` and `ORIGIN_NOT_ALLOWED`, `AuthTokensDto.refreshToken` nullable (OA-R2-7…9).
 - **Scope:** rebuild and start the backend at `ecbcd19`; `api:pull --commit ecbcd19…` → `api:gen`; fix-script corrections for new defects; `error-codes.ts` (media, support, reviews, returns, coupons, refunds, wishlist, back-office codes); domain enums + labels (B-1, B-3…B-6, new enums: media, support, review, return, coupon, notification); fix B-1, B-2 (shape only), B-3 (queue filter `pending_manual`), B-5, B-6; regression test that the BFF never forwards `X-Nile-Client` (B-9); contract tests for the changed DTOs.
 - **Acceptance:** `api:check`, type-check, lint, tests green; existing screens behave as before against the new backend (E2E smoke per app).
 

@@ -18,6 +18,8 @@ export const adminAgentFactory = defineFactory<'AdminAgentDto'>((sequence) => ({
 /** `AdminShipmentDto` with its history: an unassigned COD shipment picked up in governorate 9700. Ids from 11000. */
 export const adminShipmentFactory = defineFactory<'AdminShipmentDto'>((sequence) => ({
   id: fixtureId(11000 + sequence),
+  kind: 'delivery',
+  returnId: null,
   orderId: fixtureId(11500 + sequence),
   sellerOrderId: fixtureId(11800 + sequence),
   orderNumber: `NM-2026-${String(sequence).padStart(6, '0')}`,
@@ -86,6 +88,8 @@ export const agentProfileFactory = defineFactory<'AgentProfileDto'>((sequence) =
 /** `AgentShipmentDto`: a COD parcel assigned to the agent (300.00 to collect, fee included). Ids from 12500. */
 export const agentShipmentFactory = defineFactory<'AgentShipmentDto'>((sequence) => ({
   id: fixtureId(12500 + sequence),
+  kind: 'delivery',
+  returnId: null,
   sellerOrderId: fixtureId(12800 + sequence),
   orderNumber: `NM-2026-${String(sequence).padStart(6, '0')}`,
   status: 'assigned',

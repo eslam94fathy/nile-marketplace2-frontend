@@ -25,7 +25,11 @@ const row = (o: AllowedOperation) => `${describeOp(o)} ${o.auth}${o.idempotencyK
 function designTables(): Record<string, string[]> {
   const tables: Record<string, string[]> = {};
   let app: string | null = null;
-  for (const line of readFileSync(DESIGN_FILE, 'utf8').split('\n')) {
+  // Only §1 holds the allow-lists; later sections reuse `#### <name> (` headings for other tables.
+  const lines = readFileSync(DESIGN_FILE, 'utf8').split('\n');
+  const start = lines.findIndex((line) => line.startsWith('## 1. '));
+  const end = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  for (const line of lines.slice(start, end)) {
     const heading = /^#### (\w+) \(/.exec(line);
     if (heading?.[1] !== undefined) {
       app = heading[1];

@@ -5,7 +5,22 @@ import { z } from 'zod';
 // The session lives only in an encrypted, httpOnly cookie (design 01 §3.1): a compact JWE (`dir` +
 // `A256GCM`) whose `kid` header names the key, so keys can be rotated without logging everyone out.
 
+/** Tokens as the backend answers them. `refreshToken` is null only with the web cookie transport. */
 export type AuthTokens = Schema<'AuthTokensDto'>;
+/** Tokens as the BFF holds them: body transport only, so the refresh token is always present. */
+export type BodyAuthTokens = AuthTokens & { refreshToken: string };
+
+/**
+ * The BFF never sends `X-Nile-Client: web`, so the backend answers with the body transport and a
+ * refresh token (backend spec 03 §8.1, IW-4). A missing one means the contract changed: fail closed
+ * instead of writing a session that can't be refreshed or revoked.
+ */
+export function bodyTokens(tokens: AuthTokens): BodyAuthTokens {
+  const { refreshToken } = tokens;
+  if (refreshToken === null)
+    throw new Error('The backend answered without a refresh token (cookie transport)');
+  return { ...tokens, refreshToken };
+}
 export type SessionUser = Schema<'AuthUserDto'>;
 export type UserRole = SessionUser['role'];
 
@@ -46,7 +61,7 @@ function keyBytes(ring: SessionKeyRing, kid: string): Uint8Array | null {
   return encoded === undefined ? null : Uint8Array.from(Buffer.from(encoded, 'base64'));
 }
 
-export function sessionFromTokens(tokens: AuthTokens, now: Date): SessionV1 {
+export function sessionFromTokens(tokens: BodyAuthTokens, now: Date): SessionV1 {
   return {
     v: 1,
     accessToken: tokens.accessToken,

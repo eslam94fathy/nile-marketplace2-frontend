@@ -27,6 +27,10 @@ function sellerOrder(overrides: Partial<SellerOrder> = {}): SellerOrder {
     businessName: 'Nile Crafts',
     status: 'placed',
     subtotal: '500.00',
+    discountAmount: '0.00',
+    discountFunding: null,
+    returnedPaid: '0.00',
+    cancelReason: null,
     canCancel: true,
     items: [],
     timeline: [],
@@ -168,7 +172,7 @@ describe('cancel a seller order (spec 01 SF-18-A1)', { timeout: 15_000 }, () => 
     const dialog = await openDialog(view);
     expect(
       within(dialog).getByText(
-        "Cancel the items from Nile Crafts? This can't be undone. Your refund will be processed by our team.",
+        "Cancel the items from Nile Crafts? This can't be undone. Your card will be refunded automatically.",
       ),
     ).toBeDefined();
   });

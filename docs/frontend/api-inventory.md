@@ -756,12 +756,14 @@ T-J1 rebuilds the backend at `ecbcd19`, pulls the snapshot and re-checks every r
 | reviews | `REVIEW_NOT_ALLOWED` 422 · `REVIEW_WINDOW_CLOSED` 422 · `REVIEW_ALREADY_EXISTS` 409 · `REVIEW_NOT_FOUND` 404 · `REVIEW_EDIT_WINDOW_CLOSED` 422 · `REVIEW_HIDDEN` 409 · `REVIEW_ALREADY_REPLIED` 409 · `REVIEW_REPLY_NOT_FOUND` 404 · `REVIEW_INVALID_STATUS_TRANSITION` 409 | |
 | customers | `WISHLIST_LIMIT_REACHED` 422 · `CUSTOMER_NOT_FOUND` 404 | |
 | sellers | `SELLER_NOT_FOUND` 404 (public seller page) | |
-| ordering | `ORDER_NOT_CANCELLABLE` 409 (`details`: blocking seller-order ids) · `RETURN_QUANTITY_INVALID` 422 | |
+| ordering | `ORDER_NOT_CANCELLABLE` 409 (`details`: blocking seller-order ids) · `RETURN_QUANTITY_INVALID` 422 · `KASHIER_TOTAL_ZERO` 422 (a card checkout whose total is 0.00 after a coupon; COD works at zero, backend OR-32, PR-21) [found in T-J1] | |
 | returns | `RETURN_NOT_FOUND` 404 · `RETURN_NOT_ALLOWED` 422 · `RETURN_WINDOW_CLOSED` 422 · `RETURN_PICKUP_UNAVAILABLE` 422 · `RETURN_AMOUNT_TOO_LOW` 422 · `RETURN_ALREADY_OPEN` 409 · `RETURN_INVALID_STATUS_TRANSITION` 409 · `RETURN_ESCALATION_WINDOW_CLOSED` 409 · `RETURN_INSPECTION_WINDOW_CLOSED` 409 · `RETURN_ITEMS_MISMATCH` 422 · `RETURN_PHOTOS_REQUIRED` 422 | |
 | payments | `REFUND_NOT_FOUND` 404 · `REFUND_NOT_RETRYABLE` 409 | |
 | promotions | `COUPON_NOT_FOUND` 422 (checkout / preview) or 404 (management) · `COUPON_INACTIVE` · `COUPON_NOT_ACTIVE_YET` · `COUPON_EXPIRED` · `COUPON_LIMIT_REACHED` · `COUPON_CUSTOMER_LIMIT_REACHED` · `COUPON_NOT_APPLICABLE` · `COUPON_MIN_SUBTOTAL_NOT_MET` (details: missing amount) · `COUPON_INVALID` (all 422) · `COUPON_CODE_TAKEN` · `COUPON_LOCKED` · `COUPON_BLOCKED` · `COUPON_BLOCK_INVALID_STATUS` · `COUPON_SELLER_FUNDED` (all 409) | |
 | audit | `AUDIT_ENTRY_NOT_FOUND` 404 | |
-| realtime (socket) | connect: `UNAUTHENTICATED`, `FORBIDDEN`, `RATE_LIMITED`, `ORIGIN_NOT_ALLOWED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`; ack: `SUPPORT_TICKET_NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `INTERNAL_ERROR`; disconnect reasons `token_expired`, `server_shutting_down`, `account_suspended` (`session.ended`) | |
+
+T-J1 (2026-10-23): `packages/api/src/error-codes.ts` holds all 171 backend codes at `ecbcd19`, extracted from `src/lib/error` and `src/app/*/errors.ts` (62 new).
+| realtime (socket) | `ORIGIN_NOT_ALLOWED` is also in the backend error catalogue (T-J1); connect: `UNAUTHENTICATED`, `FORBIDDEN`, `RATE_LIMITED`, `ORIGIN_NOT_ALLOWED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`; ack: `SUPPORT_TICKET_NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `INTERNAL_ERROR`; disconnect reasons `token_expired`, `server_shutting_down`, `account_suspended` (`session.ended`) | |
 
 ### 11.5 New enumerations
 
@@ -784,6 +786,7 @@ T-J1 rebuilds the backend at `ecbcd19`, pulls the snapshot and re-checks every r
 | `PaymentStatus` | `partially_refunded`, `refunded` replace the `_manually` values | SPEC 10 PA-23 |
 | `ShipmentKind` / `ShipmentStatus` | `delivery, return` / + `pickup_failed` | SPEC 11 §8.1 |
 | `SellerOrderCancelReason` | + `admin_cancelled` | VERIFIED |
+| `StockMovementType` | + `return_restock` (a return the seller put back in stock) | VERIFIED (T-J1), SPEC 07 §8 |
 | `CouponFunding` / `DiscountType` / `CouponScope` / `CouponStatus` / display status | `platform, seller` / `percent, fixed` / `all, seller, category` / `active, inactive` / `scheduled, active, expired, inactive` | SPEC 19 |
 | `AuditActorType` / `AuditTargetType` / `AuditAction` | `admin, cli` / 18 target types / one per audited action (spec 20 §2.3) | VERIFIED |
 | Finance | accounts + `seller_pending, customer_refund_payable, platform_promotions`; entries + `seller_net_held, seller_net_released, seller_net_reversed, commission_reversed, promotion_funded, promotion_reversed, return_fee_charged, return_fee_earned, customer_refund_owed, customer_refund_paid`; references + `return, refund, seller_order_hold` | SPEC 12 §8.1 |
@@ -799,12 +802,15 @@ T-J1 rebuilds the backend at `ecbcd19`, pulls the snapshot and re-checks every r
 
 | # | Finding | Consequence |
 |---|---|---|
-| OA-R2-1 | `__atLeastOneField` phantom property on the new PATCH DTOs (`EditReviewDto`, `UpdateProductImageDto`) [VERIFIED] | Same correction as OA-5 in `openapi-fix.ts` |
-| OA-R2-2 | `POST /media/uploads/{mediaId}/complete` documents only `200`; the spec answers `202` for a new completion (ME-3) [VERIFIED doc, SPEC] | Treat 200 and 202 alike; fix-script adds `202` if T-J1 confirms the runtime |
-| OA-R2-3 | `POST /support/tickets` documents `CustomerOpenTicketDto` only; sellers send `SellerOpenTicketDto` [VERIFIED] | Seller request type from the component schema, corrected in the fix script (`oneOf`) |
+| OA-R2-1 | `__atLeastOneField` phantom property on the new PATCH DTOs (`EditReviewDto`, `UpdateProductImageDto`, coupon updates) [VERIFIED] | Removed by the OA-5 rule (15 schemas at `ecbcd19`) |
+| OA-R2-2 | Resolved: the pinned snapshot documents both `200` and `202` for `POST /media/uploads/{mediaId}/complete` [VERIFIED T-J1] | None |
+| OA-R2-3 | `POST /support/tickets` documents `CustomerOpenTicketDto` only; sellers send `SellerOpenTicketDto` [VERIFIED] | No correction needed (T-J1): a seller body (no `orderId`) fits the documented type; the seller app never sends `orderId` (spec 02 SE-25) |
 | OA-R2-4 | Errors of several new operations are missing from their summaries (customer reviews, seller images, seller reviews) [VERIFIED] | Error unions from §11.4 (spec), as for OA-3 |
 | OA-R2-5 | `RegisterPushSubscriptionDto` has `expirationTime` (accepted and ignored, NO-23) [VERIFIED] | Send `PushSubscription.toJSON()` as it is |
 | OA-R2-6 | Nullable image fields (`primaryImage`, `image`, `reply`, …) likely documented as optional like OA-1 [ASSUMPTION] | T-B7 contract suite checks the runtime `null`s |
+| OA-R2-7 | 22 R2 request fields are `@Nullable()` in the backend DTOs but documented as optional only (images `variantId` / `altText`, review `title` / `body`, coupon `maxDiscount` / `globalLimit` / `scopeCategoryId` / `scopeSellerId`, push `expirationTime`, `AssignTicketDto.adminUserId`) [VERIFIED T-J1 against backend source] | Added to `NULLABLE_REQUEST_FIELDS` in `openapi-fix.ts` |
+| OA-R2-8 | `AssignTicketDto.adminUserId` is required (an admin or `null` to unassign) but documented optional [VERIFIED T-J1] | OA-6 rule generalised to `REQUIRED_REQUEST_FIELDS` |
+| OA-R2-9 | `AuthTokensDto.refreshToken` is now `string | null` (null only with the web cookie transport) [VERIFIED T-J1] | `@nile/auth` `bodyTokens()` fails closed on null; the BFF never selects the cookie transport |
 
 ### 11.8 Gaps and questions (Release 2)
 

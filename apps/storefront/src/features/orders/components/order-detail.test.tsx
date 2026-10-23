@@ -30,6 +30,10 @@ function item(overrides: Partial<Item> = {}): Item {
     quantity: 2,
     cancelledQuantity: 0,
     lineTotal: '500.00',
+    returnedQuantity: 0,
+    discountAmount: '0.00',
+    paidTotal: '500.00',
+    image: null,
     ...overrides,
   };
 }
@@ -41,6 +45,10 @@ function sellerOrder(overrides: Partial<SellerOrder> = {}): SellerOrder {
     businessName: 'Nile Crafts',
     status: 'accepted',
     subtotal: '500.00',
+    discountAmount: '0.00',
+    discountFunding: null,
+    returnedPaid: '0.00',
+    cancelReason: null,
     canCancel: false,
     items: [item()],
     timeline: [
@@ -166,7 +174,11 @@ describe('order detail (spec 01 SF-18)', { timeout: 15_000 }, () => {
       await screen.findByText("Cancelled or returned parcels aren't included in the total."),
     ).toBeDefined();
     expect(screen.getByText('No delivery fee is charged because nothing was delivered.')).toBeDefined();
-    expect(screen.queryByText('Refunds for card payments are processed by our team.')).toBeNull();
+    expect(
+      screen.queryByText(
+        'Card refunds go back to your card automatically. Your bank may take a few days to show them.',
+      ),
+    ).toBeNull();
     expect(screen.getByRole('button', { name: 'Buy again' })).toBeDefined();
   });
 
@@ -179,7 +191,11 @@ describe('order detail (spec 01 SF-18)', { timeout: 15_000 }, () => {
       }),
     );
     renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
-    expect(await screen.findByText('Refunds for card payments are processed by our team.')).toBeDefined();
+    expect(
+      await screen.findByText(
+        'Card refunds go back to your card automatically. Your bank may take a few days to show them.',
+      ),
+    ).toBeDefined();
   });
 
   it('someone else’s or an unknown order: not found', async () => {

@@ -42,8 +42,8 @@ export interface FixReport {
   removedPhantomProperties: number;
   /** OA-4: `idOrSlug` path parameter no longer typed as uuid. */
   fixedIdOrSlug: boolean;
-  /** OA-6: `UpdateGovernorateDto.deliveryFee` required. */
-  fixedGovernorateFee: boolean;
+  /** OA-6: request fields required although documented optional (`UpdateGovernorateDto.deliveryFee`, …). */
+  requiredRequestProperties: number;
   /** OA-7: literal `attr.{code}[in]` query parameter removed. */
   removedAttrParameter: boolean;
 }
@@ -57,6 +57,24 @@ export const NULLABLE_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>
   UpdateVariantDto: ['compareAtPrice'], // spec 06 §4.3
   CreateCategoryDto: ['parentId'], // spec 06 §4.2
   UpdateGovernorateDto: ['deliveryFee'], // spec 11 §4.3 (also required, OA-6)
+  // Release 2 (backend DTOs with `@Nullable()` at ecbcd19)
+  AddProductImageDto: ['variantId', 'altText'], // spec 06 §8.4
+  UpdateProductImageDto: ['variantId', 'altText'], // spec 06 §8.4
+  SetCategoryImageDto: ['altText'], // spec 06 §8.4
+  CreateReviewDto: ['title', 'body'], // spec 17 §4.2
+  EditReviewDto: ['title', 'body'], // spec 17 §4.2
+  AssignTicketDto: ['adminUserId'], // spec 16 §4.2 (also required, OA-6)
+  RegisterPushSubscriptionDto: ['expirationTime'], // spec 13 NO-23
+  SellerCreateCouponDto: ['maxDiscount', 'globalLimit'], // spec 19 §4
+  AdminCreateCouponDto: ['maxDiscount', 'globalLimit'], // spec 19 §4
+  SellerUpdateCouponDto: ['maxDiscount', 'scopeCategoryId', 'globalLimit'], // spec 19 §4
+  AdminUpdateCouponDto: ['maxDiscount', 'scopeCategoryId', 'globalLimit', 'scopeSellerId'], // spec 19 §4
+};
+
+/** Request fields the backend requires (a value or `null`) but documents as optional, keyed by schema name. */
+export const REQUIRED_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  UpdateGovernorateDto: ['deliveryFee'], // spec 11 §4.3
+  AssignTicketDto: ['adminUserId'], // spec 16 §4.2: an admin, or null to unassign
 };
 
 /**
@@ -148,7 +166,7 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     nullableRequestProperties: 0,
     removedPhantomProperties: 0,
     fixedIdOrSlug: false,
-    fixedGovernorateFee: false,
+    requiredRequestProperties: 0,
     removedAttrParameter: false,
   };
 
@@ -219,10 +237,15 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     }
   }
 
-  // OA-6: deliveryFee is required (a fee or null), not optional.
-  const governorate = objectSchema(schemas, 'UpdateGovernorateDto');
-  governorate.required = [...new Set([...(governorate.required ?? []), 'deliveryFee'])];
-  report.fixedGovernorateFee = true;
+  // OA-6: fields the backend requires (a value or null) although the document marks them optional.
+  for (const [name, fields] of Object.entries(REQUIRED_REQUEST_FIELDS)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      if (!(field in schema.properties)) throw new OpenApiFixError(`${name}.${field} is missing`);
+      schema.required = [...new Set([...(schema.required ?? []), field])];
+      report.requiredRequestProperties += 1;
+    }
+  }
 
   // OA-4: the product path accepts a slug as well as a uuid.
   const idOrSlug = findGetOperation(document, PRODUCT_DETAIL_PATH).parameters?.find(

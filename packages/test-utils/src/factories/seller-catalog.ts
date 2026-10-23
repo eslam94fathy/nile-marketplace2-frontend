@@ -15,10 +15,14 @@ export const sellerProductFactory = defineFactory<'SellerProductDetailDto'>((seq
   minPrice: null,
   maxPrice: null,
   inStock: false,
+  primaryImage: null,
+  adminBlocked: false,
+  adminBlockReason: null,
   publishedAt: null,
   createdAt: '2026-10-15T08:00:00.000Z',
   updatedAt: '2026-10-15T08:00:00.000Z',
   variants: [],
+  images: [],
 }));
 
 /** `SellerProductDto` (list row): a published product with one in-stock variant. */
@@ -33,6 +37,9 @@ export const sellerProductListItemFactory = defineFactory<'SellerProductDto'>((s
   minPrice: '150.00',
   maxPrice: '150.00',
   inStock: true,
+  primaryImage: null,
+  adminBlocked: false,
+  adminBlockReason: null,
   publishedAt: '2026-10-15T09:00:00.000Z',
   createdAt: '2026-10-15T08:00:00.000Z',
   updatedAt: '2026-10-15T09:00:00.000Z',

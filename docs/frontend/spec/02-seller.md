@@ -530,6 +530,7 @@ Live updates replace the 60 s polling of SE-06, SE-14 and SE-15 when a socket is
 **Coupon display status:** `scheduled` Scheduled · `active` Active · `expired` Expired · `inactive` Inactive.
 **Statement descriptions (new entry types)** [SPEC 12 §8]: `seller_net_held` Earnings on hold (return period) · `seller_net_released` Earnings released · `seller_net_reversed` Returned items · `return_fee_charged` Return delivery fee · `seller_net_earned` (R1) Earnings from order. Any other type stays as in §5 (raw + `console.warn`).
 **Cancellation reason (§5.2):** + `admin_cancelled` Cancelled by Nile.
+**Stock movement (SE-13):** + `return_restock` Restocked from a customer return [added in T-J1: the value was found in the pulled snapshot].
 **Notification category:** Orders · Deliveries · Support · Offers.
 
 ### 8.7 Questions (Release 2)

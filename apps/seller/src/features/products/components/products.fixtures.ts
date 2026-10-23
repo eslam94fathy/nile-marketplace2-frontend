@@ -15,7 +15,10 @@ export const TREE: Schema<'CategoryNodeDto'>[] = [
     name: 'Fashion',
     slug: 'fashion',
     sortOrder: 0,
-    children: [{ id: OTHER_CATEGORY_ID, name: 'Shirts', slug: 'shirts', sortOrder: 0, children: [] }],
+    image: null,
+    children: [
+      { id: OTHER_CATEGORY_ID, name: 'Shirts', slug: 'shirts', sortOrder: 0, image: null, children: [] },
+    ],
   },
 ];
 

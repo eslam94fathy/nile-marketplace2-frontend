@@ -20,7 +20,8 @@ import {
 } from '../lib/list-params';
 import { RefundsTable } from './refunds-table';
 
-const TABS: readonly RefundStatus[] = ['pending_manual', 'recorded'];
+/** The manual queue only until the full refund list (spec 03 §7.3 AD-16, T-M8). */
+const TABS = ['pending_manual', 'recorded'] as const satisfies readonly RefundStatus[];
 
 const listHref = (filters: RefundFilters): Route => {
   const query = refundFiltersQuery(filters);

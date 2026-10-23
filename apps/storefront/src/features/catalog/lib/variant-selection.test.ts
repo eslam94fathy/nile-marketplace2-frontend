@@ -24,6 +24,7 @@ function variant(options: Record<string, string>, overrides: Partial<ProductVari
     })),
     inStock: true,
     availableQuantity: 10,
+    imageId: null,
     ...overrides,
   };
 }
@@ -35,10 +36,12 @@ function product(attributes: Record<string, string[]>, variants: ProductVariant[
     name: 'Tee',
     description: 'A tee.',
     category: { id: 'c', name: 'Tees', slug: 'tees', path: [] },
-    seller: { id: 's', businessName: 'Shop' },
+    seller: { id: 's', businessName: 'Shop', ratingAvg: null, ratingCount: 0 },
     minPrice: '100.00',
     maxPrice: '120.00',
     inStock: variants.some((v) => v.inStock),
+    rating: { avg: null, count: 0 },
+    images: [],
     attributes: Object.entries(attributes).map(([code, options]) => ({
       code,
       name: code,

@@ -44,8 +44,8 @@ type SellerOrder = Order['sellerOrders'][number];
 /** Seller orders that don't count towards the total (spec 01 SF-18 §5, [SPEC 09 OR-13]). */
 const EXCLUDED: ReadonlySet<SellerOrder['status']> = new Set(['cancelled', 'returned_to_seller']);
 
-/** Card payments that may need a refund when something was cancelled (spec 01 SF-18 §5). */
-const REFUNDABLE: ReadonlySet<Order['paymentStatus']> = new Set(['paid', 'partially_refunded_manually']);
+/** Card payments that may need a refund when something was cancelled (spec 01 SF-18 §5, §10.3). */
+const REFUNDABLE: ReadonlySet<Order['paymentStatus']> = new Set(['paid', 'partially_refunded']);
 
 /** The notes under the totals (spec 01 SF-18 §5). */
 function totalNotes(order: Order): string[] {

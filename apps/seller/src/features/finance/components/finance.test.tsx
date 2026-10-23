@@ -58,7 +58,7 @@ afterEach(() => {
 
 describe('balance (spec 02 SE-16, SE-06)', () => {
   it('"0.00" with no update yet: no earnings yet (the overview explains when they come)', async () => {
-    serveBalance({ balance: '0.00', updatedAt: null });
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: null });
     renderWithProviders(<BalanceCard variant="overview" />);
     expect(
       await screen.findByText('No earnings yet. Earnings are added when an order is delivered.'),
@@ -68,12 +68,31 @@ describe('balance (spec 02 SE-16, SE-06)', () => {
   });
 
   it('a balance: the amount and when it was last updated; 0.00 after payouts is still a balance', async () => {
-    serveBalance({ balance: '0.00', updatedAt: '2026-10-15T12:00:00.000Z' });
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: '2026-10-15T12:00:00.000Z' });
     renderWithProviders(<BalanceCard variant="finance" />);
     expect(await screen.findByText(/^Last updated /)).toBeDefined();
-    expect(screen.getByText(/0\.00/)).toBeDefined();
+    expect(screen.getAllByText(/0\.00/)).toHaveLength(2);
     expect(screen.queryByText(/No earnings yet/)).toBeNull();
     expect(screen.getByText(/Nile pays you outside the app and records each payout here\./)).toBeDefined();
+  });
+
+  it('available and pending side by side (holding period, spec 02 §8.3)', async () => {
+    serveBalance({ available: '170.00', pending: '90.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    renderWithProviders(<BalanceCard variant="finance" />);
+    const available = await screen.findByText('Available');
+    expect(within(available.closest('div') as HTMLElement).getByText(/170\.00/)).toBeDefined();
+    const pending = screen.getByText('Pending');
+    expect(within(pending.closest('div') as HTMLElement).getByText(/90\.00/)).toBeDefined();
+    expect(
+      screen.getByText('Earnings from delivered orders that are still within the 14-day return period.'),
+    ).toBeDefined();
+    expect(screen.queryByText(/You owe Nile/)).toBeNull();
+  });
+
+  it('a negative available balance says what the seller owes (return fees, FI-12)', async () => {
+    serveBalance({ available: '-25.00', pending: '0.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    renderWithProviders(<BalanceCard variant="finance" />);
+    expect(await screen.findByText(/^You owe Nile .*25\.00 because of return fees\./)).toBeDefined();
   });
 
   it('load failure: error state', async () => {
@@ -89,7 +108,7 @@ describe('balance (spec 02 SE-16, SE-06)', () => {
 
 describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
   it('statement (default tab): descriptions, signed amounts, balance after; newest first', async () => {
-    serveBalance({ balance: '170.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    serveBalance({ pending: '0.00', available: '170.00', updatedAt: '2026-10-16T09:00:00.000Z' });
     const queries = serveEntries([
       entry({
         id: fixtureId(8102),
@@ -117,7 +136,7 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
 
   it('an entry type a seller account never has: shown raw and reported (type and id only)', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    serveBalance({ balance: '0.00', updatedAt: null });
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: null });
     serveEntries([entry({ id: fixtureId(8300), entryType: 'commission_earned' })]);
     renderWithProviders(<FinanceView tab="statement" />);
     expect(await screen.findByText('commission_earned')).toBeDefined();
@@ -129,8 +148,34 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
     });
   });
 
+  it('release 2 entries are described, not reported', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    serveBalance({ available: '50.00', pending: '0.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    serveEntries([
+      entry({ id: fixtureId(8401), entryType: 'seller_net_released', referenceType: 'seller_order_hold' }),
+      entry({
+        id: fixtureId(8402),
+        entryType: 'seller_net_reversed',
+        referenceType: 'return',
+        direction: 'debit',
+      }),
+      entry({
+        id: fixtureId(8403),
+        entryType: 'return_fee_charged',
+        referenceType: 'return',
+        direction: 'debit',
+      }),
+    ]);
+    renderWithProviders(<FinanceView tab="statement" />);
+    const table = await screen.findByRole('table', { name: 'Your statement' });
+    expect(await within(table).findByText('Earnings released')).toBeDefined();
+    expect(within(table).getByText('Returned items')).toBeDefined();
+    expect(within(table).getByText('Return delivery fee')).toBeDefined();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('empty statement', async () => {
-    serveBalance({ balance: '0.00', updatedAt: null });
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: null });
     serveEntries([]);
     renderWithProviders(<FinanceView tab={null} />);
     expect(await screen.findByText('No transactions yet.')).toBeDefined();
@@ -138,7 +183,7 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
   });
 
   it('payouts tab: paid date, amount, reference, recorded date', async () => {
-    serveBalance({ balance: '170.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    serveBalance({ pending: '0.00', available: '170.00', updatedAt: '2026-10-16T09:00:00.000Z' });
     servePayouts([
       {
         id: fixtureId(8200),
@@ -159,7 +204,7 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
   });
 
   it('empty payouts; failures show their own error', async () => {
-    serveBalance({ balance: '0.00', updatedAt: null });
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: null });
     servePayouts([]);
     const view = renderWithProviders(<FinanceView tab="payouts" />);
     expect(await screen.findByText('No payouts yet.')).toBeDefined();

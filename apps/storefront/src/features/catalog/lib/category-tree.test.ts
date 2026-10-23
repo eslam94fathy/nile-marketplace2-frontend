@@ -4,7 +4,7 @@ import { findCategoryPath, type CategoryNode } from './category-tree';
 let sequence = 0;
 const node = (slug: string, children: CategoryNode[] = []): CategoryNode => {
   sequence += 1;
-  return { id: `id-${sequence}`, name: slug.toUpperCase(), slug, sortOrder: sequence, children };
+  return { id: `id-${sequence}`, name: slug.toUpperCase(), slug, sortOrder: sequence, image: null, children };
 };
 
 const TREE = [

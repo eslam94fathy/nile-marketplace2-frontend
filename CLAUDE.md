@@ -302,6 +302,9 @@ Agent app gets the admin app's test harness and approved form/query packages · 
 ### 14.1ap Decided (2026-10-23, T-J0)
 Release 2 specs and design approved with every recommendation and [PROPOSED] item: spec 00 v1.1 §12, spec 01 v1.2 §10 (SF-Q-13…20), spec 02 v1.1 §8 (SE-Q-9…14), spec 03 v1.1 §7 (AD-Q-10…17), spec 04 v1.1 §7 (AG-Q-7…8), design 01 v1.1 §15 (DQ-10…14, R-53…R-57), design 02 v1.1 §5, `api-inventory.md` §11, `workflows.md` §6 · notable: customer pages under `/account/*`, coupon on the checkout review step only, heart while signed out saves after sign-in, image reorder by menu (no drag and drop), customer suspension and invite resend from the admin user directory (AD-4 reversed), no admin product search (entry from orders, reviews, seller store), dashboard without timed polling, socket closed after 5 min hidden, shared `@nile/notifications` and `@nile/support-screens` packages, push tested by a manual checklist.
 
+### 14.1aq Decided (2026-10-23, T-J1)
+Snapshot pinned to backend `ecbcd19` (217 operations) · `openapi-fix.ts`: 22 R2 nullable request fields, OA-6 generalised to `REQUIRED_REQUEST_FIELDS` (`AssignTicketDto.adminUserId`) · `@nile/auth` `bodyTokens()` refuses tokens without a refresh token (500, no cookie): the BFF never selects the web cookie transport · return pickups get no agent actions until T-N1 · the seller balance card shows Available / Pending / what the seller owes now (B-2); the seller statement describes `seller_net_released`, `seller_net_reversed`, `return_fee_charged` (links with T-L3) · the admin refund queue keeps its two tabs until T-M8; admin statement references to returns, refunds and holds show without a link until phase m · card refund copy says refunds are automatic (spec 01 §10.3) · allow-lists carry every R2 operation per design 02 §5.1, and the allow-list test reads only design 02 §1.
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

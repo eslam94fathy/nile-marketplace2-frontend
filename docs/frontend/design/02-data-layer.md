@@ -1,7 +1,7 @@
 # Design 02 — Data layer: BFF allow-lists, queries, mutations
 
 Status: **v1.0 APPROVED (2026-10-14); v1.1 APPROVED (2026-10-23): §5 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Companion of `01-system-design.md`.
-Generated parts (§1) come from the OpenAPI snapshot (sha256 prefix `4b4e399d39b9b3da`, backend `4ad89a6`) and are regenerated with the snapshot; the BFF code reads the same data from `packages/api/src/allow-lists.ts`, which a unit test compares against this table.
+Generated parts (§1) come from the OpenAPI snapshot (backend `ecbcd19`, regenerated in T-J1) and are regenerated with the snapshot; the BFF code reads the same data from `packages/api/src/allow-lists.ts`, which a unit test compares against this table.
 
 ---
 
@@ -9,7 +9,7 @@ Generated parts (§1) come from the OpenAPI snapshot (sha256 prefix `4b4e399d39b
 
 Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/email/verify`, `/auth/invite/accept`, `/auth/password/change` (dedicated auth routes, `01` §4.1), `POST /webhooks/kashier`, `GET /health/*`.
 
-#### storefront (26 operations)
+#### storefront (64 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
@@ -19,6 +19,7 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/auth/register/customer` | none (public) | – |
 | GET | `/cart` | Bearer from session | – |
 | DELETE | `/cart` | Bearer from session | – |
+| POST | `/cart/coupon-preview` | Bearer from session | – |
 | POST | `/cart/items` | Bearer from session | – |
 | PATCH | `/cart/items/{itemId}` | Bearer from session | – |
 | DELETE | `/cart/items/{itemId}` | Bearer from session | – |
@@ -33,14 +34,51 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | GET | `/me/addresses/{addressId}` | Bearer from session | – |
 | PATCH | `/me/addresses/{addressId}` | Bearer from session | – |
 | DELETE | `/me/addresses/{addressId}` | Bearer from session | – |
+| GET | `/me/notification-preferences` | Bearer from session | – |
+| PUT | `/me/notification-preferences` | Bearer from session | – |
+| GET | `/me/notifications` | Bearer from session | – |
+| POST | `/me/notifications/read-all` | Bearer from session | – |
+| GET | `/me/notifications/unread-count` | Bearer from session | – |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – |
+| POST | `/me/push-subscriptions` | Bearer from session | – |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – |
+| GET | `/me/reviewable-items` | Bearer from session | – |
+| GET | `/me/reviews` | Bearer from session | – |
+| GET | `/me/reviews/{reviewId}` | Bearer from session | – |
+| PATCH | `/me/reviews/{reviewId}` | Bearer from session | – |
+| DELETE | `/me/reviews/{reviewId}` | Bearer from session | – |
+| GET | `/me/wishlist` | Bearer from session | – |
+| GET | `/me/wishlist/product-ids` | Bearer from session | – |
+| PUT | `/me/wishlist/{productId}` | Bearer from session | – |
+| DELETE | `/me/wishlist/{productId}` | Bearer from session | – |
+| POST | `/media/uploads` | Bearer from session | – |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – |
+| GET | `/media/{mediaId}` | Bearer from session | – |
 | GET | `/orders` | Bearer from session | – |
 | GET | `/orders/{orderId}` | Bearer from session | – |
 | POST | `/orders/{orderId}/payment/kashier-session` | Bearer from session | – |
 | POST | `/orders/{orderId}/seller-orders/{sellerOrderId}/cancel` | Bearer from session | required, from client |
+| GET | `/orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items` | Bearer from session | – |
 | GET | `/products` | none (public) | – |
 | GET | `/products/{idOrSlug}` | none (public) | – |
+| GET | `/products/{productId}/reviews` | none (public) | – |
+| GET | `/products/{productId}/reviews/summary` | none (public) | – |
+| GET | `/push/config` | Bearer from session | – |
+| GET | `/returns` | Bearer from session | – |
+| POST | `/returns` | Bearer from session | required, from client |
+| GET | `/returns/{returnId}` | Bearer from session | – |
+| POST | `/returns/{returnId}/cancel` | Bearer from session | – |
+| POST | `/returns/{returnId}/escalate` | Bearer from session | – |
+| POST | `/reviews` | Bearer from session | – |
+| GET | `/sellers/{sellerId}` | none (public) | – |
+| GET | `/support/tickets` | Bearer from session | – |
+| POST | `/support/tickets` | Bearer from session | required, from client |
+| GET | `/support/tickets/{ticketId}` | Bearer from session | – |
+| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – |
+| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client |
+| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – |
 
-#### seller (32 operations)
+#### seller (67 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
@@ -51,8 +89,25 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | GET | `/categories` | none (public) | – |
 | GET | `/categories/{categoryId}/attributes` | none (public) | – |
 | GET | `/governorates` | none (public) | – |
+| GET | `/me/notification-preferences` | Bearer from session | – |
+| PUT | `/me/notification-preferences` | Bearer from session | – |
+| GET | `/me/notifications` | Bearer from session | – |
+| POST | `/me/notifications/read-all` | Bearer from session | – |
+| GET | `/me/notifications/unread-count` | Bearer from session | – |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – |
+| POST | `/me/push-subscriptions` | Bearer from session | – |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – |
+| POST | `/media/uploads` | Bearer from session | – |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – |
+| GET | `/media/{mediaId}` | Bearer from session | – |
+| GET | `/push/config` | Bearer from session | – |
+| GET | `/seller/coupons` | Bearer from session | – |
+| POST | `/seller/coupons` | Bearer from session | – |
+| GET | `/seller/coupons/{couponId}` | Bearer from session | – |
+| PATCH | `/seller/coupons/{couponId}` | Bearer from session | – |
 | GET | `/seller/finance/balance` | Bearer from session | – |
 | GET | `/seller/finance/entries` | Bearer from session | – |
+| GET | `/seller/finance/holds` | Bearer from session | – |
 | GET | `/seller/finance/payouts` | Bearer from session | – |
 | GET | `/seller/orders` | Bearer from session | – |
 | GET | `/seller/orders/{sellerOrderId}` | Bearer from session | – |
@@ -68,30 +123,61 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | DELETE | `/seller/products/{productId}` | Bearer from session | – |
 | POST | `/seller/products/{productId}/activate` | Bearer from session | – |
 | POST | `/seller/products/{productId}/deactivate` | Bearer from session | – |
+| POST | `/seller/products/{productId}/images` | Bearer from session | – |
+| PUT | `/seller/products/{productId}/images/order` | Bearer from session | – |
+| PATCH | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – |
+| DELETE | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – |
 | POST | `/seller/products/{productId}/variants` | Bearer from session | – |
 | PATCH | `/seller/products/{productId}/variants/{variantId}` | Bearer from session | – |
 | DELETE | `/seller/products/{productId}/variants/{variantId}` | Bearer from session | – |
 | GET | `/seller/profile` | Bearer from session | – |
 | PATCH | `/seller/profile` | Bearer from session | – |
 | POST | `/seller/profile/reapply` | Bearer from session | – |
+| GET | `/seller/returns` | Bearer from session | – |
+| GET | `/seller/returns/{returnId}` | Bearer from session | – |
+| POST | `/seller/returns/{returnId}/approve` | Bearer from session | – |
+| POST | `/seller/returns/{returnId}/confirm-receipt` | Bearer from session | required, from client |
+| POST | `/seller/returns/{returnId}/dispute` | Bearer from session | – |
+| POST | `/seller/returns/{returnId}/reject` | Bearer from session | – |
+| GET | `/seller/reviews` | Bearer from session | – |
+| POST | `/seller/reviews/{reviewId}/reply` | Bearer from session | – |
 | POST | `/seller/variants/{variantId}/stock-adjustments` | Bearer from session | required, from client |
 | GET | `/seller/variants/{variantId}/stock-movements` | Bearer from session | – |
+| GET | `/support/tickets` | Bearer from session | – |
+| POST | `/support/tickets` | Bearer from session | required, from client |
+| GET | `/support/tickets/{ticketId}` | Bearer from session | – |
+| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – |
+| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client |
+| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – |
 
-#### admin (52 operations)
+#### admin (103 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
-| POST | `/admin/admins` | Bearer from session | – |
 | GET | `/admin/admins` | Bearer from session | – |
+| POST | `/admin/admins` | Bearer from session | – |
 | PATCH | `/admin/attributes/{attributeId}` | Bearer from session | – |
 | DELETE | `/admin/attributes/{attributeId}` | Bearer from session | – |
 | POST | `/admin/attributes/{attributeId}/options` | Bearer from session | – |
+| GET | `/admin/audit-log` | Bearer from session | – |
+| GET | `/admin/audit-log/{entryId}` | Bearer from session | – |
 | GET | `/admin/categories` | Bearer from session | – |
 | POST | `/admin/categories` | Bearer from session | – |
 | PATCH | `/admin/categories/{categoryId}` | Bearer from session | – |
 | POST | `/admin/categories/{categoryId}/attributes` | Bearer from session | – |
-| POST | `/admin/delivery-agents` | Bearer from session | – |
+| PUT | `/admin/categories/{categoryId}/image` | Bearer from session | – |
+| DELETE | `/admin/categories/{categoryId}/image` | Bearer from session | – |
+| GET | `/admin/coupons` | Bearer from session | – |
+| POST | `/admin/coupons` | Bearer from session | – |
+| GET | `/admin/coupons/{couponId}` | Bearer from session | – |
+| PATCH | `/admin/coupons/{couponId}` | Bearer from session | – |
+| POST | `/admin/coupons/{couponId}/block` | Bearer from session | – |
+| POST | `/admin/coupons/{couponId}/unblock` | Bearer from session | – |
+| GET | `/admin/customers` | Bearer from session | – |
+| GET | `/admin/customers/{customerId}` | Bearer from session | – |
+| GET | `/admin/dashboard` | Bearer from session | – |
 | GET | `/admin/delivery-agents` | Bearer from session | – |
+| POST | `/admin/delivery-agents` | Bearer from session | – |
 | GET | `/admin/delivery-agents/{agentId}` | Bearer from session | – |
 | PATCH | `/admin/delivery-agents/{agentId}` | Bearer from session | – |
 | POST | `/admin/delivery-agents/{agentId}/activate` | Bearer from session | – |
@@ -99,21 +185,38 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | GET | `/admin/finance/accounts` | Bearer from session | – |
 | GET | `/admin/finance/accounts/{accountId}` | Bearer from session | – |
 | GET | `/admin/finance/accounts/{accountId}/entries` | Bearer from session | – |
-| POST | `/admin/finance/cod-remittances` | Bearer from session | required, from client |
 | GET | `/admin/finance/cod-remittances` | Bearer from session | – |
+| POST | `/admin/finance/cod-remittances` | Bearer from session | required, from client |
 | GET | `/admin/finance/entries` | Bearer from session | – |
-| POST | `/admin/finance/payouts` | Bearer from session | required, from client |
 | GET | `/admin/finance/payouts` | Bearer from session | – |
+| POST | `/admin/finance/payouts` | Bearer from session | required, from client |
 | GET | `/admin/governorates` | Bearer from session | – |
 | PATCH | `/admin/governorates/{governorateId}` | Bearer from session | – |
 | PATCH | `/admin/options/{optionId}` | Bearer from session | – |
 | DELETE | `/admin/options/{optionId}` | Bearer from session | – |
 | GET | `/admin/orders` | Bearer from session | – |
 | GET | `/admin/orders/{orderId}` | Bearer from session | – |
+| POST | `/admin/orders/{orderId}/cancel` | Bearer from session | required, from client |
 | GET | `/admin/orders/{orderId}/payment` | Bearer from session | – |
-| GET | `/admin/payments/{paymentId}` | Bearer from session | – |
 | GET | `/admin/payments/refunds` | Bearer from session | – |
+| GET | `/admin/payments/refunds/{refundId}` | Bearer from session | – |
 | POST | `/admin/payments/refunds/{refundId}/record` | Bearer from session | required, from client |
+| POST | `/admin/payments/refunds/{refundId}/retry` | Bearer from session | – |
+| GET | `/admin/payments/{paymentId}` | Bearer from session | – |
+| GET | `/admin/products/{productId}` | Bearer from session | – |
+| POST | `/admin/products/{productId}/block` | Bearer from session | – |
+| POST | `/admin/products/{productId}/unblock` | Bearer from session | – |
+| GET | `/admin/returns` | Bearer from session | – |
+| GET | `/admin/returns/{returnId}` | Bearer from session | – |
+| POST | `/admin/returns/{returnId}/decide` | Bearer from session | – |
+| POST | `/admin/returns/{returnId}/resolve-dispute` | Bearer from session | required, from client |
+| GET | `/admin/reviews` | Bearer from session | – |
+| GET | `/admin/reviews/{reviewId}` | Bearer from session | – |
+| POST | `/admin/reviews/{reviewId}/hide` | Bearer from session | – |
+| POST | `/admin/reviews/{reviewId}/reply/hide` | Bearer from session | – |
+| POST | `/admin/reviews/{reviewId}/reply/unhide` | Bearer from session | – |
+| POST | `/admin/reviews/{reviewId}/unhide` | Bearer from session | – |
+| POST | `/admin/seller-orders/{sellerOrderId}/cancel` | Bearer from session | required, from client |
 | GET | `/admin/sellers` | Bearer from session | – |
 | GET | `/admin/sellers/{sellerId}` | Bearer from session | – |
 | POST | `/admin/sellers/{sellerId}/approve` | Bearer from session | – |
@@ -128,13 +231,34 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | GET | `/admin/shipments` | Bearer from session | – |
 | GET | `/admin/shipments/{shipmentId}` | Bearer from session | – |
 | POST | `/admin/shipments/{shipmentId}/assign` | Bearer from session | – |
+| GET | `/admin/support/tickets` | Bearer from session | – |
+| GET | `/admin/support/tickets/{ticketId}` | Bearer from session | – |
+| POST | `/admin/support/tickets/{ticketId}/assign` | Bearer from session | – |
+| POST | `/admin/support/tickets/{ticketId}/close` | Bearer from session | – |
+| GET | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | – |
+| POST | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | required, from client |
+| POST | `/admin/support/tickets/{ticketId}/read` | Bearer from session | – |
+| POST | `/admin/support/tickets/{ticketId}/resolve` | Bearer from session | – |
+| GET | `/admin/users` | Bearer from session | – |
 | POST | `/admin/users/{userId}/reactivate` | Bearer from session | – |
 | POST | `/admin/users/{userId}/resend-invite` | Bearer from session | – |
 | POST | `/admin/users/{userId}/suspend` | Bearer from session | – |
 | POST | `/auth/password/forgot` | none (public) | – |
 | POST | `/auth/password/reset` | none (public) | – |
+| GET | `/me/notification-preferences` | Bearer from session | – |
+| PUT | `/me/notification-preferences` | Bearer from session | – |
+| GET | `/me/notifications` | Bearer from session | – |
+| POST | `/me/notifications/read-all` | Bearer from session | – |
+| GET | `/me/notifications/unread-count` | Bearer from session | – |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – |
+| POST | `/me/push-subscriptions` | Bearer from session | – |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – |
+| POST | `/media/uploads` | Bearer from session | – |
+| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – |
+| GET | `/media/{mediaId}` | Bearer from session | – |
+| GET | `/push/config` | Bearer from session | – |
 
-#### agent (15 operations)
+#### agent (24 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
@@ -153,6 +277,15 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/auth/password/forgot` | none (public) | – |
 | POST | `/auth/password/reset` | none (public) | – |
 | GET | `/governorates` | none (public) | – |
+| GET | `/me/notification-preferences` | Bearer from session | – |
+| PUT | `/me/notification-preferences` | Bearer from session | – |
+| GET | `/me/notifications` | Bearer from session | – |
+| POST | `/me/notifications/read-all` | Bearer from session | – |
+| GET | `/me/notifications/unread-count` | Bearer from session | – |
+| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – |
+| POST | `/me/push-subscriptions` | Bearer from session | – |
+| POST | `/me/push-subscriptions/unregister` | Bearer from session | – |
+| GET | `/push/config` | Bearer from session | – |
 
 Operations reachable through no proxy: none besides the auth-route-only, webhook and health operations.
 
@@ -307,164 +440,11 @@ Notation: key segments after the scope; `stale` = `staleTime`; `poll` = `refetch
 
 ## 5. Release 2 [v1.1 APPROVED 2026-10-23, T-J0]
 
-Inputs: `api-inventory.md` §11, specs 00 §12, 01 §10, 02 §8, 03 §7, 04 §7, design 01 §15. T-J1 regenerates the allow-lists from the pulled snapshot and replaces the "backend source" marks.
+Inputs: `api-inventory.md` §11, specs 00 §12, 01 §10, 02 §8, 03 §7, 04 §7, design 01 §15.
 
 ### 5.1 BFF allow-list additions per app
 
-Generated from the R2-P5 container's OpenAPI (new operations only) plus the R2-P6/P7 operations read from the backend source. Not reachable through any proxy, as before: the auth routes (the new `GET /api/auth/realtime-token` is an auth action, design 01 §15.2).
-
-#### storefront (+38 operations)
-
-| Method | Path | Session | Idempotency-Key | Source |
-|---|---|---|---|---|
-| POST | `/cart/coupon-preview` | Bearer from session | – | backend source |
-| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
-| GET | `/me/reviewable-items` | Bearer from session | – | VERIFIED |
-| GET | `/me/reviews` | Bearer from session | – | VERIFIED |
-| GET | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
-| PATCH | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
-| DELETE | `/me/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
-| GET | `/me/wishlist` | Bearer from session | – | VERIFIED |
-| PUT | `/me/wishlist/{productId}` | Bearer from session | – | VERIFIED |
-| DELETE | `/me/wishlist/{productId}` | Bearer from session | – | VERIFIED |
-| GET | `/me/wishlist/product-ids` | Bearer from session | – | VERIFIED |
-| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
-| GET | `/orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items` | Bearer from session | – | backend source |
-| GET | `/products/{productId}/reviews` | none (public) | – | VERIFIED |
-| GET | `/products/{productId}/reviews/summary` | none (public) | – | VERIFIED |
-| GET | `/push/config` | Bearer from session | – | VERIFIED |
-| GET | `/returns` | Bearer from session | – | backend source |
-| POST | `/returns` | Bearer from session | required, from client | backend source |
-| GET | `/returns/{returnId}` | Bearer from session | – | backend source |
-| POST | `/returns/{returnId}/cancel` | Bearer from session | – | backend source |
-| POST | `/returns/{returnId}/escalate` | Bearer from session | – | backend source |
-| POST | `/reviews` | Bearer from session | – | VERIFIED |
-| GET | `/sellers/{sellerId}` | none (public) | – | VERIFIED |
-| GET | `/support/tickets` | Bearer from session | – | VERIFIED |
-| POST | `/support/tickets` | Bearer from session | required, from client | VERIFIED |
-| GET | `/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
-| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
-| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
-| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
-
-#### seller (+35 operations)
-
-| Method | Path | Session | Idempotency-Key | Source |
-|---|---|---|---|---|
-| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
-| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
-| GET | `/push/config` | Bearer from session | – | VERIFIED |
-| GET | `/seller/coupons` | Bearer from session | – | backend source |
-| POST | `/seller/coupons` | Bearer from session | – | backend source |
-| GET | `/seller/coupons/{couponId}` | Bearer from session | – | backend source |
-| PATCH | `/seller/coupons/{couponId}` | Bearer from session | – | backend source |
-| GET | `/seller/finance/holds` | Bearer from session | – | backend source |
-| POST | `/seller/products/{productId}/images` | Bearer from session | – | VERIFIED |
-| PATCH | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – | VERIFIED |
-| DELETE | `/seller/products/{productId}/images/{imageId}` | Bearer from session | – | VERIFIED |
-| PUT | `/seller/products/{productId}/images/order` | Bearer from session | – | VERIFIED |
-| GET | `/seller/returns` | Bearer from session | – | backend source |
-| GET | `/seller/returns/{returnId}` | Bearer from session | – | backend source |
-| POST | `/seller/returns/{returnId}/approve` | Bearer from session | – | backend source |
-| POST | `/seller/returns/{returnId}/confirm-receipt` | Bearer from session | required, from client | backend source |
-| POST | `/seller/returns/{returnId}/dispute` | Bearer from session | – | backend source |
-| POST | `/seller/returns/{returnId}/reject` | Bearer from session | – | backend source |
-| GET | `/seller/reviews` | Bearer from session | – | VERIFIED |
-| POST | `/seller/reviews/{reviewId}/reply` | Bearer from session | – | VERIFIED |
-| GET | `/support/tickets` | Bearer from session | – | VERIFIED |
-| POST | `/support/tickets` | Bearer from session | required, from client | VERIFIED |
-| GET | `/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
-| GET | `/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
-| POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
-| POST | `/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
-
-#### admin (+51 operations)
-
-| Method | Path | Session | Idempotency-Key | Source |
-|---|---|---|---|---|
-| GET | `/admin/audit-log` | Bearer from session | – | VERIFIED |
-| GET | `/admin/audit-log/{entryId}` | Bearer from session | – | VERIFIED |
-| PUT | `/admin/categories/{categoryId}/image` | Bearer from session | – | VERIFIED |
-| DELETE | `/admin/categories/{categoryId}/image` | Bearer from session | – | VERIFIED |
-| GET | `/admin/coupons` | Bearer from session | – | backend source |
-| POST | `/admin/coupons` | Bearer from session | – | backend source |
-| GET | `/admin/coupons/{couponId}` | Bearer from session | – | backend source |
-| PATCH | `/admin/coupons/{couponId}` | Bearer from session | – | backend source |
-| POST | `/admin/coupons/{couponId}/block` | Bearer from session | – | backend source |
-| POST | `/admin/coupons/{couponId}/unblock` | Bearer from session | – | backend source |
-| GET | `/admin/customers` | Bearer from session | – | VERIFIED |
-| GET | `/admin/customers/{customerId}` | Bearer from session | – | VERIFIED |
-| GET | `/admin/dashboard` | Bearer from session | – | VERIFIED |
-| POST | `/admin/orders/{orderId}/cancel` | Bearer from session | required, from client | VERIFIED |
-| GET | `/admin/payments/refunds/{refundId}` | Bearer from session | – | backend source |
-| POST | `/admin/payments/refunds/{refundId}/retry` | Bearer from session | – | backend source |
-| GET | `/admin/products/{productId}` | Bearer from session | – | VERIFIED |
-| POST | `/admin/products/{productId}/block` | Bearer from session | – | VERIFIED |
-| POST | `/admin/products/{productId}/unblock` | Bearer from session | – | VERIFIED |
-| GET | `/admin/returns` | Bearer from session | – | backend source |
-| GET | `/admin/returns/{returnId}` | Bearer from session | – | backend source |
-| POST | `/admin/returns/{returnId}/decide` | Bearer from session | – | backend source |
-| POST | `/admin/returns/{returnId}/resolve-dispute` | Bearer from session | required, from client | backend source |
-| GET | `/admin/reviews` | Bearer from session | – | VERIFIED |
-| GET | `/admin/reviews/{reviewId}` | Bearer from session | – | VERIFIED |
-| POST | `/admin/reviews/{reviewId}/hide` | Bearer from session | – | VERIFIED |
-| POST | `/admin/reviews/{reviewId}/reply/hide` | Bearer from session | – | VERIFIED |
-| POST | `/admin/reviews/{reviewId}/reply/unhide` | Bearer from session | – | VERIFIED |
-| POST | `/admin/reviews/{reviewId}/unhide` | Bearer from session | – | VERIFIED |
-| POST | `/admin/seller-orders/{sellerOrderId}/cancel` | Bearer from session | required, from client | VERIFIED |
-| GET | `/admin/support/tickets` | Bearer from session | – | VERIFIED |
-| GET | `/admin/support/tickets/{ticketId}` | Bearer from session | – | VERIFIED |
-| POST | `/admin/support/tickets/{ticketId}/assign` | Bearer from session | – | VERIFIED |
-| POST | `/admin/support/tickets/{ticketId}/close` | Bearer from session | – | VERIFIED |
-| GET | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | – | VERIFIED |
-| POST | `/admin/support/tickets/{ticketId}/messages` | Bearer from session | required, from client | VERIFIED |
-| POST | `/admin/support/tickets/{ticketId}/read` | Bearer from session | – | VERIFIED |
-| POST | `/admin/support/tickets/{ticketId}/resolve` | Bearer from session | – | VERIFIED |
-| GET | `/admin/users` | Bearer from session | – | VERIFIED |
-| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
-| GET | `/media/{mediaId}` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads` | Bearer from session | – | VERIFIED |
-| POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – | VERIFIED |
-| GET | `/push/config` | Bearer from session | – | VERIFIED |
-
-#### agent (+9 operations)
-
-| Method | Path | Session | Idempotency-Key | Source |
-|---|---|---|---|---|
-| GET | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| PUT | `/me/notification-preferences` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/{notificationId}/read` | Bearer from session | – | VERIFIED |
-| POST | `/me/notifications/read-all` | Bearer from session | – | VERIFIED |
-| GET | `/me/notifications/unread-count` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions` | Bearer from session | – | VERIFIED |
-| POST | `/me/push-subscriptions/unregister` | Bearer from session | – | VERIFIED |
-| GET | `/push/config` | Bearer from session | – | VERIFIED |
+Merged into the §1 tables in T-J1 (2026-10-23) and checked against the pinned snapshot at backend `ecbcd19` by `allow-lists.test.ts` (operation exists, session, `Idempotency-Key`): storefront +38, seller +35, admin +51, agent +9 operations. Apps per operation: `/admin/*` admin; `/seller/*` seller; `/agent/*` agent; `/support/*` storefront and seller; `/me/notification*`, `/me/push-*`, `/push/*` all four apps; `/media/*` storefront, seller and admin (the agent app uploads nothing); the customer and public operations storefront. Not reachable through any proxy, as before: the auth routes (the new `GET /api/auth/realtime-token` is an auth action, design 01 §15.2).
 
 The R1 user actions (`/admin/users/{userId}/suspend`, `/reactivate`, `/resend-invite`) are already on the admin allow-list; AD-24 starts using them for customers and agents (AD-Q-10).
 

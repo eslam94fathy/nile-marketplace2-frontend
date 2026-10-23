@@ -649,6 +649,7 @@ Account navigation becomes: Profile · Orders · Returns · Reviews · Wishlist 
 | `COUPON_NOT_APPLICABLE` | "This coupon doesn't apply to the items in your cart." |
 | `COUPON_MIN_SUBTOTAL_NOT_MET` | "Add {missing} more of eligible items to use this coupon." (`missing` from the error details [SPEC 19 §1.2]; without it: "Your eligible items don't reach this coupon's minimum.") |
 | `RATE_LIMITED` | "Too many attempts. Try again in {n} s." |
+| `KASHIER_TOTAL_ZERO` (checkout only) | "Your total is EGP 0.00, so there is nothing to pay by card. Choose cash on delivery." The coupon stays; the payment choice switches to COD for the shopper to confirm (backend PR-21) [added in T-J1] |
 
   A coupon error **at checkout** removes the coupon, recomputes the total without it and asks the shopper to place the order again (new body → new key).
 
@@ -658,6 +659,7 @@ Account navigation becomes: Profile · Orders · Returns · Reviews · Wishlist 
 - SF-18 seller order: when `cancelReason = admin_cancelled`: "Cancelled by Nile."; other reasons per §10.6; "{returnedQuantity} returned" on items.
 - SF-18 refunds block (`refunds[]`): "Refund {amount} — {status label} — {date}".
 - SF-18 copy change: the card note "Refunds for card payments are processed by our team." becomes "Card refunds go back to your card automatically. Your bank may take a few days to show them." (`paymentStatus` `paid` or `partially_refunded` with a cancellation) [SPEC 10 §8.1].
+- SF-18 A1 dialog (T-J1, follows from the same change): the card sentence "Your refund will be processed by our team." becomes "Your card will be refunded automatically."
 - SF-18 actions: "Return items" on a delivered seller order (SF-26 entry, SF-Q-18); "Write a review" next to each item listed in `GET /me/reviewable-items` (SF-Q-16); "Get help with this order" → SF-30 with the order preselected.
 - SF-18 live: refetch on `order.updated`, `seller_order.updated`, `shipment.updated`, `payment.updated`, `return.updated` for this order; the 30 s poll while `pending_payment` stays only when no socket is connected.
 

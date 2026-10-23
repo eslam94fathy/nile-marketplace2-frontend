@@ -25,7 +25,7 @@ export const ORDERS_COPY = {
     action: (businessName: string) => `Cancel the items from ${businessName}`,
     title: 'Cancel these items',
     confirm: (businessName: string) => `Cancel the items from ${businessName}? This can't be undone.`,
-    refund: 'Your refund will be processed by our team.',
+    refund: 'Your card will be refunded automatically.',
     note: 'Reason (optional)',
     confirmAction: 'Cancel items',
     keep: 'Keep them',
@@ -55,7 +55,7 @@ export const ORDERS_COPY = {
   notes: {
     excluded: "Cancelled or returned parcels aren't included in the total.",
     noFee: 'No delivery fee is charged because nothing was delivered.',
-    refunds: 'Refunds for card payments are processed by our team.',
+    refunds: 'Card refunds go back to your card automatically. Your bank may take a few days to show them.',
   },
   detailLoadFailed: "This order couldn't be loaded.",
   backToOrders: 'Your orders',

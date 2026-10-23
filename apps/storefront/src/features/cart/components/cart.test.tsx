@@ -43,6 +43,7 @@ function line(overrides: Partial<CartLine> = {}): CartLine {
     quantity: 2,
     lineTotal: '500.00',
     issue: null,
+    image: null,
     availableQuantity: 10,
     ...overrides,
   };

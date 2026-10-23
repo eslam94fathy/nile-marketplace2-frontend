@@ -60,7 +60,7 @@ function check(response: BackendResponse, template: string): void {
 
 describe('public GETs', () => {
   let categoryId = '';
-  let product: { id: string; slug: string } | undefined;
+  let product: { id: string; slug: string; seller: { id: string } } | undefined;
 
   const PUBLIC_CHECKS: Record<string, () => Promise<void>> = {
     '/api/v1/categories': async () => {
@@ -83,6 +83,24 @@ describe('public GETs', () => {
         check(await backend.request('GET', `/api/v1/products/${idOrSlug}`), '/api/v1/products/{idOrSlug}');
       }
     },
+    '/api/v1/products/{productId}/reviews': async () => {
+      if (!product) throw new Error('No public product: run the backend seed (npm run seed:dev)');
+      const template = '/api/v1/products/{productId}/reviews';
+      check(await backend.request('GET', `/api/v1/products/${product.id}/reviews`), template);
+    },
+    '/api/v1/products/{productId}/reviews/summary': async () => {
+      if (!product) throw new Error('No public product: run the backend seed (npm run seed:dev)');
+      const template = '/api/v1/products/{productId}/reviews/summary';
+      check(await backend.request('GET', `/api/v1/products/${product.id}/reviews/summary`), template);
+    },
+    '/api/v1/sellers/{sellerId}': async () => {
+      // A product is public only while its seller is approved, so its seller has a public page.
+      if (!product) throw new Error('No public product: run the backend seed (npm run seed:dev)');
+      check(
+        await backend.request('GET', `/api/v1/sellers/${product.seller.id}`),
+        '/api/v1/sellers/{sellerId}',
+      );
+    },
   };
 
   beforeAll(async () => {
@@ -93,7 +111,7 @@ describe('public GETs', () => {
     // A child category inherits its parents' attributes: the deepest first branch exercises the most fields.
     categoryId = first.children[0]?.id ?? first.id;
     const list = await backend.request('GET', '/api/v1/products', { query: { limit: '1' } });
-    product = (list.body as { data: { id: string; slug: string }[] }).data[0];
+    product = (list.body as { data: { id: string; slug: string; seller: { id: string } }[] }).data[0];
   });
 
   it('checks every public GET of the snapshot', () => {

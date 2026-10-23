@@ -5,7 +5,7 @@ import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { AuthAppConfig } from './config';
 import { createAuthRouteHandler } from './route-handlers';
-import { unsealSession, type AuthTokens } from './session';
+import { unsealSession, type BodyAuthTokens } from './session';
 import {
   KEY_RING,
   makeRequest,
@@ -40,7 +40,7 @@ function setup(app: BffApp = 'storefront', overrides: Partial<AuthAppConfig> = {
 }
 
 /** No response body or log line may ever contain a token or the password. */
-async function expectNoSecrets(response: Response, logs: string[], tokens: AuthTokens) {
+async function expectNoSecrets(response: Response, logs: string[], tokens: BodyAuthTokens) {
   const text = await response.clone().text();
   for (const secret of [tokens.accessToken, tokens.refreshToken, CREDENTIALS.password]) {
     expect(text).not.toContain(secret);
@@ -119,6 +119,24 @@ describe('POST /api/auth/login', () => {
     );
     await setup('agent').call('login', { body: JSON.stringify(CREDENTIALS) });
     expect(deviceName).toBe('Web (agent)');
+  });
+
+  // The BFF never asks for the web cookie transport, so a missing refresh token is a contract break
+  // (backend spec 03 §8.1): no session may be written without one.
+  it('refuses tokens without a refresh token: 500, no cookie, nothing leaked', async () => {
+    const tokens = { ...tokensFor('storefront'), refreshToken: null };
+    server.use(mockApi('post', '/auth/login', ({ reply }) => reply.ok(tokens)));
+    const { call, logs } = setup();
+    const response = await call('login', { body: JSON.stringify(CREDENTIALS) });
+
+    expect(response.status).toBe(500);
+    expect(((await response.clone().json()) as { error: { code: string } }).error.code).toBe(
+      'INTERNAL_ERROR',
+    );
+    expect(setCookies(response)).toEqual([]);
+    const text = await response.clone().text();
+    expect(text).not.toContain(tokens.accessToken);
+    for (const line of logs) expect(line).not.toContain(tokens.accessToken);
   });
 
   it('drops the cookie prefix and Secure for local http development', async () => {

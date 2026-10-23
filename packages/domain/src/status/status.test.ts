@@ -25,7 +25,9 @@ describe('agentShipmentActions (spec 04 AG-05)', () => {
   const shipment = (
     status: AgentShipmentState['status'],
     reasons: AttemptFailureReason[] = [],
+    kind: AgentShipmentState['kind'] = 'delivery',
   ): AgentShipmentState => ({
+    kind,
     status,
     attemptCount: reasons.length,
     attempts: reasons.map((reason) => ({ reason })),
@@ -45,12 +47,21 @@ describe('agentShipmentActions (spec 04 AG-05)', () => {
     });
   });
 
-  it.each(['unassigned', 'returned_to_seller', 'delivered', 'cancelled'] as const)(
+  it.each(['unassigned', 'returned_to_seller', 'delivered', 'cancelled', 'pickup_failed'] as const)(
     '%s is read-only',
     (status) => {
       expect(agentShipmentActions(shipment(status))).toEqual({ primary: null, secondary: null });
     },
   );
+
+  it('never offers delivery actions on a return pickup, whatever its status', () => {
+    for (const status of SHIPMENT_STATUSES) {
+      expect(agentShipmentActions(shipment(status, [], 'return'))).toEqual({
+        primary: null,
+        secondary: null,
+      });
+    }
+  });
 
   it('never offers more than one primary action, for any status', () => {
     for (const status of SHIPMENT_STATUSES) {
