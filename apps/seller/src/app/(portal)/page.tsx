@@ -1,0 +1,10 @@
+import type { Metadata } from 'next';
+import { Overview } from '@/features/overview';
+import { requireSession } from '@/lib/dal';
+
+export const metadata: Metadata = { title: 'Overview' };
+
+export default async function OverviewPage() {
+  await requireSession();
+  return <Overview />;
+}

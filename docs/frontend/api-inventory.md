@@ -7,7 +7,7 @@ Backend: `nile-marketplace2` @ `4ad89a6` (`main`, clean working tree), read loca
 
 Sources, in order of authority for this document:
 
-1. **The running API.** The OpenAPI 3.1 document was fetched from `GET /api/v1/docs/openapi.json` (sha256 prefix `4b4e399d39b9b3da`, 123 operations, 150 schemas). Public endpoints were called to confirm runtime shapes (envelope, `null` values, error body, CORS preflight).
+1. **The running API.** The OpenAPI 3.1 document was fetched from `GET /api/v1/docs/openapi.json` (sha256 prefix `4b4e399d39b9b3da` of the served bytes, 123 operations, 150 schemas). Since T-B3 it is pinned as `packages/api/openapi/nile.openapi.json` (pretty-printed, sha256 in `backend.lock.json`; same content, verified). Public endpoints were called to confirm runtime shapes (envelope, `null` values, error body, CORS preflight).
 2. **Backend source** (`src/http-app.ts`, `src/app/*/routes.ts`, `src/lib/middleware/*`, `src/lib/http/openapi/*`, env schema) for things OpenAPI doesn't carry: role guards, rate-limit classes, headers, CORS.
 3. **Backend spec** (`docs/spec/00`–`13`, all APPROVED) and `CLAUDE.md` for business rules and error codes.
 
@@ -442,7 +442,7 @@ Display labels and Arabic/English copy for every value are a frontend concern (F
 
 | # | Finding | Evidence | Consequence for the frontend |
 |---|---|---|---|
-| OA-1 | **Nullable fields are not marked nullable.** They appear as optional (`not in required[]`) `string`/enum, but the API returns `null` | `GovernorateDto.deliveryFee` documented `string`, runtime `"deliveryFee": null`; `AddressDto.floor/apartment/landmark`, `CartDto.id`, `CartItemDto.issue`, `OrderDetailDto.paymentExpiresAt`, … Only 2 `"null"` types in the whole document, 0 `nullable` | Generated types say `T \| undefined`, runtime is `null`. Must be corrected in a post-generation step or by runtime schemas (architecture.md §6.3) |
+| OA-1 | **Nullable fields are not marked nullable.** They appear as optional (`not in required[]`) `string`/enum, but the API returns `null` | `GovernorateDto.deliveryFee` documented `string`, runtime `"deliveryFee": null`; `AddressDto.floor/apartment/landmark`, `CartDto.id`, `CartItemDto.issue`, `OrderDetailDto.paymentExpiresAt`, … Only 2 `"null"` types in the whole document, 0 `nullable` | Generated types say `T \| undefined`, runtime is `null`. Must be corrected in a post-generation step or by runtime schemas (architecture.md §6.3). **[VERIFIED 2026-10-14, T-B7 contract suite]** confirmed for every checked response, with one correction: `AdminShipmentDto.history` is left out of list items (not `null`) and stays optional (`openapi-fix.ts` `OPTIONAL_RESPONSE_FIELDS`) |
 | OA-2 | No `operationId` on any of the 123 operations | – | Generators invent names from paths; prefer a path-keyed client (`openapi-fetch`) over name-keyed generated SDKs, or names will churn |
 | OA-3 | Error responses are only a `default: ErrorEnvelope`; codes live in summary text | every operation | Error-code unions are hand-maintained from §7 (single file, reviewed when backend specs change) |
 | OA-4 | `GET /products/{idOrSlug}` path param is typed `format: uuid` | `parameters[0].schema` | A slug is valid at runtime. Do not validate this param against the generated schema |

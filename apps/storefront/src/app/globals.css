@@ -1,0 +1,5 @@
+/* Tailwind CSS v4 + the Nile tokens (@nile/ui). Components live in packages/ui, so Tailwind scans it too. */
+@import 'tailwindcss';
+@import '@nile/ui/theme.css';
+
+@source '../../../../packages/ui/src';

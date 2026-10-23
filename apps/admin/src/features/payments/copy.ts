@@ -1,0 +1,82 @@
+// AD-15 payment summary, AD-16, AD-17 copy (spec 03). Status, method and reason labels: @nile/domain.
+
+export const PAYMENTS_COPY = {
+  // AD-16
+  refundsTitle: 'Refunds',
+  tabsLabel: 'Refund status',
+  tabs: { pending_manual: 'To record', recorded: 'Recorded' },
+  reasonFilter: 'Reason',
+  from: 'Created from',
+  to: 'Created to',
+  clearFilters: 'Clear filters',
+  refundsCaption: 'Refunds',
+  columns: {
+    created: 'Created',
+    order: 'Order',
+    sellerOrder: 'Seller order',
+    amount: 'Amount',
+    reason: 'Reason',
+    status: 'Status',
+    reference: 'Kashier reference',
+    recorded: 'Recorded',
+    actions: 'Actions',
+  },
+  orderLink: (orderId: string) => `Order ${orderId.slice(0, 8)}`,
+  shortId: (id: string) => id.slice(0, 8),
+  none: '—',
+  recordedBy: (date: string, by: string) => `${date} by ${by}`,
+  empty: 'No refunds here.',
+  emptyToRecord: 'Nothing to record.',
+  emptyFiltered: 'No refunds match these filters.',
+  listFailed: "The refunds couldn't be loaded.",
+
+  // Record
+  record: 'Record refund',
+  recordFor: (amount: string) => `Record refund of ${amount}`,
+  recordInstruction: (amount: string) =>
+    `Refund ${amount} in the Kashier dashboard first, then enter Kashier's refund reference here.`,
+  reference: "Kashier's refund reference",
+  recordConfirm: 'Record refund',
+  recorded: (amount: string) => `Refund of ${amount} recorded.`,
+  alreadyRecorded: 'This refund was already recorded.',
+  refundGone: 'This refund no longer exists.',
+
+  // AD-17
+  paymentTitle: 'Payment',
+  loadFailed: "This payment couldn't be loaded.",
+  notFound: "This payment doesn't exist.",
+  backToRefunds: 'Back to refunds',
+  detailsHeading: 'Details',
+  order: 'Order',
+  method: 'Method',
+  status: 'Status',
+  amount: 'Amount',
+  collected: 'Collected',
+  refunded: 'Refunded',
+  providerOrderRef: 'Kashier order reference',
+  providerTransactionRef: 'Kashier transaction reference',
+  paidAt: 'Paid at',
+  created: 'Created',
+  refundsHeading: 'Refunds',
+  paymentRefundsCaption: 'Refunds of this payment',
+  noRefunds: 'No refunds.',
+  eventsHeading: 'Events',
+  eventsCaption: 'Payment events',
+  eventColumns: { type: 'Event', signature: 'Signature', processed: 'Processed', received: 'Received' },
+  signatureValid: 'Valid',
+  signatureInvalid: 'Invalid',
+  notProcessed: 'Not processed',
+  noEvents: 'No events.',
+
+  // AD-15 payment summary
+  summaryHeading: 'Payment',
+  noPayment: 'No payment record',
+  summaryFailed: "The payment couldn't be loaded.",
+  openPayment: 'Open the payment',
+  orderRefundsCaption: 'Refunds of this order',
+
+  // Dashboard queue (AD-02)
+  queueTitle: 'Refunds to record',
+  queueSeeAll: 'See all refunds to record',
+  queueRow: (reason: string, date: string) => `${reason}, ${date}`,
+} as const;

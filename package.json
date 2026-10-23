@@ -1,0 +1,50 @@
+{
+  "name": "nile-marketplace-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nile Marketplace web apps (storefront, seller, admin, agent) and shared packages",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:stop": "node scripts/dev-stop.mjs",
+    "dev:env": "node scripts/dev-env.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "api:pull": "npm run api:pull -w @nile/api --",
+    "api:gen": "npm run api:gen -w @nile/api",
+    "api:check": "npm run api:check -w @nile/api",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p e2e/tsconfig.json && npm run typecheck --workspaces --if-present",
+    "lint": "eslint --max-warnings=0 .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "audit": "node scripts/audit.mjs",
+    "test:contract": "vitest run --config packages/api/contract/vitest.config.ts",
+    "e2e": "playwright test --config e2e/playwright.config.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@nile/config": "*",
+    "@nile/test-utils": "*",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.2",
+    "eslint": "9.39.5",
+    "playwright-core": "1.63.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "vitest": "5.0.4"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  }
+}

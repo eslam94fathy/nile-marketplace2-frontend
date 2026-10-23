@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# Next.js / build output
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# tests
+coverage/
+playwright-report/
+test-results/
+
+# env (keys only in .env.example)
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db

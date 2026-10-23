@@ -1,0 +1,117 @@
+import { defineFactory, fixtureId } from '../factory';
+
+/**
+ * `AdminOrderDetailDto`: a placed COD order of 250.00 + 50.00 with one seller order (two items, one cancelled)
+ * and their histories. Ids start at 14000 (order), 14500 (seller order), 14800 (items).
+ */
+export const adminOrderDetailFactory = defineFactory<'AdminOrderDetailDto'>((sequence) => ({
+  id: fixtureId(14000 + sequence),
+  orderNumber: `NM-2026-${String(sequence).padStart(6, '0')}`,
+  customerId: fixtureId(14300 + sequence),
+  status: 'placed',
+  paymentMethod: 'cod',
+  paymentStatus: 'pending',
+  itemsTotal: '250.00',
+  deliveryFee: '50.00',
+  total: '300.00',
+  shippingAddress: {
+    recipientName: 'Mona Adel',
+    recipientPhone: '+201001234567',
+    governorateId: fixtureId(9701),
+    governorateName: 'Alexandria',
+    city: 'Alexandria',
+    area: 'Smouha',
+    street: 'Victor Emmanuel',
+    building: '7',
+    floor: '3',
+    apartment: null,
+    landmark: null,
+  },
+  paymentExpiresAt: null,
+  placedAt: '2026-10-15T10:00:00.000Z',
+  completedAt: null,
+  cancelledAt: null,
+  createdAt: '2026-10-15T10:00:00.000Z',
+  statusHistory: [
+    {
+      fromStatus: null,
+      toStatus: 'placed',
+      actorRole: 'customer',
+      actorUserId: fixtureId(14300 + sequence),
+      reason: null,
+      at: '2026-10-15T10:00:00.000Z',
+    },
+  ],
+  sellerOrders: [
+    {
+      id: fixtureId(14500 + sequence),
+      sellerId: fixtureId(9601),
+      businessName: 'Nile Crafts',
+      status: 'placed',
+      subtotal: '250.00',
+      commissionRate: '0.1000',
+      commission: '25.00',
+      sellerNet: '225.00',
+      cancelReason: null,
+      canCancel: true,
+      items: [
+        {
+          id: fixtureId(14800 + sequence),
+          productId: fixtureId(14900 + sequence),
+          variantId: fixtureId(14950 + sequence),
+          productName: 'Cotton scarf',
+          sku: 'SCARF-L',
+          attributes: [{ attribute: 'Size', value: 'Large' }],
+          unitPrice: '125.00',
+          quantity: 2,
+          cancelledQuantity: 0,
+          lineTotal: '250.00',
+        },
+      ],
+      timeline: [{ status: 'placed', at: '2026-10-15T10:00:00.000Z' }],
+      statusHistory: [
+        {
+          fromStatus: null,
+          toStatus: 'placed',
+          actorRole: 'customer',
+          actorUserId: fixtureId(14300 + sequence),
+          reason: null,
+          at: '2026-10-15T10:00:00.000Z',
+        },
+      ],
+    },
+  ],
+}));
+
+/** `RefundDto`: 100.00 to record by hand for a cancelled seller order. Ids start at 15000. */
+export const refundFactory = defineFactory<'RefundDto'>((sequence) => ({
+  id: fixtureId(15000 + sequence),
+  paymentId: fixtureId(15500),
+  orderId: fixtureId(14001),
+  sellerOrderId: fixtureId(14501),
+  amount: '100.00',
+  reason: 'seller_order_cancelled',
+  status: 'pending_manual',
+  providerRefundRef: null,
+  recordedByUserId: null,
+  recordedAt: null,
+  createdAt: '2026-10-15T12:00:00.000Z',
+}));
+
+/** `AdminPaymentDto`: a paid Kashier payment of 300.00 with no refunds or events. Ids start at 15500. */
+export const adminPaymentFactory = defineFactory<'AdminPaymentDto'>((sequence) => ({
+  id: fixtureId(15500 + sequence),
+  orderId: fixtureId(14001),
+  method: 'kashier',
+  status: 'paid',
+  amount: '300.00',
+  collectedAmount: '300.00',
+  refundedAmount: '0.00',
+  providerOrderRef: 'KSH-ORDER-1',
+  providerTransactionRef: 'KSH-TX-1',
+  paidAt: '2026-10-15T10:05:00.000Z',
+  refunds: [],
+  events: [],
+  createdAt: '2026-10-15T10:00:00.000Z',
+  updatedAt: '2026-10-15T10:05:00.000Z',
+}));

@@ -1,0 +1,57 @@
+# CLAUDE.md §12: npm ci → lint → format check → type-check → unit/component tests → build → dependency audit.
+# Contract tests against the real backend run in contract.yml (T-B7); E2E smoke joins in phase d.
+# A red CI blocks merge.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # next.config.ts validates the public NEXT_PUBLIC_* settings, which typegen and builds load. CI uses the
+      # local development values (localhost URLs); the generated session key is never read by a build.
+      - name: Env files
+        run: npm run dev:env
+
+      - name: Lint
+        run: npm run lint && npm run format:check
+
+      # The committed generated types must match the pinned snapshot (backend.lock.json) and openapi-fix.ts.
+      - name: OpenAPI drift check
+        run: npm run api:check
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # High/critical advisories fail, in runtime and dev dependencies, except reviewed entries in
+      # audit-exceptions.json (each with a reason and a review date that also fails once passed).
+      - name: Dependency audit
+        run: npm run audit

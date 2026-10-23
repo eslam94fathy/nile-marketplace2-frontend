@@ -1,6 +1,6 @@
 # Design 02 — Data layer: BFF allow-lists, queries, mutations
 
-Status: **v0.1 DRAFT (2026-10-14), for review.** Companion of `01-system-design.md`.
+Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Companion of `01-system-design.md`.
 Generated parts (§1) come from the OpenAPI snapshot (sha256 prefix `4b4e399d39b9b3da`, backend `4ad89a6`) and are regenerated with the snapshot; the BFF code reads the same data from `packages/api/src/allow-lists.ts`, which a unit test compares against this table.
 
 ---

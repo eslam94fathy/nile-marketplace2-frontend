@@ -34,6 +34,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase b — Frontend Foundation
 
 ### T-B1 Repository and workspace scaffold
+- **Status (2026-10-14):** implemented, verified locally from a clean `npm ci` (lint, format, type-check, 18 tests, build of 4 apps, audit gate, dev servers on 4100–4103); awaiting review and first CI run on GitHub. Versions and deviations: `CLAUDE.md` §1, §14.3 TB-1, TB-2.
 - **Scope:** git repo (FQ-11), npm workspaces, Node 24 (`.nvmrc`, `engines`), shared `packages/config` (tsconfig strict flags from architecture §10, ESLint, Prettier, Vitest preset), one empty Next.js app per approved role (`apps/storefront`, `apps/seller`, `apps/admin`, `apps/agent` per FQ-2) rendering a placeholder page, root scripts (`dev`, `build`, `typecheck`, `lint`, `format`, `test`), CI workflow running them.
 - **Exclusions:** UI, auth, API calls, styling beyond defaults, deployment.
 - **Dependencies:** FQ-1, FQ-2, FQ-9, FQ-11 (all decided).
@@ -43,6 +44,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B2 Environment configuration
+- **Status (2026-10-14):** implemented and verified (65 tests; build fails on a missing public key; server start fails with key names only; a client import of server env fails the build; clean CI sequence green). Refinements: design 01 R-7…R-11.
 - **Scope:** zod-validated env per app, split server/public, no defaults, startup failure naming missing keys (never values); `.env.example` per app; keys: `NILE_API_BASE_URL`, `SESSION_ENCRYPTION_KEYS`, `SESSION_ACTIVE_KEY_ID`, `APP_ORIGIN`, plus public ones.
 - **Exclusions:** secret management in deployment (phase i).
 - **Dependencies:** T-B1.
@@ -52,6 +54,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B3 OpenAPI snapshot, correction script and type generation
+- **Status (2026-10-14):** implemented and verified: snapshot pinned to backend `4ad89a6` (`backend.lock.json`), corrections report 84 nullable response fields, 11 nullable request fields, 10 phantom properties removed, `idOrSlug`, governorate fee and `attr.*` fixed; 24 rule tests + compile-time checks on the generated types; drift check fails on stale types and on a hand-edited snapshot; clean CI sequence green. Refinement: design 01 R-12.
 - **Scope:** `api:pull` (from `NILE_API_BASE_URL`), committed snapshot, `openapi-fix.ts` with the corrections in architecture §6.3, `openapi-typescript` generation, CI drift check.
 - **Exclusions:** runtime client, React hooks.
 - **Dependencies:** T-B1, FQ-9.
@@ -61,6 +64,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD + corrections listed in `api-inventory.md` §9 are cross-referenced in code comments.
 
 ### T-B4 API client core
+- **Status (2026-10-14):** implemented and verified: `createApiClient` + `unwrap`, `ApiError` (109 backend codes from the backend source + 4 client codes), `serverTransport`, `browserTransport` (BFF rewrite, single refresh-and-retry), `productQuery`/`inValues`/literal query serializer; 57 tests with MSW 3 (success, list meta, 204, each common error code, Retry-After, non-envelope, malformed JSON, network failure, abort, idempotency header and compile-time key requirement, retry once with the same key). Refinement: design 01 R-13.
 - **Scope:** `openapi-fetch` wrapper: envelope unwrapping, `ApiError`, error-code union (api-inventory §7), `Retry-After` parsing, correlation id, idempotency-key parameter, literal filter/sort/cursor query builder, `buildProductQuery()` for `attr.*`; server transport (Bearer) and browser transport (`/api/bff`).
 - **Exclusions:** auth/session (T-D1), TanStack hooks (T-B5).
 - **Dependencies:** T-B3.
@@ -70,6 +74,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B5 TanStack Query foundation
+- **Status (2026-10-14):** implemented and verified in `packages/query` (design R-1 moved it out of `packages/api`): query client defaults and per-request/singleton rule, key factory, cursor-list helper, shared public queries, `QueryProvider` in every app layout; 21 tests incl. the acceptance test (server prefetch hydrates with 0 client requests; a mutation that makes the client refetch fails it); devtools absent from production bundles. Refinement: design 01 R-14.
 - **Scope:** `getQueryClient()` (per request on server, singleton in browser), providers per app, default options (architecture §6.5), query-key factory pattern, infinite-list helper for cursor pagination, `HydrationBoundary` usage example, devtools in development only.
 - **Exclusions:** feature queries.
 - **Dependencies:** T-B4.
@@ -79,6 +84,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B6 Domain utilities
+- **Status (2026-10-14):** implemented and verified in `packages/domain`: enum value lists checked against the generated API types in both directions, money (`parseMoney`, `addMoney`, `formatMoney`, `formatMoneyRange`, `rateToPercent`, `percentToRate`), dates (`formatDateTime`, `countdown`), exhaustive label maps per view (customer/seller/admin/agent), Zod `fields`, `sellerOrderActions` and `agentShipmentActions`; 172 tests plus compile-time checks (a missing, extra or new enum value fails type-check). Labels without spec wording decided 2026-10-14 (CLAUDE.md §14.1c). Refinement: design 01 R-15.
 - **Scope:** money (parse/format/add with decimal library), dates (format in display zone, countdown from server timestamps), exhaustive enum label maps (api-inventory §8), shared Zod field schemas mirroring backend rules (email ≤ 254 lower-cased, Egyptian phone, money pattern, password 8 chars..72 UTF-8 bytes untrimmed, OTP 6 digits, slug), display-only status→actions helpers.
 - **Exclusions:** UI components; localisation of labels beyond the default language until FQ-4.
 - **Dependencies:** T-B1 (FQ-4 decided: English, `Africa/Cairo`).
@@ -88,6 +94,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-B7 Test infrastructure and contract tests
+- **Status (2026-10-14):** implemented and run locally against the backend at the pinned commit: contract suite 41/41 (5 public GETs, 27 role GETs across four accounts, 4 error envelopes, coverage check) after it found one wrong OA-1 correction (`AdminShipmentDto.history` is left out of lists, now kept optional, types regenerated); checker unit tests with broken fixtures; `@nile/test-utils` (typed MSW, factories, render helper, backend/Mailpit/account helpers) with 19 tests; Playwright smoke 4/4 (production builds, axe) and the per-role fixtures check. `contract.yml` is unverified until its first run on GitHub and needs the `BACKEND_REPO_TOKEN` secret. Refinement: design 01 R-16; OA-1 marked verified in `api-inventory.md`.
 - **Scope:** MSW handlers typed from the schema, factories, render helpers; Playwright project with per-role fixtures; CI job that starts the backend from its repo (`docker compose up`, `seed:dev`, fake gateway, Mailpit), waits for `/health/ready`, runs contract tests that parse real responses with strict schemas (validates the OA-1 assumption).
 - **Exclusions:** feature E2E tests (added per phase).
 - **Dependencies:** T-B3, T-B4; access to the backend repo from CI (FQ-11).
@@ -99,6 +106,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase c — Design System
 
 ### T-C1 Tailwind + shadcn/ui setup and design tokens
+- **Status (2026-10-14):** implemented; **tokens approved 2026-10-14 (FQ-5)**. `packages/ui`: `tokens.ts` (source of truth: Nile blue and slate scales, shadcn-named semantic colours, type scale, 4 px spacing, radii, shadows), `theme.css` (Tailwind v4 `@theme`, default palette switched off), `cn()`, `contrastRatio()`, `TokenSheet`, `components.json`; Tailwind 4.3.3 + Inter (`next/font/google`, self-hosted) in all four apps; token page at storefront `/design/tokens`. Tests: 83 unit tests (theme.css equals tokens.ts; 21 contrast pairs, 19 text pairs ≥ 4.5:1 and 2 boundary pairs ≥ 3:1); Playwright checks computed colours, font and axe on the token page and attaches a full-page screenshot (no pixel baseline: OS-dependent, and CI E2E starts in phase d). Refinement: design 01 R-17.
 - **Scope:** Tailwind CSS v4, shadcn/ui init in `packages/ui`, tokens (color, type scale, spacing, radius, shadow) as CSS variables, light theme (dark mode not in scope unless you ask), LTR only (FQ-4), font loading via `next/font`.
 - **Exclusions:** product screens.
 - **Dependencies:** T-B1. FQ-5: I propose the tokens; you approve them before T-C2.
@@ -108,6 +116,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD + tokens approved by you.
 
 ### T-C2 Core components
+- **Status (2026-10-14):** implemented in `packages/ui`: Button, Input, Textarea, Label, Select (Radix), Checkbox, Switch, `Field` (React Hook Form, label/description/error wired with `aria-*`) and `FormAlert`, Dialog/Sheet (`placement`), `ConfirmDialog` (async, stays open on failure), Toast (Radix, `toast()` with correlation id), Badge/`StatusBadge` + exhaustive tone maps per status enum, Money, DateTime, Countdown, EmptyState, ErrorState, Skeleton/LoadingRegion, LoadMore, DataTable (API `sort` values, `aria-sort`, load more, no totals). Scope decisions 2026-10-14 (CLAUDE.md §14.1f): no Combobox yet (first screen that needs search), own DataTable instead of `@tanstack/react-table`, Radix Toast instead of `sonner`; "cursor stack" dropped because every spec uses "Load more" (conventions §7). Tests: 110 in `@nile/ui` (axe-core in jsdom per component group, DataTable over two cursor pages with TanStack Query + typed MSW); Playwright on the storefront `/design/components` gallery (axe incl. colour contrast, focus outline, dialog/confirm/toast/table). Refinement: design 01 R-18.
 - **Scope:** Button, Input, Textarea, Select/Combobox, Checkbox/Switch, form Field (RHF-wired, error/description slots), Dialog/Sheet, Toast (with correlation id), Badge/StatusBadge (per enum), Money, DateTime, EmptyState, ErrorState, Skeletons, Pagination (load more / cursor stack), DataTable (sortable columns mapped to API sort, filters bound to URL), Countdown.
 - **Exclusions:** feature-specific composites.
 - **Dependencies:** T-C1, T-B6.
@@ -117,6 +126,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-C3 Application shells per role
+- **Status (2026-10-14):** implemented: storefront header (logo, categories drawer stand-in, search 2..100 trimmed → `/search?q=`, signed-out account links with `returnTo`, cart → sign-in) and footer; seller sidebar / mobile bottom sheet with business-name and status stand-ins; admin grouped sidebar from 1024 px, menu sheet below, phone note; agent top bar with disabled shift switch and 48 px bottom navigation in a centred column. Every app: skip link, one `<main id="main">`, `<Toaster />`, `error.tsx` (Next.js 16 `retry`, digest as reference), `not-found.tsx`; seller/admin/agent pages in a `(portal)` route group (auth pages join outside it in phase d). Decisions 2026-10-14 (CLAUDE.md §14.1g): a placeholder page per navigation destination naming the task that builds it; static stand-ins for data-driven header parts. Tests: Playwright 33/33 (each app at 360/768/1280 px with landmarks, skip link, no horizontal scroll, axe, attached screenshots; navigation incl. mobile menus; not-found 404; search rules; returnTo links). Refinement: design 01 R-19.
 - **Scope:** layouts, navigation, header with session menu placeholder, responsive behaviour (agent shell mobile-first), `error.tsx`/`not-found.tsx` per app, role-specific landing placeholders.
 - **Exclusions:** auth wiring (phase d), data.
 - **Dependencies:** T-C2.
@@ -128,6 +138,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase d — Authentication
 
 ### T-D1 BFF session and route handlers
+- **Status (2026-10-14):** implemented and verified locally (604 tests; lint, format, type-check, API drift check, build of 4 apps, audit gate green; no session or token code in any client bundle). Not yet run against the real backend (needs the local stack); E2E sign-in coverage arrives with the screens (T-D4+). Decisions and refinements: design 01 R-20.
 - **Scope:** encrypted session cookie (architecture §5.2), `POST /api/auth/{login,refresh,logout}` route handlers, per-app role check at login (wrong role → session discarded, explanatory error), BFF proxy `/api/bff/[...path]` with per-app path/method allow-list, Origin + custom-header CSRF checks, `no-store` headers, correlation id forwarding.
 - **Exclusions:** UI screens (T-D4+), client refresh coordination (T-D2), production client-IP forwarding (blocked by OQ-1).
 - **Dependencies:** T-B2, T-B4, FQ-1, FQ-8; **OQ-1 must be resolved before production**, not before local development.
@@ -137,6 +148,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD + security review checklist (architecture §9) for this PR.
 
 ### T-D2 Refresh coordination
+- **Status (2026-10-14):** implemented and verified locally (664 tests incl. a simulated two-tab browser: 20 concurrent calls after expiry → 1 backend rotation, and a control without Web Locks → 2; lint, format, type-check, drift check, build, audit green). The real-backend two-tab E2E is written but **not yet run**: it needs the backend's `ACCESS_TOKEN_TTL_MINUTES=2` and the E2E settings. Decisions: design 01 R-21.
 - **Scope:** client refresh coordinator (Web Locks + `sv` cookie + BroadcastChannel fallback), 401 → refresh → single retry in the browser transport, proactive refresh timer while visible, RSC "expired session" boundary that refreshes then `router.refresh()`, cross-tab logout.
 - **Exclusions:** none beyond T-D1.
 - **Dependencies:** T-D1.
@@ -146,6 +158,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D3 Route protection
+- **Status (2026-10-14):** implemented and verified locally (lint, format, type-check, drift check, unit/component tests, build of 4 apps, audit green) and smoke-tested against the real backend on the storefront production build (register → verify → BFF login without tokens in the body → deep link → `returnTo` safe/refused → Bearer call → refresh → logout → redirect). The Playwright suite (deep link per app, portal shells now signed in) is written but **not yet run** (needs the E2E settings). Decisions: design 01 R-22.
 - **Scope:** `proxy.ts` optimistic guard per app (redirect with `returnTo`), `requireSession(role)` DAL used by every protected server entry point, role landing redirect after login.
 - **Exclusions:** business-status gating (seller approval, agent active) — in phase h.
 - **Dependencies:** T-D1.
@@ -155,6 +168,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D4 Customer auth screens (workflow C-2)
+- **Status (2026-10-14):** implemented and verified locally (802 tests: every form's validation, each mapped server error, rate-limit countdown, header account area; lint, format, type-check, build green). E2E `e2e/storefront/auth.spec.ts` passed against the real backend (storefront production build on a spare port): register → Mailpit code → verify → signed in → sign out → sign in with an untrimmed password; forgot → code → reset → old password refused → new password accepted; unknown email answered like a known one; axe on every sign-in screen. Decisions: design 01 R-23.
 - **Scope:** login, register customer, verify email (with resend + 60 s countdown), forgot password, reset password, logout; error mapping per api-inventory §7.2; `EMAIL_NOT_VERIFIED` → verify step.
 - **Exclusions:** social login, phone OTP (not in API).
 - **Dependencies:** T-D1…T-D3, T-C2.
@@ -164,6 +178,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D5 Seller registration and auth screens (workflow S-1)
+- **Status (2026-10-14):** implemented and verified locally (815 tests; lint, format, type-check, build of 4 apps green). E2E `e2e/seller/auth.spec.ts` passed against the real backend (seller production build on a spare port): register with pickup address → Mailpit code → verify → overview with business name, "Waiting for approval" badge and banner; a customer account is pointed to the store site. The generic sign-in screens moved to `@nile/auth-screens` and the storefront uses them. Decisions: design 01 R-24.
 - **Scope:** seller login/register (business name, phone, pickup address with governorate select), verify email, password reset, post-login status page.
 - **Exclusions:** seller features (phase h).
 - **Dependencies:** T-D4 patterns, T-D1…T-D3.
@@ -173,6 +188,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D6 Invite acceptance (admins, agents)
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests, build of 4 apps green). E2E `e2e/storefront/invite.spec.ts` passed against the real backend (production builds on spare ports): admin invited → token from Mailpit → storefront `/invite` (token removed from the URL) → admin app sign-in with the "password set" notice → dashboard, no storefront session cookie; same for a delivery agent → agent app; a used invite asks for a new one. The run found a pre-hydration native GET submit that put the password in the URL; fixed in every form with a regression test. Decisions: design 01 R-25.
 - **Scope:** neutral `/invite?token=…` page in the storefront (architecture §5.7): set password, server-side accept, immediate session discard (no cookie set), redirect to the admin or agent app login with a "password set" notice; token removed from the URL after reading. Admin and agent `/login` pages show that notice.
 - **Exclusions:** invite sending (phase h); a backend per-role invite URL.
 - **Dependencies:** T-D1; backend env `INVITE_URL_BASE` pointed at `<storefront>/invite` (locally `http://localhost:4100/invite`).
@@ -182,6 +198,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-D7 Change password (all apps)
+- **Status (2026-10-15):** implemented and verified locally (852+ tests; lint, format, type-check, build of 4 apps green). E2E `e2e/storefront/security.spec.ts` passed against the real backend (production build on a spare port): change password → still signed in after a reload → sign out → old password refused → new password accepted; a wrong current password shown on its field. Decisions: design 01 R-26. Phase d complete.
 - **Scope:** security page: change password (BFF supplies the refresh token), notice that other sessions end.
 - **Exclusions:** "log out everywhere" (no endpoint, OQ-9).
 - **Dependencies:** T-D1.
@@ -193,6 +210,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase e — Catalog (workflow C-1)
 
 ### T-E1 Category navigation and category pages
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests, build green). E2E `e2e/storefront/catalog-navigation.spec.ts` passed against the real backend (production build on a spare port) with the live tree: home tile → category → subcategory chips to the third level → breadcrumbs back; desktop dropdown; phone drawer to the third level; unknown slug → 404. The storefront shell specs pass too (the T-C3 footer test now expects the T-D3 sign-in redirect). Home split with T-E2 (decided 2026-10-15). Decisions: design 01 R-27.
 - **Scope:** category tree menu (`GET /categories`, server-prefetched, revalidated), category page by slug with breadcrumbs, subcategory links.
 - **Exclusions:** product listing logic (T-E2).
 - **Dependencies:** T-B5, T-C3, FQ-7.
@@ -202,6 +220,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-E2 Product listing, search and filters
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests incl. 32 URL ⇄ API mapping cases, build green). E2E `e2e/storefront/catalog-listing.spec.ts` passed against the real backend (production build on a spare port, live data): header search → results → sort and "In stock only" in the URL → Back restores; "Load more" without duplicates; attribute facet on a category page; invalid URL values dropped. Home "New arrivals" done (T-E1 split). Decisions: design 01 R-28.
 - **Scope:** listing with infinite/“load more” cursor paging; search `q` (2..100); filters (price range, in stock, attribute facets from `GET /categories/:id/attributes` when a category is selected); sort options valid for the context (relevance only with `q`); all state in the URL.
 - **Exclusions:** result counts (API has none); autocomplete (no endpoint).
 - **Dependencies:** T-E1, T-B4 (`buildProductQuery`).
@@ -211,6 +230,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-E3 Product detail and variant selection
+- **Status (2026-10-15):** implemented and verified locally (lint, format, type-check, unit/component tests incl. 16 variant-selection cases, build green). E2E `e2e/storefront/product.spec.ts` passed against the real backend (production build on a spare port, live data): choose options → URL `?variant=` → "Add to cart" signed out → sign in → back on the product with the variant and quantity preselected; id URL → 308 to the slug; unknown product → 404 "This product isn't available any more.". The run found a server/client boundary bug (a constant imported from a client module), fixed. JSON-LD pending a decision (CLAUDE.md §14.3 SF-JSONLD). Decisions: design 01 R-29.
 - **Scope:** product page by slug (server-rendered, `no-store`), description as plain text, seller link (`/search?seller=`), variant picker by option, price/compare-at, availability (`availableQuantity`), add-to-cart entry point (logged out → login with `returnTo` carrying variant and quantity, FQ-6), SEO metadata.
 - **Exclusions:** images, reviews (not in API); the cart write itself (T-F1).
 - **Dependencies:** T-E2 (FQ-6 decided: login required to add).
@@ -222,6 +242,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase f — Cart & Checkout
 
 ### T-F1 Cart (workflow C-4)
+- **Status (2026-10-15):** implemented and verified locally (947 tests incl. every `issue` value and add/change error code; lint, format, type-check, build green). E2E `e2e/storefront/cart.spec.ts` passed against the real backend (production build on a spare port): signed-in add from the product page → badge "Cart, 1 item" → cart page → two clicks = one debounced update → "Items (3)" → remove → empty; the T-E3 product journey now checks that nothing is added automatically after sign-in (FQ-6). Decisions: design 01 R-30.
 - **Scope:** add from product page (logged-out visitor → login/register → back to the product with variant and quantity preselected, FQ-6), cart page grouped by seller, quantity change (1..99, ≤ `availableQuantity`), remove, empty, issue display and resolution, header cart count (`itemCount`).
 - **Exclusions:** guest cart, automatic add after login (FQ-6).
 - **Dependencies:** T-E3, T-D3.
@@ -231,6 +252,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F2 Address selection at checkout (workflow C-3, C-5)
+- **Status (2026-10-15):** implemented and verified locally (959 tests incl. preselection rules, non-deliverable addresses, the C-3 default rule, `ADDRESS_LIMIT_REACHED`, `GOVERNORATE_NOT_FOUND`, entry guard and load failure; lint, format, type-check, build green). E2E `e2e/storefront/checkout-address.spec.ts` passed against the real backend (production build on a spare port): cart item → checkout → inline form → saved address selected → delivery fee shown → emptied cart sends back to `/cart`. Decisions: design 01 R-31.
 - **Scope:** choose/add an address in checkout; governorate picker marking non-deliverable ones; delivery fee display.
 - **Exclusions:** full address book management (T-G2), though components are shared.
 - **Dependencies:** T-F1, T-G2 components (or built here and reused there).
@@ -240,6 +262,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F3 Checkout with cash on delivery (workflow C-6, COD path)
+- **Status (2026-10-15):** implemented and verified locally (991 tests incl. `expectedTotal` unit tests, `useIdempotentMutation` key rules, every Place order error of SF-07-A1 except `ORDER_PAYMENT_PENDING` (Kashier only, T-F4), same key on retry, new key after `ORDER_TOTAL_CHANGED`, no second request while placing, and the SF-08 confirmation; lint, format, type-check, build green). E2E `e2e/storefront/checkout-cod.spec.ts` passed against the real backend (production build on a spare port): saved default address preselected → Cash on delivery → one `POST /checkout` → confirmation → order in `GET /orders` with total = items total + fee → cart empty. Decisions: design 01 R-32.
 - **Scope:** review step (per-seller groups, items total, fee, total), `expectedTotal` computed with decimals, `POST /checkout` with one idempotency key per attempt intent, the full error-recovery table of workflow C-6, confirmation page.
 - **Exclusions:** Kashier (T-F4).
 - **Dependencies:** T-F2, T-B6 (OQ-15: computation recommended in api-inventory §10.4).
@@ -249,6 +272,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-F4 Kashier payment and return page
+- **Status (2026-10-15):** implemented and verified locally (1021 tests incl. https check, storage guards, card checkout with/without `checkoutUrl`, `ORDER_PAYMENT_PENDING`, return page per outcome, tampered URL, grace limit, fallback lookup, Pay now errors, Buy again; lint, format, type-check, build green). E2E `e2e/storefront/checkout-kashier.spec.ts` paid path passed against the real backend (fake gateway, production build on a spare port): card checkout → intercepted Kashier page → cross-site return with `?paymentStatus=SUCCESS` still signed in (SameSite=Lax verified) and still "Confirming…" → signed webhook → "Payment received" → order `placed`/`paid`. Expired path written but **skipped locally**: it needs `KASHIER_PAYMENT_TTL_MINUTES=1` in the backend (currently 15). Decisions: design 01 R-33.
 - **Scope:** save the order id in `sessionStorage` and redirect to `checkoutUrl` (https check), recovery via `kashier-session` when `null`, return page locating the order (saved id, else newest `pending_payment`/`placed` order) and polling `GET /orders/:id` until placed/cancelled/expired with countdown from `paymentExpiresAt`, "pay now" on pending orders, `ORDER_PAYMENT_PENDING` handling.
 - **Exclusions:** refunds (admin, phase h).
 - **Dependencies:** T-F3; backend env `KASHIER_REDIRECT_URL` pointed at `<storefront>/checkout/payment-return` (OQ-2; locally `http://localhost:4100/checkout/payment-return`).
@@ -260,6 +284,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 ## Phase g — Orders & Account
 
 ### T-G1 Customer profile (workflow C-3)
+- **Status (2026-10-15):** implemented and verified locally (1036 tests incl. the changed-fields patch, Save disabled without a change, header greeting update, client and server validation, failure and load states, `formatDate`; lint, format, type-check, build green). E2E `e2e/storefront/profile.spec.ts` passed against the real backend (production build on a spare port): edit last name and phone → one PATCH → "Profile saved." → values survive a reload and match `GET /me`. Decisions: design 01 R-34.
 - **Scope:** view/edit name and phone; email read-only.
 - **Exclusions:** email change (no endpoint).
 - **Dependencies:** T-D3.
@@ -269,6 +294,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G2 Address book
+- **Status (2026-10-15):** implemented and verified locally (1049 tests incl. edit body rules (changed fields only, `null` for cleared optionals, never unsetting the default), list order and limit, add/edit/make default/delete, `ADDRESS_NOT_FOUND` reload, empty and failure states; lint, format, type-check, build green). E2E `e2e/storefront/addresses.spec.ts` passed against the real backend (production build on a spare port): add two → first is default → edit → make the second default → delete it → "Choose a default address." and the API agrees; the T-F2 checkout address E2E still passes with the shared form. Decisions: design 01 R-35.
 - **Scope:** list, create, edit, delete, set default (rules in workflow C-3).
 - **Exclusions:** maps/geolocation.
 - **Dependencies:** T-G1 (or T-F2 components).
@@ -278,6 +304,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G3 Orders list and detail (workflow C-7)
+- **Status (2026-10-15):** implemented and verified locally (tests incl. every order and seller-order status label, tabs → `status[in]`, "Load more", detail sections, cancelled quantities, Pay now before/after the deadline, the three total notes, Buy again, not found; lint, format, type-check, build green). E2E `e2e/storefront/orders.spec.ts` passed against the real backend: COD order → list → tabs → detail → another customer's id and a malformed id both "not found". The E2E found that a malformed id answered `400 VALIDATION_FAILED` and showed a retryable error; fixed for SF-08/SF-09/SF-18 with regression tests. Decisions: design 01 R-36.
 - **Scope:** orders list with status filter and cursor paging; detail with totals, payment status, address, seller orders, items (incl. cancelled quantities), timelines.
 - **Exclusions:** live tracking (no data).
 - **Dependencies:** T-F3.
@@ -287,6 +314,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 - **DoD:** global DoD.
 
 ### T-G4 Customer cancellation (workflow C-8)
+- **Status (2026-10-15):** implemented and verified locally (tests incl. Cancel only when `canCancel`, body with and without a note, note limit, card refund line, retry with the same key, `SELLER_ORDER_NOT_CANCELLABLE` refetch, "Keep them"; lint, format, type-check, build green). E2E `e2e/storefront/order-cancel.spec.ts` passed against the real backend: COD order → order page → cancel with a note → block "Cancelled", Cancel gone, API agrees. Decisions: design 01 R-37.
 - **Scope:** cancel a seller order when `canCancel`, optional note, idempotency key, refund notice for Kashier.
 - **Exclusions:** item-level cancel (seller only).
 - **Dependencies:** T-G3.
@@ -300,6 +328,7 @@ Status: **DRAFT v0.2 (2026-10-14), PROPOSED.** v0.2: FQ decisions applied (archi
 Seller app (workflows S-1…S-6):
 
 ### T-H1 Seller shell, status gating, profile, re-apply
+- **Status (2026-10-15):** implemented; component tests green (each of the four statuses in banner, overview and access rules; `SELLER_NOT_APPROVED` refetch + toast; profile changed-fields-only, whole pickup address, cleared landmark `null`, `BUSINESS_NAME_TAKEN`, `GOVERNORATE_NOT_FOUND`, `VALIDATION_FAILED`, load failure; re-apply confirm, cancel, `SELLER_INVALID_STATUS_TRANSITION`, other failure); seller lint, format, type-check and build green. E2E `e2e/seller/profile.spec.ts` (admin rejects via API → reason shown → edit → re-apply → waiting for approval, API agrees; pending overview) written and type-checked, **not yet run** against the real backend. Overview split with T-H4/T-H5 (decided 2026-10-15). Decisions: design 01 R-38.
 - **Scope:** status banner from `GET /seller/profile`; write actions disabled with explanation unless `approved`; profile edit; re-apply when `rejected`.
 - **Exclusions:** products, orders.
 - **Dependencies:** T-D5, T-C3.
@@ -309,6 +338,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H2 Products and variants
+- **Status (2026-10-15):** implemented; unit and component tests green (filters URL ⇄ API, category paths, option matrix incl. incomplete set and existing combination, compare-at rule, body order, edit patch, last-active warning; list rows, filters, debounce, empty and error states; new product incl. `CATEGORY_NOT_FOUND`, `SELLER_NOT_APPROVED`, redirect when not approved; product page incl. not found, Publish rules and refusals, Unpublish/Delete confirmations, category lock, unavailable category; every create/edit error code). Seller lint, type-check and build green. E2E `e2e/seller/products.spec.ts` (create → variant → publish → storefront) written and type-checked, **not yet run** against the real backend. Category picker: Select with path labels (decided 2026-10-15). Stock actions stay with T-H3. Decisions: design 01 R-39.
 - **Scope:** product list (filters), create draft, edit, delete, activate/deactivate; variant create (option matrix from effective attributes, one option per attribute; default-variant case), edit, delete.
 - **Exclusions:** images, bulk import (no API).
 - **Dependencies:** T-H1.
@@ -318,6 +348,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H3 Stock adjustments and history
+- **Status (2026-10-15):** implemented; unit tests (delta for add/remove/set, refusals, amount parsing, schema) and component tests (fresh read on opening, "set to" from it, effect sentence equals the delta sent, removal beyond sellable blocked with the reserved count, "No change needed.", network retry reuses the key, `STOCK_ADJUSTMENT_INVALID` re-reads and the next try has a new key, `SELLER_NOT_APPROVED`, not-approved state; history labels, signed changes, "Order item", load more, empty, error, not found) green; seller lint, type-check and build green. E2E `e2e/seller/stock.spec.ts` (add, set, history) written and type-checked, **not yet run** against the real backend. The products feature hosts the dialog and history page; `features/stock` doesn't import it. Decisions: design 01 R-40.
 - **Scope:** delta adjustments with idempotency key; optional "set to N" helper computing the delta from fresh `onHand` with explicit confirmation; movements list.
 - **Exclusions:** absolute stock set (not in API).
 - **Dependencies:** T-H2.
@@ -327,6 +358,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H4 Seller orders
+- **Status (2026-10-15):** implemented; unit tests (tabs, open quantities, whole-order cancellation, final statuses) and component tests (list per tab with query and countdown, empty and error; detail per status with only the allowed actions; confirm, confirm after the deadline, ready, cancel with note and key reuse on retry, not cancellable, return received, item cancellation limits, "Other" note, whole-order warning, quantity changed; pending vs suspended access; not found; overview queues) green; seller lint, type-check and build green. E2E `e2e/seller/orders.spec.ts` (customer COD order for the seller's product → confirm → ready) written and type-checked, **not yet run** against the real backend. Default tab "To confirm", no date filter (decided 2026-10-15). The Overview moved to `features/overview` and shows the order queues. Decisions: design 01 R-41.
 - **Scope:** list with status filters, detail, accept, ready, cancel, item cancel (reason/note rules), return received, accept-deadline countdown, polling per OQ-13.
 - **Exclusions:** customer PII (not provided by API).
 - **Dependencies:** T-H1 (polling: 60 s while visible, api-inventory §10.4).
@@ -336,6 +368,7 @@ Seller app (workflows S-1…S-6):
 - **DoD:** global DoD.
 
 ### T-H5 Seller finance
+- **Status (2026-10-15):** implemented; component tests green (no earnings vs a 0.00 balance with history, balance error; statement descriptions and links, signed amounts, newest first, unexpected entry type shown and reported, empty and error states; payouts and empty payouts; overview balance card); seller lint, type-check and build green. E2E smoke `e2e/seller/finance.spec.ts` written and type-checked, **not yet run** against the real backend. No date filter; unexpected entry types go to `console.warn` until T-I4 (decided 2026-10-15). Decisions: design 01 R-42.
 - **Scope:** balance, ledger statement, payouts list.
 - **Exclusions:** payout requests (no endpoint).
 - **Dependencies:** T-H1.
@@ -347,6 +380,7 @@ Seller app (workflows S-1…S-6):
 Admin app (workflows AD-1…AD-7):
 
 ### T-H6 Admin shell and admin accounts
+- **Status (2026-10-15):** implemented (the shell navigation already existed from T-C3/T-D6); component tests green (rows and actions per status, no "Suspend" on yourself, tabs, invite incl. `EMAIL_ALREADY_REGISTERED`, resend incl. `USER_NOT_INVITED`, suspend reason rules, `CANNOT_SUSPEND_SELF` and `USER_INVALID_STATUS_TRANSITION`, reactivate, load failure; dashboard frame and queue card); admin lint, type-check and build green. The admin app got the seller app's test harness and form/query packages. E2E `e2e/admin/admins.spec.ts` (invite → accept → suspend → sign-in refused with `ACCOUNT_SUSPENDED`; own row) written and type-checked, **not yet run** against the real backend. Dashboard split per task (decided 2026-10-15). Decisions: design 01 R-43.
 - **Scope:** navigation; invite admin, list admins, resend invite, suspend (reason)/reactivate admins.
 - **Exclusions:** customer suspension and agent invite resend (OQ-7: no `userId` exposed; gap accepted for R1).
 - **Dependencies:** T-D6, T-C3.
@@ -356,6 +390,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H7 Seller management and commission
+- **Status (2026-10-15):** implemented; unit tests (percent ⇄ rate and `fields.percentRate`, Cairo-day bounds in winter and summer time, list filters URL ⇄ API, history actor roles) and component tests (list query, governorate names, date filter; seller page details, links and histories with "you" / admin email / Seller; actions per status; approve disabled without a verified email and `SELLER_EMAIL_NOT_VERIFIED`; reject reason rules; reinstate without a reason; stale transition; commission 12.5 → `"0.1250"`, unchanged rate, invalid percent; default commission with confirmation; dashboard queue) green; admin lint, type-check and build green. E2E `e2e/admin/sellers.spec.ts` (pending seller → approve → commission, API agrees; list and dashboard axe) written and type-checked, **not yet run** against the real backend. Date range built as specified (decided 2026-10-15). Decisions: design 01 R-44.
 - **Scope:** sellers list/filters, detail with histories, approve/reject/suspend/reinstate with reasons, commission rate per seller, default commission setting.
 - **Exclusions:** —
 - **Dependencies:** T-H6.
@@ -365,6 +400,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H8 Catalog structure
+- **Status (2026-10-15):** implemented; unit tests (path, inherited attributes by depth and order, effective count, depth limit, default sort order, form bodies and patches) and component tests (tree selection in the URL and the click-to-select regression, expand/collapse, inactive marking, prompt and unknown id, load failure; panel depth-3 rule, inactive-parent rules, details patch and slug warning, field errors, deactivate confirmation and `CATEGORY_IN_USE`, `CATEGORY_NOT_FOUND` reload; create with every category error; attribute and option create/edit/delete with every error; codes never editable; 5-attribute warning) green; admin lint, type-check and build green. E2E `e2e/admin/catalog.spec.ts` (category → attribute → option → a seller creates a product and variant with it) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-45.
 - **Scope:** category tree editor (create, rename, slug, order, activate/deactivate), attributes and options CRUD with the constraints of workflow AD-3.
 - **Exclusions:** moving categories, deleting categories (not in API).
 - **Dependencies:** T-H6.
@@ -374,6 +410,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H9 Delivery setup, agents and shipments
+- **Status (2026-10-16):** implemented; unit tests (shipment tabs → API query incl. `[in]`, agent/order/Cairo-day filters and URL round-trip, invalid values dropped; assignable statuses and candidate order; agent filters; edit patch of changed fields) and component tests (AD-08 share confirmation and fraction, governorates by name, "Set fee" string and "Stop delivering" `null`, `GOVERNORATE_NOT_FOUND` reload, load failure; AD-09 default query and rows; AD-10 create, invite toast and redirect, `EMAIL_ALREADY_REGISTERED`, validation; AD-11 invite note, balances and shortcuts, active shipments query, deactivate confirmation, `AGENT_HAS_ACTIVE_SHIPMENTS` link, `AGENT_INVALID_STATUS_TRANSITION` refetch, edit patch; AD-12 default and filtered queries, agent names; AD-13 content, cancelled-after-pickup note, no assign after pickup, assign dialog lists active agents only, current excluded, preferred first, `SHIPMENT_NOT_ASSIGNABLE`, `AGENT_INACTIVE`, not found; dashboard queue) green; repo type-check, lint, format, all unit tests and admin build green. E2E `e2e/admin/delivery.spec.ts` (set fee → create agent → seller-ready COD order → assign) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-46.
 - **Scope:** governorate fees (set/clear), agent fee-share setting, agents CRUD/activate/deactivate, shipments list (unassigned queue), detail, assign/reassign.
 - **Exclusions:** reassignment after pickup (not in API); agent invite resend (OQ-7).
 - **Dependencies:** T-H6.
@@ -383,6 +420,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H10 Orders, payments and refund queue
+- **Status (2026-10-16):** implemented; unit tests (order tabs, exact number, customer and Cairo-day filters with URL round-trip; refund tabs, reasons as `[in]` in a fixed order, invalid values dropped; admin cancel-reason labels) and component tests (AD-14 default query, rows, exact search on Find, customer filter; AD-15 content, links, neutral cancel reason, payment deadline, no actions, not found; AD-16 default query, reason filter in the URL, recorded rows with actor, record with the Kashier instruction and the same idempotency key on retry, `REFUND_ALREADY_RECORDED`; AD-17 references, refunds, events, not found; payment summary "No payment record"; dashboard queues 3 and 5) green; repo type-check, lint, format, all unit tests and admin build green. E2E `e2e/admin/refunds.spec.ts` (late Kashier payment → refund to record → recorded, needs `NILE_BACKEND_DIR` and `KASHIER_PAYMENT_TTL_MINUTES=1`) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-47.
 - **Scope:** orders list/detail with histories, payment view, refunds work queue, record refund with idempotency key.
 - **Exclusions:** admin order cancellation (S-9, not in API).
 - **Dependencies:** T-H6.
@@ -392,6 +430,7 @@ Admin app (workflows AD-1…AD-7):
 - **DoD:** global DoD.
 
 ### T-H11 Finance
+- **Status (2026-10-16):** implemented; unit tests (account, statement, remittance, payout and reference URL ⇄ API mappings incl. the earlier links; Cairo `datetime-local` ⇄ ISO in winter and summer; `moneyGreaterThan`) and component tests (AD-18 default query, owners, "Nile", red negatives, row links, owner filter and non-zero toggle; AD-19 header, signed amounts, reference links, type filter, not found; AD-20 list names, record with cash shown, warning, summary, note omitted, same key on retry, `REMITTANCE_EXCEEDS_BALANCE` with the fresh balance; AD-21 list names, payee search and choose, owed shown, ISO paid-at, future refused before sending, `PAYOUT_ALREADY_RECORDED`, `PAYOUT_EXCEEDS_BALANCE`; AD-22 form → URL, invalid id, account names, empty; dashboard queue 4) green; repo type-check, lint, format, all unit tests and admin build green. E2E `e2e/admin/finance.spec.ts` (delivered COD order → agent holds cash → recorded received → cash back to zero) written and type-checked, **not yet run** against the real backend. Decisions: design 01 R-48.
 - **Scope:** accounts list/detail/statement, reference lookup, COD remittance form, payout form (`paidAt` not in the future), lists.
 - **Exclusions:** —
 - **Dependencies:** T-H6.
@@ -403,6 +442,7 @@ Admin app (workflows AD-1…AD-7):
 Agent app (FQ-2 = yes; workflows A-1…A-4):
 
 ### T-H12 Agent app
+- **Status (2026-10-16):** implemented; component tests per transition (picked up without a key; start delivery; COD delivered with the required tick, the API amount, the same key on retry; `COD_AMOUNT_MISMATCH` with the new amount and a new intent; card delivered with an empty body; failed attempt with reason required, consequences and note omitted; hand back only when cancelled after pickup, the return note otherwise; stale transition re-read; not assigned any more; read-only finished shipments), AG-04 tabs, cards, empty and off-shift states, 30 s polling option, inactive gate and `AGENT_INACTIVE` re-read; AG-03 on/off with confirmation and inactive; AG-02; AG-06; AG-07 balances, both statements, hand-ins, empty) green; repo type-check, lint, format, all unit tests and agent build green. E2E `e2e/agent/delivery.spec.ts` (full COD delivery at 360 px with axe checks) written and type-checked, **not yet run** against the real backend; the shell E2E now expects a working shift switch. Decisions: design 01 R-49.
 - **Scope:** profile/status, shift toggle, active shipments, shipment detail with call/navigation links, picked-up / out-for-delivery / delivered (COD amount equal to `amountToCollect`) / failed attempt / returned, history, finance.
 - **Exclusions:** offline mode, maps, push notifications (no API support).
 - **Dependencies:** T-D6, T-C3 (polling 30 s while visible; `AGENT_INACTIVE` handled by code, OQ-12).
