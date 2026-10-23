@@ -289,6 +289,9 @@ Payee search on AD-21 is a search field with a result list and "Choose" buttons 
 ### 14.1ak Decided (2026-10-16, T-H12)
 Agent app gets the admin app's test harness and approved form/query packages · every screen but Me waits for the profile and shows the inactive message instead of content; any `AGENT_INACTIVE` re-reads the profile · "Open in maps" is the universal Google Maps search link, opened only by the agent's tap · COD delivery sends the API amount after a required tick box; an amount change makes a new intent · active list tabs in the URL (`?tab=`) (design 01 R-49).
 
+### 14.1ao Decided (2026-10-23, Release 2 plan)
+`docs/frontend/release-2-plan.md` approved with every recommendation (FR2-Q1…FR2-Q9), against backend `main` `ecbcd19`: the socket gets the access token from a same-origin BFF route `GET /api/auth/realtime-token`, held in memory for the handshake only, never stored; the refresh token stays server-side (written exception to §4 in T-J0) · web app manifest with brand icons in every app, still no offline mode · own `<NileImage>` with `srcset` from the API widths, no `next/image` optimiser; §7 "no product images" lifted · per-app notification link map, unknown links shown without a link · tokens re-based on the brand palette (primary teal `#1F6F80`, navy for headings/header, gold decorative only), token page re-approved in T-J2 · no chart dependency (table + inline SVG bars) · new customer pages under `/account/*`, seller page `/s/[sellerId]` · FR2-Q8 changed by the user the same day: phase i stays unmerged for now and phase j branches from `main` without T-I1…T-I3 (see TB-4) · uploads start as files are picked, submit waits until all are `ready` · phases j (foundation), k (storefront), l (seller), m (admin), n (agent), o (R2 hardening).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -303,6 +306,10 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
 | SF-JSONLD | Spec 01 SF-05 [PROPOSED] asks for JSON-LD `Product`; the usual way is a `<script type="application/ld+json">` with `dangerouslySetInnerHTML`, which CLAUDE.md §7 forbids with API data | Rec: allow one exception: JSON-LD built from typed fields, `JSON.stringify` with `<` escaped as `\u003c`, in one reviewed helper. Alternative: drop JSON-LD from SF-05 |
 | TB-3 | `@nile/config/env` is one module: browser bundles that read public settings also carry the server env *schema* (key names and rules, no values) | Rec: split into `env/public` and `env/server` entry points (small change) |
+| OQ-17 | Backend `CORS_ALLOWED_ORIGINS` (socket handshake, storage bucket CORS) must list the four web origins (4100–4103 locally) | Backend env change only (release-2-plan §4.1) |
+| OQ-18 | Notification `link` values assume one prefixed web app (backend NO-12) | Ask the backend to confirm the link list as a stable contract |
+| OQ-19 | Local backend container predates R2-P6/P7 (no returns or coupon routes) | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
+| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. Rec: merge phase i before phase k |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.
@@ -315,5 +322,6 @@ New ones go here as rows. When a decision is made, move it to §14.1.
 | `docs/frontend/workflows.md` | What each role can do with the current API |
 | `docs/frontend/architecture.md` | Architecture, auth, API client, structure, testing, guidelines, decisions |
 | `docs/frontend/implementation-plan.md` | Phased tasks with acceptance criteria and DoD |
+| `docs/frontend/release-2-plan.md` | Release 2: backend changes, breaking fixes, phases j–o, decisions FR2-Q1…Q9 |
 | `docs/frontend/spec/` | Business/screen specs per app: the source of truth for frontend behaviour once approved |
 | `docs/frontend/design/` | System design: packages, session and BFF, data flow, config, CI (`01`); allow-lists, query keys, mutations (`02`). Code must follow it once approved |
