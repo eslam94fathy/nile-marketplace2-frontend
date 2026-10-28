@@ -288,7 +288,7 @@ describe('CSRF on auth routes', () => {
   ] satisfies [string, RequestInit][])(
     'rejects %s with 403 CSRF_REJECTED before anything else',
     async (_, init) => {
-      for (const action of ['login', 'refresh', 'logout']) {
+      for (const action of ['login', 'refresh', 'logout', 'realtime-token']) {
         const { call, logs } = setup();
         const response = await call(action, { ...init, body: JSON.stringify(CREDENTIALS) });
         expect(response.status, action).toBe(403);
@@ -592,6 +592,45 @@ describe('POST /api/auth/refresh', () => {
     });
     expect(response.status).toBe(status);
     expect(setCookies(response)).toEqual([]);
+  });
+});
+
+describe('POST /api/auth/realtime-token (design 01 §15.2)', () => {
+  it('answers the current access token and its expiry, no-store, without calling the backend', async () => {
+    const tokens = tokensFor('storefront');
+    const { call, logs } = setup();
+    const response = await call('realtime-token', { cookie: await sessionCookie('storefront', tokens) });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(await response.json()).toEqual({
+      success: true,
+      data: { token: tokens.accessToken, expiresAt: tokens.accessTokenExpiresAt },
+    });
+    expect(setCookies(response)).toEqual([]);
+    for (const line of logs) expect(line).not.toContain(tokens.accessToken);
+  });
+
+  it('answers 401 UNAUTHENTICATED without a session', async () => {
+    const response = await setup().call('realtime-token');
+    expect(response.status).toBe(401);
+    expect(((await response.json()) as { error: { code: string } }).error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('never refreshes: a token within the skew is 401, the cookie untouched and no backend call', async () => {
+    const tokens = tokensFor('storefront', { accessTokenExpiresAt: '2026-10-14T08:00:30.000Z' }); // 30 s left, below the 60 s skew;
+    const response = await setup().call('realtime-token', {
+      cookie: await sessionCookie('storefront', tokens),
+    });
+    expect(response.status).toBe(401);
+    expect(await response.text()).not.toContain(tokens.accessToken);
+    expect(setCookies(response)).toEqual([]);
+  });
+
+  it("refuses another app's session", async () => {
+    const response = await setup('admin').call('realtime-token', {
+      cookie: (await sessionCookie('storefront', tokensFor('storefront'))).replace('storefront', 'admin'),
+    });
+    expect(response.status).toBe(401);
   });
 });
 

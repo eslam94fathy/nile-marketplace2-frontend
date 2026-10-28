@@ -20,3 +20,4 @@ export {
   readPendingPaymentOrder,
 } from './payment/storage';
 export { ORDERS_COPY } from './copy';
+export { ORDERS_INVALIDATION } from './realtime';

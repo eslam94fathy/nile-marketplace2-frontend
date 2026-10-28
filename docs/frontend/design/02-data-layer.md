@@ -444,7 +444,7 @@ Inputs: `api-inventory.md` §11, specs 00 §12, 01 §10, 02 §8, 03 §7, 04 §7,
 
 ### 5.1 BFF allow-list additions per app
 
-Merged into the §1 tables in T-J1 (2026-10-23) and checked against the pinned snapshot at backend `ecbcd19` by `allow-lists.test.ts` (operation exists, session, `Idempotency-Key`): storefront +38, seller +35, admin +51, agent +9 operations. Apps per operation: `/admin/*` admin; `/seller/*` seller; `/agent/*` agent; `/support/*` storefront and seller; `/me/notification*`, `/me/push-*`, `/push/*` all four apps; `/media/*` storefront, seller and admin (the agent app uploads nothing); the customer and public operations storefront. Not reachable through any proxy, as before: the auth routes (the new `GET /api/auth/realtime-token` is an auth action, design 01 §15.2).
+Merged into the §1 tables in T-J1 (2026-10-23) and checked against the pinned snapshot at backend `ecbcd19` by `allow-lists.test.ts` (operation exists, session, `Idempotency-Key`): storefront +38, seller +35, admin +51, agent +9 operations. Apps per operation: `/admin/*` admin; `/seller/*` seller; `/agent/*` agent; `/support/*` storefront and seller; `/me/notification*`, `/me/push-*`, `/push/*` all four apps; `/media/*` storefront, seller and admin (the agent app uploads nothing); the customer and public operations storefront. Not reachable through any proxy, as before: the auth routes (the new `POST /api/auth/realtime-token` is an auth action, design 01 §15.2).
 
 The R1 user actions (`/admin/users/{userId}/suspend`, `/reactivate`, `/resend-invite`) are already on the admin allow-list; AD-24 starts using them for customers and agents (AD-Q-10).
 

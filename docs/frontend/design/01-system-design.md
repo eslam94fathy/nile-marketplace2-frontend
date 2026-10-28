@@ -397,8 +397,8 @@ Dependency rules (§2.1) gain: `@nile/media`, `@nile/realtime` ──► `@nile/
 
 ### 15.2 Realtime token route (FR2-Q1)
 
-`GET /api/auth/realtime-token` (all four apps; the only `GET` auth action):
-1. CSRF check as §4.3 even though it is a `GET` (`Origin` = `APP_ORIGIN`, `X-Nile-Client: 1`): a cross-site page can't read it anyway (no CORS), and the check keeps the rule simple.
+`POST /api/auth/realtime-token` (all four apps; an auth action like the others, no body):
+1. CSRF check as §4.3 (`Origin` = `APP_ORIGIN`, `X-Nile-Client: 1`). Changed from `GET` in T-J5 (2026-10-28): browsers send no `Origin` on a same-origin `GET`, so the check would refuse every real request.
 2. `readSession()`; no session → `401 UNAUTHENTICATED`. Access token expiring within `REFRESH_SKEW_SECONDS` → `401 UNAUTHENTICATED` **without** refreshing (the client refreshes through `/api/auth/refresh` first; only that route refreshes, §5.3).
 3. → `200 { token, expiresAt }`, `Cache-Control: no-store`. The log line records the request but never the token.
 4. The browser keeps the token **only** inside `@nile/realtime`'s connection closure: never in storage, React state, the query cache, logs or error reports; it is read by the Socket.IO `auth` callback at every (re)connect and fetched again for each connect.
@@ -482,6 +482,7 @@ The agent app has no uploads (no `MEDIA_UPLOAD_ORIGIN`). Every key goes into the
 | R-55 | Web Push service worker without a fetch handler, link mapping in one route (§15.5), manifest per app | FR2-Q2, FR2-Q4; no duplicate link map in the worker |
 | R-56 | Shared screens packages `@nile/notifications` and `@nile/support-screens` (R-24 pattern) | Same screens in three or four apps |
 | R-57 | CSP additions from env origins (§15.7) | Uploads, images, socket, worker |
+| R-59 | T-J5: the token route is `POST` (browsers send no `Origin` on a same-origin `GET`); `@nile/realtime` also depends on `@tanstack/react-query` (invalidation); `RealtimeProvider({ url, enabled, fetchToken, refresh, signOut, scope, invalidationMap })` gets the session pieces from the app (no dependency on `@nile/auth`); invalidations and the after-connect refetch are debounced 250 ms; after 3 `UNAUTHENTICATED` refusals following a successful refresh the socket stays off (polling carries on); each feature owns its part of the invalidation map; polled query options take a `live` flag | No `Origin` on GET; no refresh loop for a suspended account; maps next to their query keys |
 | R-58 | T-J4: `@nile/media` depends on `@nile/api` only (no query cache: `waitForMedia` polls directly and T-J5 wakes it through `subscribe`); `useImageUploads({ api, purpose, max, onRateLimited })` gets the app's browser client; the presentational `UploadTiles` lives in `@nile/ui`; storage refusals are the client code `STORAGE_UPLOAD_REJECTED`; the storage bucket CORS must also answer the preflight that upload progress listeners cause (OQ-17) | No cache entry for a one-off poll; `@nile/ui` stays below `@nile/media` |
 
 ### 15.12 Design questions (Release 2)

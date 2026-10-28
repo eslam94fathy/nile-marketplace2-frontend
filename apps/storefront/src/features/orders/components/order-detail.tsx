@@ -10,6 +10,7 @@ import {
   PAYMENT_STATUS_LABELS,
   SELLER_ORDER_STATUS_LABELS,
 } from '@nile/domain';
+import { useRealtimeConnected } from '@nile/realtime';
 import {
   buttonVariants,
   Countdown,
@@ -36,7 +37,10 @@ import { CancelSellerOrder } from './cancel-seller-order';
 
 const COPY = ORDERS_COPY;
 
-/** SF-18: refetch every 30 s while visible, only while the order awaits payment [PROPOSED in spec 01]. */
+/**
+ * SF-18: refetch every 30 s while visible, only while the order awaits payment and no socket is connected
+ * (spec 01 v1.2 §10: the order's messages refresh it otherwise).
+ */
 export const AWAITING_PAYMENT_POLL_MS = 30_000;
 
 type SellerOrder = Order['sellerOrders'][number];
@@ -80,10 +84,11 @@ function usePassed(atMs: number): boolean {
 
 /** SF-18 Order detail: only data from `GET /orders/{orderId}`; someone else's order is "not found". */
 export function OrderDetail({ orderId }: { readonly orderId: string }) {
+  const live = useRealtimeConnected();
   const order = useQuery({
     ...orderQuery(orderId),
     refetchInterval: (query) =>
-      query.state.data?.status === 'pending_payment' ? AWAITING_PAYMENT_POLL_MS : false,
+      !live && query.state.data?.status === 'pending_payment' ? AWAITING_PAYMENT_POLL_MS : false,
     refetchOnWindowFocus: true,
   });
 

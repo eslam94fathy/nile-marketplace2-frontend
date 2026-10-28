@@ -2,3 +2,4 @@
 export { ActiveShipments } from './components/active-shipments';
 export { History } from './components/history';
 export { ShipmentView } from './components/shipment-view';
+export { SHIPMENTS_INVALIDATION } from './realtime';

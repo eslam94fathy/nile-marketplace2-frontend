@@ -43,5 +43,18 @@ export {
   type OperationPath,
 } from './allow-lists';
 export { fetchWithTimeout, forwardToBackend, upstreamTimeout, type ForwardOptions } from './upstream';
+export {
+  isRealtimeMessage,
+  isRealtimeMessageType,
+  REALTIME_CONNECT_ERROR_CODES,
+  REALTIME_DISCONNECT_REASONS,
+  REALTIME_MESSAGE_TYPES,
+  REALTIME_SIGNALS,
+  type RealtimeConnectErrorCode,
+  type RealtimeDisconnectReason,
+  type RealtimeMessage,
+  type RealtimeMessageData,
+  type RealtimeMessageType,
+} from './realtime-messages';
 export { storageUpload, type StorageUploadInput } from './storage-upload';
 export type { Schema } from './types';

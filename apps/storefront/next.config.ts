@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     '@nile/domain',
     '@nile/logger',
     '@nile/query',
+    '@nile/realtime',
     '@nile/ui',
   ],
 };

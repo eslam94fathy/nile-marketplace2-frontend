@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { QueryProvider } from '@nile/query';
 import { SkipLink, Toaster } from '@nile/ui';
 import { StorefrontShell } from '@/components/shell/storefront-shell';
+import { RealtimeKeeper } from '@/components/realtime/realtime-keeper';
 import { SessionKeeper } from '@/components/session/session-keeper';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
       <body>
         <SkipLink />
         <QueryProvider>
-          <StorefrontShell>{children}</StorefrontShell>
+          <RealtimeKeeper>
+            <StorefrontShell>{children}</StorefrontShell>
+          </RealtimeKeeper>
           <Toaster />
           <SessionKeeper />
         </QueryProvider>

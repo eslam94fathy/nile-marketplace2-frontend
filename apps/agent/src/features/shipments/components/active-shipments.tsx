@@ -2,6 +2,7 @@
 
 import { isApiError } from '@nile/api';
 import { buttonVariants, cn, EmptyState, ErrorState, LoadMore, PageHeader, Skeleton } from '@nile/ui';
+import { useRealtimeConnected } from '@nile/realtime';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -49,7 +50,8 @@ export function ActiveShipments({ tab: tabParam }: { readonly tab: string | null
 }
 
 function ShipmentList({ tab }: { readonly tab: ActiveTab }) {
-  const shipments = useInfiniteQuery(activeShipmentsOptions(tab));
+  const live = useRealtimeConnected();
+  const shipments = useInfiniteQuery(activeShipmentsOptions(tab, live));
   const profile = useQuery(profileQuery());
   useInactiveOnError(shipments.error);
   const rows = shipments.data?.pages.flatMap((page) => page.data) ?? [];

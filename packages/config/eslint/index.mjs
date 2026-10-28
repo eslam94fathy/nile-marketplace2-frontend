@@ -52,6 +52,23 @@ export function createEslintConfig({ tsconfigRootDir }) {
       },
     },
     {
+      // The socket client lives only in @nile/realtime (design 01 §15.1): it holds the access token.
+      ignores: ['packages/realtime/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              { name: 'socket.io-client', message: 'Use @nile/realtime: only it may open the socket.' },
+            ],
+            patterns: [
+              { group: ['socket.io-client/*'], message: 'Use @nile/realtime: only it may open the socket.' },
+            ],
+          },
+        ],
+      },
+    },
+    {
       files: ['**/*.{js,mjs,cjs}'],
       ...tseslint.configs.disableTypeChecked,
       rules: { ...tseslint.configs.disableTypeChecked.rules, 'no-console': 'off' },

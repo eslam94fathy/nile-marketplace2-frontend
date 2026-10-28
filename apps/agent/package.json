@@ -18,6 +18,7 @@
     "@nile/domain": "*",
     "@nile/logger": "*",
     "@nile/query": "*",
+    "@nile/realtime": "*",
     "@nile/ui": "*",
     "@tanstack/react-query": "5.104.2",
     "lucide-react": "1.49.0",

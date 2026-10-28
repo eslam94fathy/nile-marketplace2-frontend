@@ -1,6 +1,7 @@
 'use client';
 
 import { Countdown, ErrorState, Money } from '@nile/ui';
+import { useRealtimeConnected } from '@nile/realtime';
 import { useQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -25,7 +26,8 @@ const QUEUES = {
  * has none).
  */
 export function OrderQueue({ queue }: { readonly queue: OverviewQueue }) {
-  const orders = useQuery(overviewQueueQuery(queue));
+  const live = useRealtimeConnected();
+  const orders = useQuery(overviewQueueQuery(queue, live));
   const { heading, tab, seeAll } = QUEUES[queue];
   if (queue === 'returns' && (orders.data === undefined || orders.data.length === 0) && !orders.isError) {
     return null;

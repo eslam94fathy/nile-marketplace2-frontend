@@ -15,6 +15,7 @@ import {
   StatusBadge,
   type DataTableColumn,
 } from '@nile/ui';
+import { useRealtimeConnected } from '@nile/realtime';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -30,7 +31,8 @@ const tabHref = (key: OrderTabKey): Route =>
 /** SE-14 Orders: tabs in the URL (`?tab=`, default "To confirm"), polled every 60 s while visible. */
 export function OrdersList({ tab: tabParam }: { readonly tab: string | null }) {
   const tab = orderTab(tabParam);
-  const orders = useInfiniteQuery(ordersListOptions(tab));
+  const live = useRealtimeConnected();
+  const orders = useInfiniteQuery(ordersListOptions(tab, live));
   const rows = orders.data?.pages.flatMap((page) => page.data) ?? [];
 
   const columns: DataTableColumn<SellerOrder>[] = [

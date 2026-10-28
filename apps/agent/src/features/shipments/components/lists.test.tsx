@@ -73,7 +73,8 @@ describe('active shipments (spec 04 AG-04)', { timeout: 15_000 }, () => {
   });
 
   it('polls every 30 s (paused by TanStack while hidden)', () => {
-    expect(activeShipmentsOptions('pickup').refetchInterval).toBe(ACTIVE_POLL_MS);
+    expect(activeShipmentsOptions('pickup', false).refetchInterval).toBe(ACTIVE_POLL_MS);
+    expect(activeShipmentsOptions('pickup', true).refetchInterval).toBe(false);
     expect(ACTIVE_POLL_MS).toBe(30_000);
   });
 

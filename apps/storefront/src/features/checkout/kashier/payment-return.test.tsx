@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import type { Schema } from '@nile/api';
+import type * as Realtime from '@nile/realtime';
 import { fixtureId, mockApi, orderDetailFactory } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -11,6 +12,13 @@ import { PAYMENT_RETURN_POLL_MS } from '../lib/constants';
 import { PaymentReturn } from './payment-return';
 
 vi.mock('@/lib/use-has-session', () => ({ useHasSession: () => true }));
+
+/** Whether the socket is connected; off unless a test says so. */
+const realtime = vi.hoisted(() => ({ connected: false }));
+vi.mock('@nile/realtime', async (importOriginal) => ({
+  ...(await importOriginal<typeof Realtime>()),
+  useRealtimeConnected: () => realtime.connected,
+}));
 
 const server = setupMswServer();
 
@@ -98,6 +106,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  realtime.connected = false;
 });
 
 describe('Kashier payment return (spec 01 SF-09)', { timeout: 20_000 }, () => {
@@ -122,6 +131,17 @@ describe('Kashier payment return (spec 01 SF-09)', { timeout: 20_000 }, () => {
       `/account/orders/${order.id}`,
     );
     expect(window.sessionStorage.getItem(PENDING_PAYMENT_ORDER_KEY)).toBeNull();
+  });
+
+  it('with a socket, waits for payment.updated instead of polling (RT-4)', async () => {
+    realtime.connected = true;
+    const order = cardOrder();
+    window.sessionStorage.setItem(PENDING_PAYMENT_ORDER_KEY, order.id);
+    const calls = serveOrder(order, { ...order, status: 'placed', paymentStatus: 'paid' });
+    renderWithProviders(<PaymentReturn />);
+    expect(await screen.findByText('Confirming your payment…')).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, PAYMENT_RETURN_POLL_MS + 500));
+    expect(calls()).toBe(1);
   });
 
   it('a tampered return URL never shows success: only the API decides', async () => {

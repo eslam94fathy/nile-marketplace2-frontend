@@ -32,7 +32,8 @@ export const shipmentKeys = {
 const cursorOf = (cursor: string | undefined) => (cursor === undefined ? {} : { cursor });
 
 /** AG-04: one tab, oldest first, polled while visible (TanStack pauses intervals in the background). */
-export function activeShipmentsOptions(tab: ActiveTab) {
+export function activeShipmentsOptions(tab: ActiveTab, live: boolean) {
+  const refetchInterval: number | false = live ? false : ACTIVE_POLL_MS;
   return {
     ...infiniteListOptions({
       queryKey: shipmentKeys.activeTab(tab),
@@ -51,7 +52,8 @@ export function activeShipmentsOptions(tab: ActiveTab) {
           }),
         ),
     }),
-    refetchInterval: ACTIVE_POLL_MS,
+    // Fallback only: shipment messages refresh the lists while a socket is connected (design 01 §15.3).
+    refetchInterval,
     refetchOnWindowFocus: true,
   };
 }

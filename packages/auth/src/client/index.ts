@@ -17,9 +17,11 @@ export { BFF_ROUTE_PREFIX } from '../config';
 export {
   acceptInvite,
   changePassword,
+  fetchRealtimeToken,
   signIn,
   verifyEmailAndSignIn,
   wrongAppRole,
+  type RealtimeToken,
   type SignedInUser,
 } from './auth-requests';
 export { safeReturnTo, type ReturnToOptions } from '../return-to';

@@ -322,8 +322,27 @@ async function changePassword(request: NextRequest, ctx: RequestContext): Promis
   return noContentResponse(ctx.correlationId);
 }
 
+/**
+ * The one way an access token reaches browser JavaScript (CLAUDE.md §4 exception, design 01 §15.2): the socket
+ * handshake needs it. Never refreshes (only `refresh` does): a token close to expiry is answered 401 so the
+ * browser refreshes through the coordinator first. The log line never carries the token.
+ */
+async function realtimeToken(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  const { session, invalidCookie } = await readSession(request, ctx);
+  if (session === null) return unauthenticated(ctx, invalidCookie);
+  if (accessTokenRemainingMs(session, ctx.now) <= ctx.config.refreshSkewSeconds * 1000) {
+    return unauthenticated(ctx, false);
+  }
+  ctx.log.debug('REALTIME_TOKEN_ISSUED', { userId: session.user.id });
+  return okResponse(
+    { token: session.accessToken, expiresAt: session.accessTokenExpiresAt },
+    ctx.correlationId,
+  );
+}
+
 const AUTH_ACTIONS = {
   login,
+  'realtime-token': realtimeToken,
   'verify-email': verifyEmail,
   invite: acceptInvite,
   'password-change': changePassword,
