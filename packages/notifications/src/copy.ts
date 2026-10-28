@@ -1,5 +1,5 @@
-// Copy of the notification centre (spec 00 §12.4–§12.6). Sentences marked [PROPOSED] are not in the spec and
-// were added in T-J6 for approval.
+// Copy of the notification centre (spec 00 §12.4–§12.6). Sentences marked "T-J6" are not in the spec; they were
+// approved on 2026-10-28 (CLAUDE.md §14.1aw).
 
 export const NOTIFICATIONS_COPY = {
   title: 'Notifications',
@@ -12,18 +12,18 @@ export const NOTIFICATIONS_COPY = {
   settings: 'Notification settings',
   /** Screen-reader text next to the unread dot (no colour-only meaning). */
   unread: 'Unread',
-  /** [PROPOSED] */
+  /** T-J6 */
   empty: 'No notifications yet.',
-  /** [PROPOSED] */
+  /** T-J6 */
   emptyUnread: 'No unread notifications.',
-  /** [PROPOSED] */
+  /** T-J6 */
   markAllFailed: 'Notifications couldn’t be marked as read. Try again.',
   filters: {
     label: 'Show',
     all: 'All',
     unread: 'Unread',
     categoryLabel: 'Category',
-    /** [PROPOSED] */
+    /** T-J6 */
     allCategories: 'All categories',
   },
 } as const;
@@ -35,7 +35,7 @@ export const SETTINGS_COPY = {
   /** Spec 00 §12.6 (in-app notifications can't be turned off, backend spec 13 R-6). */
   inAppNote: 'In-app notifications can’t be turned off.',
   save: 'Save',
-  /** [PROPOSED] */
+  /** T-J6 */
   saved: 'Notification settings saved.',
 } as const;
 
@@ -43,14 +43,14 @@ export const PUSH_COPY = {
   deviceHeading: 'This device',
   turnOn: 'Turn on notifications on this device',
   turnOff: 'Turn off on this device',
-  /** [PROPOSED] */
+  /** T-J6 */
   on: 'Notifications are on for this device.',
   unsupported: 'This browser can’t show notifications.',
   denied: 'Notifications are blocked for this site in your browser settings.',
   needsInstall: 'On iPhone and iPad, add Nile to your Home Screen first.',
-  /** [PROPOSED] the push service refused the subscription or the browser failed to create one. */
+  /** T-J6: the push service refused the subscription or the browser failed to create one. */
   failed: 'Notifications couldn’t be turned on. Try again.',
-  /** [PROPOSED] `PUSH_ENDPOINT_NOT_ALLOWED`: the browser's push service isn't one the backend sends to. */
+  /** T-J6: `PUSH_ENDPOINT_NOT_ALLOWED`: the browser's push service isn't one the backend sends to. */
   endpointNotAllowed: 'This browser’s notification service isn’t supported.',
   cardTurnOn: 'Turn on',
   cardDismiss: 'Dismiss',
