@@ -91,6 +91,7 @@ Inputs:
 - **Acceptance:** every app shows the logo and its icon in the tab; axe clean; logo has an accessible name ("Nile Marketplace"); no layout shift (fixed dimensions).
 
 #### T-J3 Image display
+- **Status (2026-10-28):** implemented: `NileImage`, `PrivateImage` (`packages/ui`), `variantImage` / `primaryImage` / `imageAlt` (`@nile/domain`), component tests for null, public and private-expired, type tests against the image DTOs. Deferred to the phase i merge (TB-4, decided 2026-10-28): CSP `img-src` with the env keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` / `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN`, and the T-I3 Lighthouse budgets with images (no page shows images before T-K1).
 - **Scope:** `<NileImage image sizes alt placeholder>` in `packages/ui` (`srcset` from `urls`, width/height to avoid CLS, lazy except LCP image, brand placeholder when `null`); CSP `img-src` env-driven; private-image handling (refetch once on load error); `@nile/domain` helper for the variant image rule (variant `imageId` else primary).
 - **Acceptance:** component tests for null, public, private-expired; Lighthouse budgets (T-I3) still met on product and category pages with images.
 

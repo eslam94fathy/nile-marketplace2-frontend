@@ -31,4 +31,6 @@ export const UI_COPY = {
   errorTitle: 'Something went wrong',
   /** Stand-in screens (T-C3) until their task builds them. */
   placeholder: (task: string) => `This screen arrives with ${task}.`,
+  /** A private image that failed again after its resource was read again (conventions §12.1). */
+  imageUnavailable: "This image can't be shown.",
 } as const;

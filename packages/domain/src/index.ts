@@ -23,6 +23,7 @@ export {
 } from './dates';
 export * from './labels';
 export * as fields from './fields';
+export { imageAlt, primaryImage, variantImage, type PositionedImage, type ProductImages } from './images';
 export { sellerOrderActions, type SellerOrderAction } from './status/seller-order';
 export {
   agentShipmentActions,

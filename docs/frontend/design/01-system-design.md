@@ -437,6 +437,7 @@ pick file ─► checkImageFile (type, ≤ 5 MB, decode ≥ 200×200) ─► POS
 
 ### 15.6 Images in pages
 `<NileImage>` renders `<img srcset="thumb 200w, medium 600w, large 1200w" sizes=…>` with `width` / `height` from the DTO; `loading="lazy"` and `decoding="async"` unless `priority` (then `fetchpriority="high"`). No `next/image` and no `images.remotePatterns` (FR2-Q3). Server Components render it directly (no client JavaScript).
+Private images use the client `<PrivateImage onExpired>`: a failed URL is not shown again, `onExpired` (the owner's refetch) runs once per image, and a second failure shows an "image can't be shown" box (T-J3, CLAUDE.md §14.1as). `srcset` descriptors use the real file widths (`min(200, width)`, `min(600, width)`, `width`): the backend never upscales.
 
 ### 15.7 Content Security Policy additions (merged into the phase i policy, TB-4)
 

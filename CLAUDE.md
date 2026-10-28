@@ -308,6 +308,9 @@ Snapshot pinned to backend `ecbcd19` (217 operations) · `openapi-fix.ts`: 22 R2
 ### 14.1ar Decided (2026-10-23, T-J2)
 Brand from `../nile-brand`: "Nile teal" scale in `tokens.ts` (600 `#1F6F80` primary, 900 the brand navy `#0E2A3B`, 50 the brand surface), `NILE_GOLD` decorative only · `NileLogoShort` (artwork unchanged, viewBox cropped) in every header; portals show it with their name (`PortalBrand`, accessible name "Nile Seller" etc.) · navy app icon (`favicon.ico`, `icon.svg`, full-bleed `apple-icon.png`) in all four apps, manifest icons in `public/icons/` · storefront `opengraph-image.png` (full logo on the brand surface) · `ProductImagePlaceholder` / `CategoryImagePlaceholder` for T-J3 · re-based token page approved 2026-10-28 (FR2-Q5).
 
+### 14.1as Decided (2026-10-28, T-J3)
+`NileImage` in `@nile/ui` (no client JavaScript): `srcset` widths capped at the DTO `width` (never upscaled; equal widths listed once), `medium` as `src`, intrinsic `width`/`height`, lazy unless `priority` (eager + `fetchpriority=high`), brand placeholder named by `alt` for `null` · `PrivateImage` (client): a failed URL is never shown again, the owner is asked to refetch once per image, a second failure (or the same URL back) shows "This image can't be shown." · `variantImage` / `primaryImage` / `imageAlt` in `@nile/domain` (backend spec 06 §8.1) · CSP `img-src` and the media origin env keys wait for phase i (TB-4).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -325,7 +328,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-17 | Backend `CORS_ALLOWED_ORIGINS` (socket handshake, storage bucket CORS) must list the four web origins (4100–4103 locally) | Backend env change only (release-2-plan §4.1) |
 | OQ-18 | Notification `link` values assume one prefixed web app (backend NO-12) | Ask the backend to confirm the link list as a stable contract |
 | OQ-19 | Local backend container predates R2-P6/P7 (no returns or coupon routes) | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
-| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. Rec: merge phase i before phase k |
+| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. The env keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` / `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN` and the `img-src` additions (T-J3) and the T-I3 Lighthouse check with images also wait for the merge. Rec: merge phase i before phase k |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.

@@ -114,3 +114,12 @@ export {
   ProductImagePlaceholder,
   type ImagePlaceholderProps,
 } from './components/image-placeholders';
+export {
+  IMAGE_WIDTHS,
+  imageSrcSet,
+  NileImage,
+  type ImagePlaceholderKind,
+  type NileImageProps,
+  type NileImageSource,
+} from './components/nile-image';
+export { PrivateImage, type PrivateImageProps } from './components/private-image';
