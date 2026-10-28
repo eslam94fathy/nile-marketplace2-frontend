@@ -17,7 +17,7 @@ Read this whole file before every task. These rules are binding. If a rule confl
 
 | Concern | Choice |
 |---|---|
-| Framework | Next.js (App Router) **16.3.8** (exact pins, `save-exact`), latest patch of the mature 16.x line; never below the July 2026 security release (16.2.11); keep it patched |
+| Framework | Next.js (App Router) **16.4.3** (exact pins, `save-exact`; `eslint-config-next` pinned to the same version), latest patch of the mature 16.x line; never below the October 2026 security release (16.4.1); keep it patched |
 | UI runtime / language | React 19, TypeScript `strict` (flags in §10) |
 | Styling / components | Tailwind CSS v4, shadcn/ui (Radix primitives), components owned in `packages/ui` |
 | Server state | TanStack Query v5 |
@@ -128,7 +128,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 ## 9. Security
 
-1. Patched Next.js; `npm audit` in CI.
+1. Patched Next.js, never below 16.4.1 (October 2026 security release, §1); `npm audit` in CI.
 2. Nonce-based CSP from `proxy.ts`, no `unsafe-inline` scripts, `frame-ancestors 'none'`, HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`. R2 adds only env-configured origins: media (`img-src`, uploads in `connect-src`), the realtime `wss:` origin, `worker-src 'self'`, `manifest-src 'self'` (design 01 §15.7).
 3. `Cache-Control: no-store` on every authenticated response; no authenticated data in any shared cache.
 4. Redirect targets (`returnTo`) accept only same-origin relative paths. External URLs from the API (Kashier `checkoutUrl`) are used only after checking `https:`.
@@ -313,6 +313,9 @@ Brand from `../nile-brand`: "Nile teal" scale in `tokens.ts` (600 `#1F6F80` prim
 
 ### 14.1at Decided (2026-10-28, T-J4)
 CSP `connect-src` for the upload origin waits for phase i like T-J3 (TB-4) · `storageUpload` in `@nile/api` (XHR for progress, no credentials, fields then the file last; storage refusal = client code `STORAGE_UPLOAD_REJECTED`) · new package `@nile/media` on `@nile/api` only: `checkImageFile`, `uploadImage` (`MEDIA_UPLOAD_MISSING` retried 3 × 1 s while the URL is valid), `waitForMedia` (1 s doubling to 30 s, visible tab only, `subscribe` for T-J5), `useImageUploads({ api, purpose, max, onRateLimited })` · presentational `UploadTiles` in `@nile/ui` · OA-R2-10 `UploadFormDto.fields` as a string map (design 01 R-58) · approved 2026-10-28: limit sentence "You can add up to {max} photos.", tile state "Checking…", announcement "Photo {n} of {total} failed. {reason}", E2E upload against MinIO with the first screen that has an uploader (T-L1 or T-K5).
+
+### 14.1av Decided (2026-10-28, TB-5)
+`next` and `eslint-config-next` pinned to 16.4.3 (16.4.1 fixes GHSA-2464-fhr4-w9xw image optimiser RCE with SVG, GHSA-673q-mjm6-r5xr `use cache` RCE, GHSA-p3m5-59mp-jv5r Server Actions DoS; 16.4.2/16.4.3 are bug-fix backports) · floor in §1 and §9.1 raised to 16.4.1 · root `overrides` pins `undici` 8.12.2 (reached only through `jsdom`, tests only) until `jsdom` requires it · the `braces` audit exception (GHSA-vfj7-8cjw-p6xm) removed: `npm audit` no longer reports it for `braces` 3.0.3 (the chain through `eslint-config-next` is still there).
 
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
