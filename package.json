@@ -20,6 +20,7 @@
     "api:pull": "npm run api:pull -w @nile/api --",
     "api:gen": "npm run api:gen -w @nile/api",
     "api:check": "npm run api:check -w @nile/api",
+    "typegen": "npm run typegen --workspaces --if-present",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p e2e/tsconfig.json && npm run typecheck --workspaces --if-present",
     "lint": "eslint --max-warnings=0 .",
     "format": "prettier --write .",
