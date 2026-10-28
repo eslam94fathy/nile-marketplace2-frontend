@@ -28,6 +28,7 @@ const node = (id: number, depth: number, overrides: Partial<CategoryNode> = {}):
   depth,
   sortOrder: 0,
   isActive: true,
+  image: null,
   attributes: [],
   children: [],
   ...overrides,

@@ -11,4 +11,5 @@ Object.assign(process.env, {
   NEXT_PUBLIC_ADMIN_URL: TEST_APP_ORIGIN,
   NEXT_PUBLIC_AGENT_URL: 'http://agent.test',
   NEXT_PUBLIC_REFRESH_SKEW_SECONDS: '60',
+  NEXT_PUBLIC_REALTIME_URL: 'http://realtime.test',
 });

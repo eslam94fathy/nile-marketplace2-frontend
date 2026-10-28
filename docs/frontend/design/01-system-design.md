@@ -1,6 +1,6 @@
 # Design 01 — System design
 
-Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Changes after approval need explicit approval and a version bump.
+Status: **v1.0 APPROVED (2026-10-14); v1.1 APPROVED (2026-10-23): §15 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** Approved by the user with every recommendation in `01-system-design.md` §14 (DQ-1…DQ-9). Changes after approval need explicit approval and a version bump.
 Inputs: `CLAUDE.md`, `docs/frontend/architecture.md` v0.2, specs `00`–`04` v1.0 (APPROVED), `api-inventory.md` v0.2, backend `4ad89a6`.
 Companion: `02-data-layer.md` (BFF allow-lists, query keys, mutations and invalidation per app).
 
@@ -379,3 +379,125 @@ Polling intervals and page sizes are code constants (specs fix them), not env.
 | DQ-7 | Package scope name | **`@nile/*` (Rec)** · other |
 | DQ-8 | BFF limits | **Upstream timeout 15 s, body 64 KB, refresh skew 60 s (Rec)** · other values |
 | DQ-9 | Balances update asynchronously after a delivery (backend worker) | **Add the note "Balances update a few moments after a delivery." on seller and agent finance screens; refetch on visit, no polling (Rec)** · poll finance screens |
+
+---
+
+## 15. Release 2 [v1.1 APPROVED 2026-10-23, T-J0]
+
+Inputs: `release-2-plan.md` (FR2-Q1…Q9, decided 2026-10-23), backend specs 13 §8, 14, 15, `docs/realtime.md` at `ecbcd19`, specs 00 §12, 01 §10, 02 §8, 03 §7, 04 §7 (drafts). Ids: R-53 onwards (R-50…R-52 are on the unmerged phase i branch, TB-4).
+
+### 15.1 Packages
+
+| Package | New / changed | Depends on | Imports React/Next? | Public interface |
+|---|---|---|---|---|
+| `@nile/api` | changed | – | no | + `storageUpload({ url, fields, file, onProgress, signal })` (the only code that posts to object storage; `XMLHttpRequest` for upload progress, no credentials, no cookies), new error codes, `RealtimeMessage` types mirrored from the backend's `messages.ts` (hand-maintained like the error codes, OA-3) |
+| `@nile/domain` | changed | – | no | new enums and label maps (T-J1), `variantImage(product, variantId)`, `returnEstimate(items, fee, reason)` (decimal), `couponCode` / `percentRate` fields, `mapNotificationLink(appLinkMap, link)` |
+| `@nile/media` | **new** | `@nile/api`, `@nile/query` | React (no Next) | `useImageUploads({ purpose, max })` → tiles state machine (`checking → uploading(%) → processing → ready | failed`), `checkImageFile(file)` (type, size, decoded dimensions), `waitForMedia(mediaId)` (realtime `media.updated` when connected, else polling `GET /media/{id}` 1 s, 2 s, 4 s … max 30 s) |
+| `@nile/realtime` | **new** | `socket.io-client` 4.8.4, `@nile/api` | React (no Next) | `RealtimeProvider({ tokenUrl, url, invalidationMap })`, `useRealtimeStatus()`, `useRealtimeMessage(type, handler)`, `useTicketRoom(ticketId)`, `emitTyping(ticketId)` |
+| `@nile/notifications` | **new** | `@nile/ui`, `@nile/query`, `@nile/domain`, `@nile/realtime` | React (no Next) | `NotificationBell`, `NotificationsPage`, `NotificationSettings`, `usePushSubscription()`, `unregisterPush()`, `NotificationsProvider({ linkMap, navigate, Link })` (like `@nile/auth-screens`, R-24) |
+| `@nile/support-screens` | **new** | `@nile/ui`, `@nile/query`, `@nile/domain`, `@nile/media`, `@nile/realtime` | React (no Next) | `TicketList`, `NewTicketForm`, `TicketThread` (user and admin variants), `SupportScreensProvider({ routes, categories, api })` — shared by storefront, seller and admin |
+| `@nile/ui` | changed | – | React | + `NileImage`, `ImagePlaceholder`, `Lightbox`, `ImageGallery`, `UploadTiles`, `RatingStars`, `RatingInput`, `Logo` / `LogoMark` (T-J2), `MiniBarChart` (inline SVG + table, FR2-Q6) |
+| `@nile/auth` | changed | – | Next (server) + React (client) | + auth action `realtime-token` (§15.2); `signOut({ beforeSignOut })` hook for the push unregistration |
+
+Dependency rules (§2.1) gain: `@nile/media`, `@nile/realtime` ──► `@nile/api` (+ `@nile/query` for media); `@nile/notifications`, `@nile/support-screens` ──► `@nile/ui`, `@nile/query`, `@nile/domain`, `@nile/media`, `@nile/realtime`; apps ──► all of them. `socket.io-client` may be imported only by `@nile/realtime` (ESLint `no-restricted-imports`).
+
+### 15.2 Realtime token route (FR2-Q1)
+
+`POST /api/auth/realtime-token` (all four apps; an auth action like the others, no body):
+1. CSRF check as §4.3 (`Origin` = `APP_ORIGIN`, `X-Nile-Client: 1`). Changed from `GET` in T-J5 (2026-10-28): browsers send no `Origin` on a same-origin `GET`, so the check would refuse every real request.
+2. `readSession()`; no session → `401 UNAUTHENTICATED`. Access token expiring within `REFRESH_SKEW_SECONDS` → `401 UNAUTHENTICATED` **without** refreshing (the client refreshes through `/api/auth/refresh` first; only that route refreshes, §5.3).
+3. → `200 { token, expiresAt }`, `Cache-Control: no-store`. The log line records the request but never the token.
+4. The browser keeps the token **only** inside `@nile/realtime`'s connection closure: never in storage, React state, the query cache, logs or error reports; it is read by the Socket.IO `auth` callback at every (re)connect and fetched again for each connect.
+
+Exposure accepted (CLAUDE.md §4 exception): an XSS could read one access token (15 min). Mitigations: nonce CSP with `'strict-dynamic'` (phase i), no `dangerouslySetInnerHTML` with API data, the refresh token never leaves the server, token rotation every 15 min, suspension disconnects sockets and refuses reconnects [SPEC 15 UC-RT-3].
+
+### 15.3 Realtime client
+
+- One connection per tab while a session exists **and** the document is visible; after 5 min hidden the socket is closed and reopened on `visibilitychange` (then everything visible is refetched) [PROPOSED]. Options: `path: '/realtime'`, `transports: ['websocket']`, `reconnection: true` with Socket.IO's randomised back-off (1 s → 30 s).
+- `connect_error.data.code`: `UNAUTHENTICATED` → `refreshCoordinator.refresh()` then reconnect (a `SessionEnded` signs out as today); `ORIGIN_NOT_ALLOWED`, `FORBIDDEN` → stop and log `warn` (configuration); `RATE_LIMITED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR` → back-off.
+- Server disconnect (`io server disconnect`, Socket.IO doesn't reconnect by itself): `session.ended` `token_expired` → fetch a new token, `connect()`; `server_shutting_down` → `connect()` after 0–5 s; `account_suspended` → sign out.
+- Every message: drop when `eventId:type` is in a 500-entry LRU; then the app's **invalidation map** (`02-data-layer.md` §5.3) invalidates query prefixes; screen handlers (`useRealtimeMessage`) run after it (announcements, toasts).
+- After every (re)connect: invalidate every active query of the app's scope (the "refetch what you show" rule) once, debounced.
+- Signals: `ticket.subscribe` / `unsubscribe` via `useTicketRoom` (ack `INTERNAL_ERROR` → retry 3× with back-off; `SUPPORT_TICKET_NOT_FOUND` → the thread refetches and shows not found); `support.typing` throttled to one per 3 s while typing, under the 5 / s limit [SPEC 15 RT-5].
+- Polling defined in the R1 specs stays as the fallback and runs only while `useRealtimeStatus() !== 'connected'`.
+
+### 15.4 Image uploads
+
+```
+pick file ─► checkImageFile (type, ≤ 5 MB, decode ≥ 200×200) ─► POST /api/bff/media/uploads { purpose, contentType, sizeBytes }
+  ─► storageUpload(upload.url, upload.fields + file)   (browser → storage, presigned, progress)
+  ─► POST /api/bff/media/uploads/{id}/complete  (202/200; MEDIA_UPLOAD_MISSING → retry ×3, 1 s apart, until upload.expiresAt)
+  ─► waitForMedia(id) ─► ready (image urls) | failed (failureReason)
+```
+- No idempotency key (none in the API; a duplicate leaves an unclaimed upload the backend cleans up [SPEC 14 §4]). Uploads are never retried automatically after a definite failure.
+- Previews of local files use `URL.createObjectURL` (revoked on removal / unmount) → CSP `img-src blob:`.
+- Attaching (product image, review, ticket, return, dispute) happens in the owning feature's mutation with the `ready` media ids.
+
+### 15.5 Web Push and the manifest
+
+- **Service worker** `apps/<app>/public/sw.js` (static file, no bundler, reviewed by hand), registered with scope `/` only when the user turns push on. It handles `push` (shows `title`, `body`, the brand icon; `tag` = `notificationId`; nothing else from the payload is used) and `notificationclick` (focuses an open tab of the app or opens `/notifications/open?link=<encoded API link>`). That route maps the link with the app's link map (spec 00 §12.5) and redirects, so the map exists once, in TypeScript; the route accepts only a relative API link and redirects only to a same-origin path (CLAUDE.md §9.4).
+- **Subscribe:** `GET /push/config` → `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey })` → `POST /me/push-subscriptions` with `subscription.toJSON()` + `userAgent` (≤ 200 characters). The endpoint is kept in `localStorage` (`nile.<app>.pushEndpoint`, per-device convenience) for the unregister call.
+- **Unregister:** `signOut({ beforeSignOut })` calls `POST /me/push-subscriptions/unregister { endpoint }` with a 3 s timeout, then `subscription.unsubscribe()`; failures never block sign-out. A session ended elsewhere (other tab, refresh failure) also unsubscribes locally.
+- **Manifest:** `app/manifest.ts` per app (name "Nile", "Nile Seller", "Nile Admin", "Nile Agent"; `display: standalone`; `start_url: /`; theme colour from the tokens; icons 192 / 512 from `../nile-brand/icon/png`, copied into each app's `public/icons/` in T-J2). No offline caching (the service worker has no `fetch` handler).
+- `/sw.js` is served with `Cache-Control: no-cache` (browsers check for updates) and the app's security headers.
+
+### 15.6 Images in pages
+`<NileImage>` renders `<img srcset="thumb 200w, medium 600w, large 1200w" sizes=…>` with `width` / `height` from the DTO; `loading="lazy"` and `decoding="async"` unless `priority` (then `fetchpriority="high"`). No `next/image` and no `images.remotePatterns` (FR2-Q3). Server Components render it directly (no client JavaScript).
+Private images use the client `<PrivateImage onExpired>`: a failed URL is not shown again, `onExpired` (the owner's refetch) runs once per image, and a second failure shows an "image can't be shown" box (T-J3, CLAUDE.md §14.1as). `srcset` descriptors use the real file widths (`min(200, width)`, `min(600, width)`, `width`): the backend never upscales.
+
+### 15.7 Content Security Policy additions (merged into the phase i policy, TB-4)
+
+| Directive | Adds | Why |
+|---|---|---|
+| `img-src` | `blob:`, `MEDIA_PUBLIC_ORIGIN`, `MEDIA_PRIVATE_ORIGIN` | local previews, CDN images, presigned private images |
+| `connect-src` | `MEDIA_UPLOAD_ORIGIN`, the realtime origin as `wss:` (`ws:` in development) | direct uploads, the socket |
+| `worker-src` | `'self'` | the push service worker |
+| `manifest-src` | `'self'` | the manifest |
+
+Origins come from the env (§15.8) and are validated at startup as bare origins (scheme + host + port, no path).
+
+### 15.8 Configuration additions (§9)
+
+| Key | Scope | Apps | Example (dev) |
+|---|---|---|---|
+| `NEXT_PUBLIC_REALTIME_URL` | public | all | `http://localhost:3001` (the backend `realtime` service; production `https://api.<domain>`) |
+| `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` | public | all | `http://localhost:9100` (MinIO public endpoint; production the CDN `https://media.<domain>`); the backend's local `MEDIA_PUBLIC_BASE_URL` is `http://localhost:9100/nile-media` [VERIFIED backend `scripts/dev-env.js`] |
+| `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN` | public | storefront, seller, admin | `http://localhost:9100` (presigned GET host; production the S3 bucket host) |
+| `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN` | public | storefront, seller, admin | `http://localhost:9100` (presigned POST host) |
+| `NEXT_PUBLIC_RETURN_WINDOW_DAYS` | public | storefront | `14` (spec 01 SF-Q-18; kept equal to the backend's `RETURN_WINDOW_DAYS`) |
+
+The agent app has no uploads (no `MEDIA_UPLOAD_ORIGIN`). Every key goes into the Zod schemas, `.env.example`, `scripts/dev-env.mjs` and this table in the same change (CLAUDE.md §11).
+
+### 15.9 BFF and allow-list changes
+- Allow-lists per app gain the Release 2 operations (`02-data-layer.md` §5.1). Bodies stay JSON ≤ 64 KB: no file ever goes through the BFF.
+- The proxy forwards `Idempotency-Key` as today; no new forwarded headers. `X-Nile-Client` is still never forwarded upstream (plan B-9, regression test in T-J1).
+
+### 15.10 Testing additions
+- **Unit:** `@nile/realtime` with an injected fake socket (dedupe, reconnect paths, invalidation, typing throttle); `@nile/media` state machine with a fake transport and fake image decoder; link maps per app; `returnEstimate`; the service worker's handlers through a small harness (`self` stub).
+- **Component (MSW):** every new form and list per the specs; `storageUpload` mocked at the upload origin; realtime messages injected through a test provider.
+- **Contract:** the new DTOs from the corrected snapshot (T-J1).
+- **E2E:** the backend stack gains the `realtime` service (3001) and MinIO (9100); uploads run for real; live updates are checked on two pages (two browser contexts); push sending is not E2E-tested (browsers need a push service): a manual checklist row per browser in `docs/frontend/a11y-screen-reader-checklist.md`'s sibling `push-checklist.md` [PROPOSED].
+- **Backend env for local runs:** `CORS_ALLOWED_ORIGINS` with the four origins (OQ-17; the backend's `npm run dev:env` writes it empty [VERIFIED `scripts/dev-env.js`]).
+
+### 15.11 Refinements (Release 2)
+
+| # | Refinement | Why |
+|---|---|---|
+| R-53 | Realtime token route and in-memory token (§15.2), `@nile/realtime` (§15.3), `socket.io-client` 4.8.4 (exact; the backend's own test client version) | FR2-Q1 |
+| R-54 | `@nile/media` and `storageUpload` in `@nile/api` (§15.1, §15.4) | Only `@nile/api` talks HTTP to services (CLAUDE.md §2.1 rule 4, extended to object storage) |
+| R-55 | Web Push service worker without a fetch handler, link mapping in one route (§15.5), manifest per app | FR2-Q2, FR2-Q4; no duplicate link map in the worker |
+| R-56 | Shared screens packages `@nile/notifications` and `@nile/support-screens` (R-24 pattern) | Same screens in three or four apps |
+| R-57 | CSP additions from env origins (§15.7) | Uploads, images, socket, worker |
+| R-59 | T-J5: the token route is `POST` (browsers send no `Origin` on a same-origin `GET`); `@nile/realtime` also depends on `@tanstack/react-query` (invalidation); `RealtimeProvider({ url, enabled, fetchToken, refresh, signOut, scope, invalidationMap })` gets the session pieces from the app (no dependency on `@nile/auth`); invalidations and the after-connect refetch are debounced 250 ms; after 3 `UNAUTHENTICATED` refusals following a successful refresh the socket stays off (polling carries on); each feature owns its part of the invalidation map; polled query options take a `live` flag | No `Origin` on GET; no refresh loop for a suspended account; maps next to their query keys |
+| R-58 | T-J4: `@nile/media` depends on `@nile/api` only (no query cache: `waitForMedia` polls directly and T-J5 wakes it through `subscribe`); `useImageUploads({ api, purpose, max, onRateLimited })` gets the app's browser client; the presentational `UploadTiles` lives in `@nile/ui`; storage refusals are the client code `STORAGE_UPLOAD_REJECTED`; the storage bucket CORS must also answer the preflight that upload progress listeners cause (OQ-17) | No cache entry for a one-off poll; `@nile/ui` stays below `@nile/media` |
+| R-60 | T-J6: the session client gets `addSignOutHooks({ beforeSignOut, onSessionEnd })` (instead of an option on `signOut`): every sign-out path (menu, security screen, realtime `account_suspended`) runs the push clean-up without passing it; `beforeSignOut` runs only for an explicit sign-out, cut off after 5 s; `onSessionEnd` runs in every tab · `NotificationsProvider({ api, scope, app, linkMap, routes, navigate, Link, pushCardText })` (the app's browser client, as `@nile/media`); `@nile/notifications` also depends on `@nile/api` and React Hook Form/Zod · one key family `[scope, 'notifications', 'all', { view }]` (`unread-count`, `latest` for the bell's 10, `list` + filter), so `notification.created` invalidates one prefix · the list filter in the URL as `?show=unread&category=` · `mapNotificationLink` / `defineNotificationLinks` in `@nile/domain` accept only a relative link of plain segments and return only a same-origin path · each app's `/notifications/open` route maps the link (portals: in `(portal)` with `requireSession()`; storefront: public, the target page checks) · the worker source is `packages/notifications/src/service-worker.js`, each `public/sw.js` an identical copy (checked by a test per app), with `skipWaiting` + `clients.claim` so a click can navigate open tabs · `webAppManifest(name)` in `@nile/ui/manifest`; names are the apps' titles (the agent app is "Nile Delivery", T-J2) · placeholder pages for link targets of later phases (storefront returns, reviews, support; seller returns, reviews, coupons, support; admin support), decided 2026-10-28 · CSP `worker-src` / `manifest-src` wait for phase i (TB-4) | One hook point for every sign-out; one invalidation prefix; links never leave the origin; one reviewed worker file |
+
+### 15.12 Design questions (Release 2)
+
+| # | Question | Options (recommendation first) |
+|---|---|---|
+| DQ-10 | Socket while the tab is hidden | **Close after 5 min hidden, reopen and refetch on return (Rec: fewer idle connections on the shared IP, OQ-1)** · keep it open |
+| DQ-11 | Shared screens for support and notifications | **Packages `@nile/support-screens` and `@nile/notifications` (Rec, as `@nile/auth-screens`)** · copy per app |
+| DQ-12 | Upload progress | **`XMLHttpRequest` in `storageUpload` for progress events (Rec: `fetch` has no upload progress)** · `fetch` without progress |
+| DQ-13 | Push E2E | **Manual checklist per browser; E2E covers the in-app notification path (Rec)** · a fake push service in E2E (heavy) |
+| DQ-14 | Where the push endpoint is remembered for unregistering | **`localStorage` per app (Rec: per-device convenience, re-read from `pushManager.getSubscription()` when missing)** · always `getSubscription()` only |

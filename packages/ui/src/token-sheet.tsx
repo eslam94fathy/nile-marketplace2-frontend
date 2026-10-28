@@ -7,6 +7,7 @@ import {
   CONTRAST_PAIRS,
   MIN_UI_CONTRAST,
   NILE,
+  NILE_GOLD,
   RADII,
   SEMANTIC_COLORS,
   SHADOWS,
@@ -196,7 +197,18 @@ export function TokenSheet() {
         </p>
       </header>
 
-      <Scale title="Nile blue" scale={NILE} classes={NILE_BG} />
+      <Scale title="Nile teal" scale={NILE} classes={NILE_BG} />
+      <section aria-labelledby="tokens-gold" className={SECTION}>
+        <h2 id="tokens-gold" className={HEADING}>
+          Nile gold (decorative only)
+        </h2>
+        <p className="text-muted-foreground">
+          The logo’s sun. Never used for text or controls: its contrast on white is too low.
+        </p>
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <Swatch name="gold" value={NILE_GOLD} className="bg-nile-gold" />
+        </ul>
+      </section>
       <Scale title="Slate" scale={SLATE} classes={SLATE_BG} />
 
       <section aria-labelledby="tokens-semantic" className={SECTION}>

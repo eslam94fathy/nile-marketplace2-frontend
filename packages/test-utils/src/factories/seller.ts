@@ -6,6 +6,8 @@ export const sellerProfileFactory = defineFactory<'SellerProfileDto'>((sequence)
   email: `seller${sequence}@example.test`,
   businessName: `Test shop ${sequence}`,
   contactPhone: '+201112345678',
+  ratingAvg: null,
+  ratingCount: 0,
   pickupAddress: {
     governorateId: fixtureId(sequence + 1000),
     city: 'Cairo',

@@ -50,6 +50,25 @@ export function formatDate(iso: string): string {
   return `${day} ${month} ${year}`;
 }
 
+const RELATIVE_FORMAT = new Intl.RelativeTimeFormat(DISPLAY_LOCALE, { numeric: 'auto' });
+const DAY_S = 24 * HOUR_S;
+/** From a week on, a date reads better than "12 days ago". */
+const RELATIVE_MAX_DAYS = 7;
+
+/**
+ * `now`, `5 minutes ago`, `yesterday`, … for notification times (spec 00 §12.4); a week or older shows the
+ * date (`14 Oct 2026`). A timestamp ahead of the client clock reads `now`.
+ */
+export function formatRelativeTime(iso: string, nowMs: number): string {
+  const seconds = Math.max(0, Math.floor((nowMs - parseTimestamp(iso)) / SECOND_MS));
+  if (seconds < MINUTE_S) return RELATIVE_FORMAT.format(0, 'second');
+  if (seconds < HOUR_S) return RELATIVE_FORMAT.format(-Math.floor(seconds / MINUTE_S), 'minute');
+  if (seconds < DAY_S) return RELATIVE_FORMAT.format(-Math.floor(seconds / HOUR_S), 'hour');
+  const days = Math.floor(seconds / DAY_S);
+  if (days < RELATIVE_MAX_DAYS) return RELATIVE_FORMAT.format(-days, 'day');
+  return formatDate(iso);
+}
+
 export interface Countdown {
   /** Whole seconds left, rounded up, so `00:00` is shown only once the deadline has passed. */
   readonly secondsLeft: number;

@@ -1,4 +1,4 @@
-import type { AttemptFailureReason, ShipmentStatus } from '../enums';
+import type { AttemptFailureReason, ShipmentKind, ShipmentStatus } from '../enums';
 
 // Display-only: the agent's actions per shipment status (spec 04 AG-05, backend spec 11 §1.1, §4.2).
 // The backend still decides; a stale status ends in `SHIPMENT_INVALID_STATUS_TRANSITION`.
@@ -13,6 +13,7 @@ export interface AgentShipmentActions {
 
 /** The shipment fields the rule reads (a subset of `AgentShipmentDto`). */
 export interface AgentShipmentState {
+  readonly kind: ShipmentKind;
   readonly status: ShipmentStatus;
   readonly attemptCount: number;
   readonly attempts: readonly { readonly reason: AttemptFailureReason }[];
@@ -36,8 +37,12 @@ export function canHandBackToSeller(shipment: AgentShipmentState): boolean {
   );
 }
 
-/** Exactly one primary action per status, plus "Delivery failed" while out for delivery. */
+/**
+ * Exactly one primary action per status, plus "Delivery failed" while out for delivery. Return pickups
+ * (`kind = return`, spec 04 §7.3) never get delivery actions; their own actions come with T-N1.
+ */
 export function agentShipmentActions(shipment: AgentShipmentState): AgentShipmentActions {
+  if (shipment.kind === 'return') return NO_ACTIONS;
   switch (shipment.status) {
     case 'assigned':
       return { primary: 'picked_up', secondary: null };
@@ -53,6 +58,7 @@ export function agentShipmentActions(shipment: AgentShipmentState): AgentShipmen
     case 'returned_to_seller':
     case 'delivered':
     case 'cancelled':
+    case 'pickup_failed': // return pickups only
       return NO_ACTIONS;
   }
 }

@@ -3,6 +3,12 @@
 export const FINANCE_COPY = {
   title: 'Finance',
   owesYou: 'Nile owes you',
+  available: 'Available',
+  availableHelp: 'Nile can pay you this amount.',
+  pending: 'Pending',
+  pendingHelp: 'Earnings from delivered orders that are still within the 14-day return period.',
+  owesNile: (amount: string) =>
+    `You owe Nile ${amount} because of return fees. It’s taken from your next earnings.`,
   lastUpdated: (date: string) => `Last updated ${date}`,
   noEarnings: 'No earnings yet.',
   noEarningsOverview: 'No earnings yet. Earnings are added when an order is delivered.',
@@ -23,6 +29,9 @@ export const FINANCE_COPY = {
   },
   earningsFromOrder: 'Earnings from order',
   payout: 'Payout',
+  earningsReleased: 'Earnings released',
+  returnedItems: 'Returned items',
+  returnFee: 'Return delivery fee',
   statementEmpty: 'No transactions yet.',
   statementFailed: "Your statement couldn't be loaded.",
 

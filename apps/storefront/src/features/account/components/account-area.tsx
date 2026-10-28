@@ -1,5 +1,6 @@
 'use client';
 
+import { NOTIFICATIONS_COPY, NotificationBell } from '@nile/notifications';
 import {
   Button,
   DropdownMenu,
@@ -24,6 +25,7 @@ const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md ho
 
 const MENU_LINKS = [
   { href: ROUTES.orders, label: ACCOUNT_COPY.orders },
+  { href: ROUTES.notifications, label: NOTIFICATIONS_COPY.title },
   { href: ROUTES.addresses, label: ACCOUNT_COPY.addresses },
   { href: ROUTES.account, label: ACCOUNT_COPY.account },
   { href: ROUTES.security, label: ACCOUNT_COPY.security },
@@ -64,12 +66,14 @@ function SignedInMenu() {
 
 /**
  * Header account area and cart link (spec 01 §2.2): sign-in links for visitors (with `returnTo`), the
- * "Hi, {firstName}" menu with sign-out for customers, and the cart button with its count (T-F1).
+ * notification bell (T-J6) and the "Hi, {firstName}" menu with sign-out for customers, and the cart button
+ * with its count (T-F1).
  */
 export function AccountArea({ pathname }: { readonly pathname: string }) {
   const signedIn = useHasSession();
   return (
     <nav aria-label={ACCOUNT_COPY.navLabel} className="ms-auto flex items-center gap-1 md:ms-0">
+      {signedIn ? <NotificationBell /> : null}
       {signedIn ? (
         <SignedInMenu />
       ) : (

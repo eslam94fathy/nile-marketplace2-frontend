@@ -39,9 +39,14 @@ function serveQueues(placed: Schema<'SellerOrderDto'>[] = [], returning: Schema<
 beforeEach(() => {
   serveQueues();
   server.use(
-    mockApi('get', '/seller/finance/balance', ({ reply }) => reply.ok({ balance: '0.00', updatedAt: null }), {
-      base: BFF_BASE,
-    }),
+    mockApi(
+      'get',
+      '/seller/finance/balance',
+      ({ reply }) => reply.ok({ available: '0.00', pending: '0.00', updatedAt: null }),
+      {
+        base: BFF_BASE,
+      },
+    ),
   );
 });
 

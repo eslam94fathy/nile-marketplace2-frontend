@@ -17,6 +17,8 @@ export const SESSION_ENDED_NOTICE = 'session-ended';
 
 /** Gap between proactive checks, so a wrong device clock can't turn the timer into a request loop. */
 export const MIN_REFRESH_INTERVAL_MS = 30_000;
+/** Longest a sign-out waits for its hooks (push unregistration, design 01 §15.5): sign-out never hangs on them. */
+export const SIGN_OUT_HOOK_TIMEOUT_MS = 5_000;
 
 /**
  * - `ok`: the session has a fresh access token (refreshed now, by another tab, or still valid).
@@ -75,6 +77,17 @@ export interface SessionClientOptions {
   environment?: BrowserEnvironment;
 }
 
+/**
+ * Work tied to the session's end, registered by features that keep something per device (Web Push, design
+ * 01 §15.5, R-60). Failures are ignored: sign-out always happens.
+ */
+export interface SignOutHooks {
+  /** Runs while the session still exists, before an explicit sign-out (not when the session already ended). */
+  readonly beforeSignOut?: () => Promise<void>;
+  /** Runs in every tab of this app when the session ends there, however it ended. */
+  readonly onSessionEnd?: () => void;
+}
+
 /** Plain functions (no `this`), so they can be passed on, e.g. `onUnauthenticated` to the transport. */
 export interface SessionClient {
   /** Makes sure the access token is fresh; one backend refresh per browser however many callers. */
@@ -87,6 +100,8 @@ export interface SessionClient {
   start: () => () => void;
   /** True when this browser holds a session (the readable session-version cookie exists). */
   hasSession: () => boolean;
+  /** Registers hooks for this tab; returns a function that removes them. */
+  addSignOutHooks: (hooks: SignOutHooks) => () => void;
 }
 
 /** Name of the readable session-version cookie, with or without the `__Host-` prefix (design 01 §3.1). */
@@ -147,6 +162,7 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
   let env: BrowserEnvironment | undefined;
   let channel: ChannelLike | null | undefined;
   let inFlight: Promise<RefreshOutcome> | undefined;
+  const hooks = new Set<SignOutHooks>();
 
   const environment = (): BrowserEnvironment => {
     env ??= options.environment ?? browserEnvironment();
@@ -170,6 +186,13 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
   };
 
   const leave = (reason: SignOutReason): void => {
+    for (const hook of hooks) {
+      try {
+        hook.onSessionEnd?.();
+      } catch {
+        // A hook's failure never keeps the tab signed in.
+      }
+    }
     options.clearPrivateData();
     const { location } = environment();
     if (!options.isProtectedPath(location.pathname)) {
@@ -240,7 +263,24 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
     return inFlight;
   };
 
+  /** Every `beforeSignOut` hook, settled or cut off after `SIGN_OUT_HOOK_TIMEOUT_MS`. */
+  async function runBeforeSignOut(): Promise<void> {
+    const pending = [...hooks].flatMap(({ beforeSignOut }) =>
+      beforeSignOut === undefined ? [] : [Promise.resolve().then(beforeSignOut)],
+    );
+    if (pending.length === 0) return;
+    const current = environment();
+    let timer: unknown;
+    const cutOff = new Promise<void>((resolve) => {
+      timer = current.setTimeout(resolve, SIGN_OUT_HOOK_TIMEOUT_MS);
+    });
+    await Promise.race([Promise.allSettled(pending), cutOff]);
+    current.clearTimeout(timer);
+  }
+
   const signOut = async (reason: SignOutReason = 'signed-out'): Promise<void> => {
+    // An ended session can't authorise the hooks' calls any more; they would only delay leaving.
+    if (reason === 'signed-out') await runBeforeSignOut();
     try {
       await post(AUTH_ROUTES.logout);
     } catch {
@@ -298,5 +338,11 @@ export function createSessionClient(options: SessionClientOptions): SessionClien
     signOut,
     start,
     hasSession: () => sessionVersion() !== null,
+    addSignOutHooks: (added) => {
+      hooks.add(added);
+      return () => {
+        hooks.delete(added);
+      };
+    },
   };
 }

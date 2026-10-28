@@ -1,6 +1,7 @@
 'use client';
 
-import { cn, isActivePath, MAIN_CONTENT_ID } from '@nile/ui';
+import { NotificationBell } from '@nile/notifications';
+import { cn, isActivePath, MAIN_CONTENT_ID, PortalBrand } from '@nile/ui';
 import { History, Package, User, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,7 +10,7 @@ import { InactiveBanner, ShiftSwitch } from '@/features/profile';
 import { APP } from '@/lib/app';
 import { ROUTES } from '@/lib/routes';
 
-// Agent shell (spec 04 §2.1): mobile-first, one hand. Top bar with the shift switch, bottom navigation with
+// Agent shell (spec 04 §2.1): mobile-first, one hand. Top bar with the notification bell (T-J6, spec 04 §7.2) and the shift switch, bottom navigation with
 // 48 px targets; on desktop the same layout in a narrow centred column. The inactive banner sits under the
 // top bar (spec 04 §2.2).
 
@@ -57,10 +58,13 @@ export function AgentShell({ children }: { readonly children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col border-x border-border">
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background px-4">
-        <Link href={ROUTES.shipments} className="text-lg font-semibold text-primary">
-          {APP.title}
+        <Link href={ROUTES.shipments} className="rounded-md">
+          <PortalBrand roleLabel={APP.roleLabel} />
         </Link>
-        <ShiftSwitch />
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <ShiftSwitch />
+        </div>
       </header>
       <InactiveBanner />
       {/* Bottom padding keeps the last content above the fixed navigation. */}

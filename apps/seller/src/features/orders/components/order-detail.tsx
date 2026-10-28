@@ -23,6 +23,7 @@ import {
   StatusBadge,
   type DataTableColumn,
 } from '@nile/ui';
+import { useRealtimeConnected } from '@nile/realtime';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
@@ -46,7 +47,8 @@ const TIMELINE = [
 
 /** SE-15 Order: `GET /seller/orders/{id}`, refetched on focus and every 60 s until final. */
 export function OrderDetail({ sellerOrderId }: { readonly sellerOrderId: string }) {
-  const order = useQuery(orderQuery(sellerOrderId));
+  const live = useRealtimeConnected();
+  const order = useQuery(orderQuery(sellerOrderId, live));
 
   if (order.isError) {
     if (isSellerOrderMissing(order.error)) {

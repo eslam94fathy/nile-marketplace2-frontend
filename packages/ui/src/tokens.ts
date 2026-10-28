@@ -1,19 +1,26 @@
-// Design tokens (T-C1, approved 2026-10-14, FQ-5). Source of truth for the values; `theme.css` exposes
-// them to Tailwind as CSS variables and tokens.test.ts keeps both files equal. Light theme only, LTR.
+// Design tokens (T-C1, approved 2026-10-14, FQ-5; brand palette since T-J2, FR2-Q5). Source of truth for the
+// values; `theme.css` exposes them to Tailwind as CSS variables and tokens.test.ts keeps both files equal.
+// Light theme only, LTR.
 
-/** Brand scale, "Nile blue". 600 is the primary colour. */
+/**
+ * Brand scale, "Nile teal" (../nile-brand): 600 is the primary colour (brand teal), 300 the brand light teal,
+ * 50 the brand surface, 900 the brand navy used by the logo and for headings.
+ */
 export const NILE = {
-  50: '#E8F3F7',
-  100: '#C9E2EC',
-  200: '#9CC9DA',
-  300: '#66A9C2',
-  400: '#348AA8',
-  500: '#136F8E',
-  600: '#0B5C7A',
-  700: '#094A63',
-  800: '#073A4E',
-  900: '#052A39',
+  50: '#E8F0F2',
+  100: '#CFE3E8',
+  200: '#A3CCD5',
+  300: '#5FB3C2',
+  400: '#3A93A4',
+  500: '#2A8091',
+  600: '#1F6F80',
+  700: '#185A68',
+  800: '#134652',
+  900: '#0E2A3B',
 } as const;
+
+/** Brand gold: decorative only (the logo's sun). Never text or a control on white: 2.1:1. */
+export const NILE_GOLD = '#E2A93B';
 
 /** Neutral scale (slate). */
 export const SLATE = {

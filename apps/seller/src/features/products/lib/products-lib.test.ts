@@ -100,9 +100,10 @@ describe('category choices (decided 2026-10-15: Select with path labels)', () =>
       name: 'Fashion',
       slug: 'fashion',
       sortOrder: 0,
-      children: [{ id: 'b', name: 'Men', slug: 'men', sortOrder: 0, children: [] }],
+      image: null,
+      children: [{ id: 'b', name: 'Men', slug: 'men', sortOrder: 0, image: null, children: [] }],
     },
-    { id: 'c', name: 'Home', slug: 'home', sortOrder: 1, children: [] },
+    { id: 'c', name: 'Home', slug: 'home', sortOrder: 1, image: null, children: [] },
   ];
 
   it('every level, in tree order, named by its path', () => {

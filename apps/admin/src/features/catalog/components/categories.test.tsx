@@ -43,6 +43,7 @@ const leaf = (overrides: Partial<Node> = {}): Node => ({
   depth: 3,
   sortOrder: 0,
   isActive: true,
+  image: null,
   attributes: [],
   children: [],
   ...overrides,
@@ -60,6 +61,7 @@ function tree(
       depth: 1,
       sortOrder: 0,
       isActive: true,
+      image: null,
       attributes: [MATERIAL],
       children: [
         {
@@ -70,6 +72,7 @@ function tree(
           depth: 2,
           sortOrder: 0,
           isActive: true,
+          image: null,
           attributes: [SIZE],
           children: [leaf(overrides.leaf)],
           ...overrides.middle,

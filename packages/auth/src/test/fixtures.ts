@@ -4,7 +4,14 @@ import { AUTH_FIXTURE_NOW, authTokensFactory, TEST_API_ORIGIN } from '@nile/test
 import { NextRequest } from 'next/server';
 import { APP_ROLES, type AuthAppConfig } from '../config';
 import { cookieNames } from '../cookies';
-import { sealSession, sessionFromTokens, type AuthTokens, type SessionKeyRing } from '../session';
+import {
+  bodyTokens,
+  sealSession,
+  sessionFromTokens,
+  type AuthTokens,
+  type BodyAuthTokens,
+  type SessionKeyRing,
+} from '../session';
 
 export const APP_ORIGIN = 'http://app.test';
 export const NOW = AUTH_FIXTURE_NOW;
@@ -37,14 +44,14 @@ export function testConfig(app: BffApp = 'storefront', overrides: Partial<AuthAp
 }
 
 /** Tokens for the role `app` accepts. */
-export function tokensFor(app: BffApp, overrides: Partial<AuthTokens> = {}): AuthTokens {
+export function tokensFor(app: BffApp, overrides: Partial<AuthTokens> = {}): BodyAuthTokens {
   const tokens = authTokensFactory(overrides);
-  return { ...tokens, user: { ...tokens.user, role: APP_ROLES[app] } };
+  return bodyTokens({ ...tokens, user: { ...tokens.user, role: APP_ROLES[app] } });
 }
 
 export async function sessionCookie(
   app: BffApp,
-  tokens: AuthTokens,
+  tokens: BodyAuthTokens,
   ring: SessionKeyRing = KEY_RING,
 ): Promise<string> {
   const sealed = await sealSession(sessionFromTokens(tokens, NOW), ring);

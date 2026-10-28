@@ -2,5 +2,7 @@
 export const APP = {
   name: 'seller',
   title: 'Nile Seller',
+  /** The portal's name next to the logo (T-J2); with the logo's "Nile" it reads as `title`. */
+  roleLabel: 'Seller',
   devPort: 4101,
 } as const;

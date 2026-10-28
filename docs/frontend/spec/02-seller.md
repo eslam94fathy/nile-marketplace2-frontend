@@ -1,6 +1,6 @@
 # Spec 02 — Seller portal
 
-Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in §7 (SE-Q-1…SE-Q-8) and every [PROPOSED] item. Changes from now on need explicit approval and a version bump.
+Status: **v1.0 APPROVED (2026-10-14); v1.1 APPROVED (2026-10-23): §8 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** Approved by the user with every recommendation in §7 (SE-Q-1…SE-Q-8) and every [PROPOSED] item. Changes from now on need explicit approval and a version bump.
 Conventions: `00-conventions.md` v1.0. Backend specs cited as [SPEC nn] = `../nile-marketplace2/docs/spec/<nn>-*.md`; [VERIFIED] = running API / OpenAPI / backend code.
 App: `apps/seller`, dev port 4101. Access roles: public (auth screens), `seller`.
 
@@ -385,3 +385,161 @@ As storefront SF-19 (change password, sign out), within the seller app.
 | SE-Q-6 | Packing slip / print view | **Not in R1 (Rec)**: no customer data to print; the agent has the address · a print view with order number and items |
 | SE-Q-7 | Default status of a new variant | **Active (Rec)** · Inactive |
 | SE-Q-8 | Showing the seller's net per order in lists | **Yes, `sellerNet` column (Rec)** · subtotal only |
+
+---
+
+## 8. Release 2 [v1.1 APPROVED 2026-10-23, T-J0]
+
+Backend inputs at `ecbcd19`: specs 05 §8, 06 §8, 09 §8, 12 §8, 13 §8, 14, 15, 16, 17, 18, 19, 20 §3.4. Conventions: `00-conventions.md` §12. Plan: `release-2-plan.md` (phase l). Workflows: `workflows.md` §6.3.
+
+### 8.1 Scope changes
+- **Now in scope:** product images; blocked products; returns from customers; reviews and replies; seller-funded coupons; support tickets; holding period (pending / available balance, holds); notification centre and Web Push; live updates.
+- **§1 rows removed:** "Product images" (now R2), "Push / sound notifications" (now Web Push and live updates; still no sound).
+- **Still out of scope:** customer contact data (also in returns [SPEC 18 S-11]); editing or deleting a review reply (RV-5); bulk image upload across products; sales analytics.
+
+### 8.2 Navigation and route map additions
+Sidebar: Overview · Orders · **Returns** · Products · **Reviews** · **Coupons** · Finance · **Support** · Profile · Security · Sign out. Header: + bell (conventions §12.4).
+
+| Route | Screen | Access |
+|---|---|---|
+| `/returns` | SE-18 Returns | seller |
+| `/returns/[returnId]` | SE-19 Return | seller |
+| `/reviews` | SE-20 Reviews | seller |
+| `/coupons` | SE-21 Coupons | seller |
+| `/coupons/new` | SE-22 New coupon | seller (approved) |
+| `/coupons/[couponId]` | SE-23 Coupon | seller |
+| `/support` | SE-24 Support tickets | seller |
+| `/support/new` | SE-25 New ticket | seller |
+| `/support/[ticketId]` | SE-26 Ticket thread | seller |
+| `/notifications` | SE-27 Notifications | seller |
+| `/notifications/settings` | SE-28 Notification settings | seller |
+
+§2.2 status table additions: image writes, coupon create / edit and review replies are catalog-style writes (**approved only**, `SELLER_NOT_APPROVED`) [SPEC 06 §8.2, 17 UC-RV-3, 19 UC-PR-4]; returns decisions are allowed for `approved` and `suspended` sellers (open orders continue [SPEC 18 UC-RE-2]); reading reviews, coupons, tickets and finance is allowed in every status; support tickets can be opened in every status (`seller_onboarding` is meant for pending and rejected sellers).
+
+### 8.3 Changes to existing screens
+
+**SE-06 Overview** (SE-Q-11): + "Returns to decide" — up to 5 `requested` returns by decision deadline (`GET /seller/returns?status[eq]=requested&sort=sellerDecisionDeadlineAt&limit=5`) with the countdown, and up to 5 `received` returns ("Check the returned items by {deadline}"); the balance card shows Available and Pending (SE-16). Live: refetch on `seller_order.placed`, `seller_order.updated`, `return.updated`; the 60 s polling stays only without a socket.
+
+**SE-08 Products:** + thumbnail (`primaryImage`, placeholder when `null`); badge "Blocked by Nile" when `adminBlocked` (text, warning tone).
+
+**SE-10 Product:**
+1. **Blocked** (`adminBlocked = true`): banner "Nile blocked this product: {adminBlockReason}. It's hidden from the store and its status can't be changed. Contact support if you think this is a mistake." + "Contact support" (SE-25, category Account [PROPOSED]). Publish / Unpublish are disabled with that reason; `PRODUCT_BLOCKED` from any write → refetch + the banner text as a toast. After an unblock the product stays inactive; the seller publishes it again [SPEC 20 §3.4].
+2. **Images section** (SE-10-I), above the details form:
+   - Grid of up to 8 images in order; the first is labelled "Main image"; each tile shows its variant tie ("Shown for: Red / M") and alt text status ("No description").
+   - "Add images" (approved only, disabled at 8 with "A product can have up to 8 images."): conventions §12.2 with purpose `product_image`; each `ready` upload is attached at once with `POST /seller/products/{id}/images { mediaId }` (appended) → the response replaces the image list.
+   - Per tile menu: "Move earlier" / "Move later" / "Make main image" → `PUT …/images/order { imageIds }` with the full new order (SE-Q-9); "Edit" (dialog: alt text 1..200 optional, "Show for variant" select of the product's variants or "All variants") → `PATCH …/images/{imageId}` with changed fields (cleared → `null`); "Remove" (confirm "Remove this image?") → `DELETE …/images/{imageId}` → refetch the product.
+   - Errors: `PRODUCT_IMAGE_LIMIT_REACHED` → refetch + "A product can have up to 8 images."; `PRODUCT_IMAGE_ORDER_INVALID` → refetch + "The images changed. We've refreshed them, please try again."; `PRODUCT_IMAGE_NOT_FOUND` → refetch; `VARIANT_NOT_FOUND` → refetch variants; `MEDIA_NOT_ATTACHABLE` → the tile asks to upload again.
+   - Note: "Images help customers decide. Products can be published without images." [SPEC 06 R-3]
+3. Variants table: + "Image" column (thumb of the variant's image, or "Main image").
+
+**SE-14 Orders / SE-15 Order:**
+- Rows and money: when `discountAmount > 0`: "Coupon discount −{discountAmount}" with "Funded by you" / "Funded by Nile" (`discountFunding`), and the net explained: seller-funded → "Commission is calculated after your coupon discount."; Nile-funded → "Nile covers this discount; your earnings aren't reduced." [SPEC 19 R-17, PR-7].
+- Returned sums (`returnedSubtotal`, `returnedCommission`, `returnedSellerNet`) shown under the money block when not zero: "Returned by the customer: −{returnedSellerNet} from your earnings"; items show "{returnedQuantity} returned".
+- Cancellation reason `admin_cancelled` → "Cancelled by Nile."
+- SE-15 + "Get help with this order" → SE-25 with the seller order preselected; no link to the order's return (the returns list has no seller-order filter [VERIFIED backend routes]; returns show their order, SE-19).
+- Live: refetch on `seller_order.placed` (list), `seller_order.updated` (list and detail); polling only without a socket.
+
+**SE-16 Finance:**
+1. Balance card: **Available** `{available}` — "Nile can pay you this amount." · **Pending** `{pending}` — "Earnings from delivered orders that are still within the 14-day return period." When `available` is negative: "You owe Nile {abs(available)} because of return fees. It's taken from your next earnings." (no payout is possible while negative [SPEC 12 FI-12]).
+2. New tab **On hold** (`GET /seller/finance/holds`, load more): order number (link to SE-15), amount, "Released on {releaseAfter}", and "Waiting for an open return" when `blockedByReturn`. Empty: "Nothing on hold."
+3. Statement descriptions for the new entry types (§8.6).
+
+### SE-18 Returns
+
+Route: `/returns?tab=to-decide|to-check|in-progress|closed` · Data: `GET /seller/returns` (`limit=20`).
+
+| Tab | `status[in]` | Sort |
+|---|---|---|
+| To decide | `requested` | `sellerDecisionDeadlineAt` (nearest first) |
+| To check | `received` | `createdAt` (oldest first) [PROPOSED: no inspection-deadline sort exists] |
+| In progress | `rejected,escalated,approved,picked_up,disputed` | `-createdAt` |
+| Closed | `completed,refused,cancelled,pickup_failed` | `-createdAt` |
+
+Row: return number, order number, reason, items count, refund amount, status badge, deadline countdown in "To decide" / "To check". Live on `return.updated`.
+
+### SE-19 Return
+
+Route: `/returns/[returnId]` · Data: `GET /seller/returns/{id}` (`RETURN_NOT_FOUND` → not found); live on `return.updated`.
+Content: number, status, order link (SE-15), reason (with "Seller fault" note for damaged / wrong item / not as described: "You pay the return delivery fee of {returnFee}."), customer's description, photos (private), items (image, name, options, quantity, paid amount), refund amount, deadlines, timeline. No customer name, phone or address [SPEC 18 S-11].
+Actions:
+- **Approve** (`requested`): confirm "Approve this return? An agent will collect the items from the customer and bring them to your pickup address." → `POST …/approve`.
+- **Reject** (`requested`): dialog, reason 3..500 required, note "The customer can ask Nile to review your decision." → `POST …/reject`.
+- **Confirm receipt** (`received`, before `inspectionDeadlineAt`): dialog listing every item with "Put back in stock" (checkbox per item, default on [PROPOSED]) → `POST …/confirm-receipt { items[{ returnItemId, restock }] }` with Idempotency-Key → `200`. Note "The customer is refunded once you confirm. If you don't respond by {deadline}, the return is confirmed without restocking." [SPEC 18 RE-6]
+- **Report a problem** (`received`, before the deadline): dialog, reason 3..500, photos 0..4 (`return_photo`) → `POST …/dispute`. Note "Nile will review and decide whether the customer is refunded."
+- Errors: `RETURN_INVALID_STATUS_TRANSITION` → refetch + "This return was already updated (for example approved automatically when the deadline passed)."; `RETURN_ITEMS_MISMATCH` → refetch + reopen the dialog; `RETURN_INSPECTION_WINDOW_CLOSED` → refetch + "The time to report a problem has passed."
+Acceptance: actions appear only for their statuses and before their deadlines; restock choices are sent for every item exactly once.
+
+### SE-20 Reviews
+
+Route: `/reviews?product=&rating=&replied=` · Data: `GET /seller/reviews` (`limit=20`, `-createdAt`).
+Filters (URL): product (select of the seller's products, `productId[eq]`), rating chips (`rating[in]`), "Not replied" (`replied[eq]=false`), date range (`createdAt[gte]`, Cairo days).
+Row: product (link SE-10), stars, title, body, reviewer display name, variant options, date, photos, the reply when present.
+**Reply** (`canReply`, approved sellers): inline form 1..1000 with the note "You can reply once and can't edit it later." → `POST /seller/reviews/{id}/reply` → replace the row. Errors: `REVIEW_ALREADY_REPLIED` / `REVIEW_HIDDEN` → refetch + "This review can't be replied to any more."; `REVIEW_NOT_FOUND` → refetch.
+Empty: "No reviews yet."
+
+### SE-21 Coupons
+
+Route: `/coupons?status=` · Data: `GET /seller/coupons` (`limit=20`, `-createdAt`, `status[eq]`).
+Row: code, discount ("10 %, up to EGP 50" / "EGP 25 off"), scope ("All your products" / category path), dates, uses (`redemptionCount` of `globalLimit` or "unlimited"), display status badge (`displayStatus`), "Blocked by Nile" when `adminBlocked` [VERIFIED backend `CouponDto.adminBlocked`, `adminBlockReason`]. "New coupon" (approved only).
+
+### SE-22 New coupon / SE-23 Coupon
+
+Routes: `/coupons/new`, `/coupons/[couponId]` (detail + edit form).
+Fields [SPEC 19 §1.1, §4]:
+
+| Field | Rule |
+|---|---|
+| Code | create only; trimmed, upper-cased, `^[A-Z0-9-]{4,32}$` |
+| Discount type | Percent · Fixed amount |
+| Discount | percent: 1–90 with up to 2 decimals, sent as a rate string (`fields.percentRate`, SE-Q-10); fixed: money > 0 |
+| Maximum discount | percent only, optional money |
+| Minimum order (eligible items) | money ≥ 0 (default "0.00") |
+| Applies to | All my products (`seller`) · One category (`category` + category picker with full-path labels, any level, SE-Q-13) |
+| Starts / Ends | Cairo `datetime-local`, sent as UTC ISO; ends after starts |
+| Total uses | optional int 1..1 000 000 (empty = unlimited) |
+| Uses per customer | required int 1..100, default 1 [SPEC 19 PR-3] |
+| Active | switch (status) |
+
+- Create → `POST /seller/coupons` → `201` → SE-23. Edit → `PATCH` with changed fields only.
+- After the first use (`redemptionCount > 0`): only Ends, Total uses (not below `redemptionCount`) and Active are editable; the others are read-only with "Locked after the first use." [SPEC 19 PR-8].
+- A blocked coupon (`adminBlocked`): banner "Nile blocked this coupon: {adminBlockReason}" and Active can't be turned on (`COUPON_BLOCKED`).
+- Help text: "Customers enter the code at checkout. The discount applies to your products only and is paid by you; Nile's commission is calculated after the discount." [SPEC 19 R-17]
+- Errors: `COUPON_CODE_TAKEN` → code field "This code is already used. Choose another."; `COUPON_INVALID` → map `details` to fields, else form alert; `COUPON_LOCKED` → refetch + "This coupon has been used, so only the end date, total uses and status can change."; `COUPON_BLOCKED` → refetch + banner; `CATEGORY_NOT_FOUND` → category field.
+
+### SE-24 / SE-25 / SE-26 Support
+As storefront SF-29 / SF-30 / SF-31 within the seller app, with:
+- Categories: Order · Payment · Delivery · Return · Account · Seller account (`seller_onboarding`) · Other.
+- Link: one seller order (select of recent seller orders, or prefilled from SE-15 / SE-19) → `sellerOrderId` only (`orderId` is refused for sellers [SPEC 16 §4.1]).
+- Admins appear as "Nile Support".
+
+### SE-27 / SE-28 Notifications
+As conventions §12.4–§12.6 with the seller link map (§12.5).
+
+### 8.4 Acceptance across Release 2 (seller)
+1. Image, coupon and reply writes are disabled with the banner's sentence for sellers who aren't approved; return decisions stay available to suspended sellers.
+2. No customer contact data appears anywhere, returns included.
+3. Every amount shown comes from the API (balances, holds, discounts, returned sums).
+
+### 8.5 Non-functional additions
+Live updates replace the 60 s polling of SE-06, SE-14 and SE-15 when a socket is connected; polling stays as the fallback.
+
+### 8.6 Copy
+
+**Return status, seller view:** `requested` To decide · `rejected` Rejected by you · `escalated` Under review by Nile · `approved` Approved, awaiting pickup · `picked_up` On its way to you · `received` To check · `disputed` Under review by Nile · `completed` Completed · `refused` Closed, not refunded · `cancelled` Cancelled by the customer · `pickup_failed` Pickup failed.
+**Return reason:** Damaged · Wrong item · Not as described · Changed their mind.
+**Coupon display status:** `scheduled` Scheduled · `active` Active · `expired` Expired · `inactive` Inactive.
+**Statement descriptions (new entry types)** [SPEC 12 §8]: `seller_net_held` Earnings on hold (return period) · `seller_net_released` Earnings released · `seller_net_reversed` Returned items · `return_fee_charged` Return delivery fee · `seller_net_earned` (R1) Earnings from order. Any other type stays as in §5 (raw + `console.warn`).
+**Cancellation reason (§5.2):** + `admin_cancelled` Cancelled by Nile.
+**Stock movement (SE-13):** + `return_restock` Restocked from a customer return [added in T-J1: the value was found in the pulled snapshot].
+**Notification category:** Orders · Deliveries · Support · Offers.
+
+### 8.7 Questions (Release 2)
+
+| # | Question | Options (recommendation first) |
+|---|---|---|
+| SE-Q-9 | Reordering images | **"Move earlier / Move later / Make main image" in each tile's menu (Rec: keyboard-complete, no new dependency)** · drag and drop (needs a library or custom pointer handling plus a keyboard fallback) |
+| SE-Q-10 | Percent coupons | **Typed as a percent with up to 2 decimals and sent as a rate with decimal arithmetic, as admin rates (R-44) (Rec)** · typed as a rate |
+| SE-Q-11 | Overview additions | **Returns to decide (5) and returns to check (5), Available + Pending balance (Rec)** · a returns link only |
+| SE-Q-12 | Default of "Put back in stock" when confirming receipt | **On for every item; the seller unticks damaged ones (Rec)** · off by default |
+| SE-Q-13 | Category scope picker for coupons | **The existing Select with full-path labels (R-39) (Rec)** · searchable Combobox (still deferred) |
+| SE-Q-14 | Blocked product: where "Contact support" leads | **SE-25 with category Account and the product named in the subject (Rec)** · no link |

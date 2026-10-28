@@ -1,0 +1,4 @@
+{
+  "extends": "@nile/config/tsconfig/react-library.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
+}

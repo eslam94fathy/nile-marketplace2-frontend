@@ -17,7 +17,7 @@ Read this whole file before every task. These rules are binding. If a rule confl
 
 | Concern | Choice |
 |---|---|
-| Framework | Next.js (App Router) **16.3.8** (exact pins, `save-exact`), latest patch of the mature 16.x line; never below the July 2026 security release (16.2.11); keep it patched |
+| Framework | Next.js (App Router) **16.4.3** (exact pins, `save-exact`; `eslint-config-next` pinned to the same version), latest patch of the mature 16.x line; never below the October 2026 security release (16.4.1); keep it patched |
 | UI runtime / language | React 19, TypeScript `strict` (flags in §10) |
 | Styling / components | Tailwind CSS v4, shadcn/ui (Radix primitives), components owned in `packages/ui` |
 | Server state | TanStack Query v5 |
@@ -25,6 +25,8 @@ Read this whole file before every task. These rules are binding. If a rule confl
 | API types / client | `openapi-typescript` + `openapi-fetch`, generated from a committed OpenAPI snapshot |
 | Session crypto | `jose` (encrypted session cookie) |
 | Money | `decimal.js` (never JS `number` for money) |
+| Realtime (R2) | `socket.io-client` **4.8.4** (exact; the backend's version), imported only by `@nile/realtime` |
+| Push (R2) | Standard Web Push through a hand-written service worker per app (`public/sw.js`, no library) |
 | Tests | Vitest, Testing Library, MSW, Playwright, `@axe-core/playwright` |
 | Lint / format | ESLint **9.39.5** (see TB-1) with `eslint-config-next` core-web-vitals (react, react-hooks, jsx-a11y, import, @next/next), `typescript-eslint` strict + stylistic type-checked, `@tanstack/eslint-plugin-query` (from T-B5), import boundaries (as packages appear); Prettier 3. Shared config: `@nile/config/eslint` |
 | TypeScript | **6.0.x** (typescript-eslint supports TypeScript < 6.1; TypeScript 7 would break type-aware linting) |
@@ -49,6 +51,10 @@ packages/
   ui/           # shadcn/ui components, tokens, theme, data table
   config/       # tsconfig, eslint, prettier, vitest presets
   test-utils/   # MSW handlers, factories, render helpers
+  media/        # (R2) image upload state machine, waitForMedia
+  realtime/     # (R2) socket connection, dedupe, invalidation map, ticket rooms
+  notifications/   # (R2) bell, notification list, preferences, push subscription (shared screens)
+  support-screens/ # (R2) ticket list, new ticket, thread (storefront, seller, admin)
 e2e/            # Playwright, per role, against the real backend
 docs/frontend/  # discovery docs, spec/, design/
 ```
@@ -78,6 +84,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 ## 4. Authentication and session (architecture §5)
 
 - **Tokens never reach browser JavaScript.** Access and refresh tokens live only in an encrypted, `HttpOnly; Secure; SameSite=Lax; Path=/` cookie named `__Host-nile_<app>_session`, read and written only by the app's server code.
+  - **One exception (R2, FR2-Q1):** the socket handshake needs the access token. `POST /api/auth/realtime-token` (CSRF-checked, `no-store`, never refreshes; POST because browsers send no `Origin` on a same-origin GET) returns the current access token, which only `@nile/realtime` holds, in memory, for the handshake: never in storage, React state, the query cache, logs or error reports. The refresh token never leaves the server (design 01 §15.2).
 - The browser calls the backend **only** through the app's BFF routes (`/api/auth/*`, `/api/bff/*`). Each app's BFF has a path/method **allow-list** for its role.
 - **Refresh is serialised:** only `POST /api/auth/refresh` refreshes; browsers serialise it across tabs (Web Locks); Server Components never refresh. Reuse of an old refresh token revokes the whole session (backend has no grace window).
 - Each app accepts only its own role at login; another role's token is discarded at once.
@@ -93,7 +100,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Lists: `useInfiniteQuery` on `meta.nextCursor`.
 - Retries: queries retry only on network errors and `5xx`; mutations never auto-retry unless idempotent with the same key.
 - Mutations update the cache from the response when the API returns the resource, otherwise invalidate precise keys.
-- Polling only where a spec says so, only while the tab is visible.
+- Polling only where a spec says so, only while the tab is visible. From R2 a realtime message invalidates the keys of the app's invalidation map (design 02 §5.3) and polling runs only while no socket is connected; after a reconnect everything on screen is refetched. Socket messages are hints, never data.
 - Clear the whole cache on logout (`clearPrivateQueries` keeps only `public` keys).
 - TanStack Query 5.104+: never `prefetchQuery`/`fetchQuery`/`fetchInfiniteQuery`/`isServer` (deprecated; lint fails). Use `queryClient.query(options)` (add `.catch(noop)` for a prefetch that must not throw), `queryClient.infiniteQuery(options)`, `environmentManager.isServer()`.
 
@@ -111,7 +118,7 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 - Accessibility target WCAG 2.2 AA: keyboard-complete, visible focus, labelled controls, correct landmarks, no colour-only meaning. axe: zero serious/critical violations.
 - Plain-text API content (e.g. product descriptions) is rendered as text, never as HTML. No `dangerouslySetInnerHTML` with API data.
 - Copy for enum values and error codes comes from central maps (`packages/domain/labels`, error-message map), never inline literals.
-- No product images in R1 (backend has none).
+- Images (R2) come as `ImageDto` and render with `<NileImage>` from `packages/ui` (`srcset` of the API widths, intrinsic size, brand placeholder for `null`); no `next/image` optimiser. Private image URLs (support attachments, return photos) expire: never stored, logged or put in links. Files go from the browser to object storage only through `@nile/api` `storageUpload`, never through the BFF.
 
 ## 8. Money, dates, numbers
 
@@ -121,8 +128,8 @@ Inside an app: `src/app/` (routes only: thin pages that compose features), `src/
 
 ## 9. Security
 
-1. Patched Next.js; `npm audit` in CI.
-2. Nonce-based CSP from `proxy.ts`, no `unsafe-inline` scripts, `frame-ancestors 'none'`, HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
+1. Patched Next.js, never below 16.4.1 (October 2026 security release, §1); `npm audit` in CI.
+2. Nonce-based CSP from `proxy.ts`, no `unsafe-inline` scripts, `frame-ancestors 'none'`, HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`. R2 adds only env-configured origins: media (`img-src`, uploads in `connect-src`), the realtime `wss:` origin, `worker-src 'self'`, `manifest-src 'self'` (design 01 §15.7).
 3. `Cache-Control: no-store` on every authenticated response; no authenticated data in any shared cache.
 4. Redirect targets (`returnTo`) accept only same-origin relative paths. External URLs from the API (Kashier `checkoutUrl`) are used only after checking `https:`.
 5. No feature is "secured" only by hiding it in the UI.
@@ -300,6 +307,33 @@ CSP enforced after a report-only run: scripts nonce-only with `'strict-dynamic'`
 ### 14.1an Decided (2026-10-16, T-I3)
 `@lhci/cli` approved (dev only; Lighthouse overridden to 13.5.0) · budgets LCP < 2.5 s, CLS < 0.1, TBT < 200 ms (INP stand-in) on home, category, product (signed out) and cart (signed in), mobile profile, median of 3 · `npm run perf` and nightly `perf.yml` · Zod namespace imports and `sideEffects` declarations (design 01 R-52, `docs/frontend/performance.md`).
 
+### 14.1ao Decided (2026-10-23, Release 2 plan)
+`docs/frontend/release-2-plan.md` approved with every recommendation (FR2-Q1…FR2-Q9), against backend `main` `ecbcd19`: the socket gets the access token from a same-origin BFF route `GET /api/auth/realtime-token`, held in memory for the handshake only, never stored; the refresh token stays server-side (written exception to §4 in T-J0) · web app manifest with brand icons in every app, still no offline mode · own `<NileImage>` with `srcset` from the API widths, no `next/image` optimiser; §7 "no product images" lifted · per-app notification link map, unknown links shown without a link · tokens re-based on the brand palette (primary teal `#1F6F80`, navy for headings/header, gold decorative only), token page re-approved in T-J2 · no chart dependency (table + inline SVG bars) · new customer pages under `/account/*`, seller page `/s/[sellerId]` · FR2-Q8 changed by the user the same day: phase i stays unmerged for now and phase j branches from `main` without T-I1…T-I3 (see TB-4) · uploads start as files are picked, submit waits until all are `ready` · phases j (foundation), k (storefront), l (seller), m (admin), n (agent), o (R2 hardening).
+
+### 14.1ap Decided (2026-10-23, T-J0)
+Release 2 specs and design approved with every recommendation and [PROPOSED] item: spec 00 v1.1 §12, spec 01 v1.2 §10 (SF-Q-13…20), spec 02 v1.1 §8 (SE-Q-9…14), spec 03 v1.1 §7 (AD-Q-10…17), spec 04 v1.1 §7 (AG-Q-7…8), design 01 v1.1 §15 (DQ-10…14, R-53…R-57), design 02 v1.1 §5, `api-inventory.md` §11, `workflows.md` §6 · notable: customer pages under `/account/*`, coupon on the checkout review step only, heart while signed out saves after sign-in, image reorder by menu (no drag and drop), customer suspension and invite resend from the admin user directory (AD-4 reversed), no admin product search (entry from orders, reviews, seller store), dashboard without timed polling, socket closed after 5 min hidden, shared `@nile/notifications` and `@nile/support-screens` packages, push tested by a manual checklist.
+
+### 14.1aq Decided (2026-10-23, T-J1)
+Snapshot pinned to backend `ecbcd19` (217 operations) · `openapi-fix.ts`: 22 R2 nullable request fields, OA-6 generalised to `REQUIRED_REQUEST_FIELDS` (`AssignTicketDto.adminUserId`) · `@nile/auth` `bodyTokens()` refuses tokens without a refresh token (500, no cookie): the BFF never selects the web cookie transport · return pickups get no agent actions until T-N1 · the seller balance card shows Available / Pending / what the seller owes now (B-2); the seller statement describes `seller_net_released`, `seller_net_reversed`, `return_fee_charged` (links with T-L3) · the admin refund queue keeps its two tabs until T-M8; admin statement references to returns, refunds and holds show without a link until phase m · card refund copy says refunds are automatic (spec 01 §10.3) · allow-lists carry every R2 operation per design 02 §5.1, and the allow-list test reads only design 02 §1.
+
+### 14.1ar Decided (2026-10-23, T-J2)
+Brand from `../nile-brand`: "Nile teal" scale in `tokens.ts` (600 `#1F6F80` primary, 900 the brand navy `#0E2A3B`, 50 the brand surface), `NILE_GOLD` decorative only · `NileLogoShort` (artwork unchanged, viewBox cropped) in every header; portals show it with their name (`PortalBrand`, accessible name "Nile Seller" etc.) · navy app icon (`favicon.ico`, `icon.svg`, full-bleed `apple-icon.png`) in all four apps, manifest icons in `public/icons/` · storefront `opengraph-image.png` (full logo on the brand surface) · `ProductImagePlaceholder` / `CategoryImagePlaceholder` for T-J3 · re-based token page approved 2026-10-28 (FR2-Q5).
+
+### 14.1as Decided (2026-10-28, T-J3)
+`NileImage` in `@nile/ui` (no client JavaScript): `srcset` widths capped at the DTO `width` (never upscaled; equal widths listed once), `medium` as `src`, intrinsic `width`/`height`, lazy unless `priority` (eager + `fetchpriority=high`), brand placeholder named by `alt` for `null` · `PrivateImage` (client): a failed URL is never shown again, the owner is asked to refetch once per image, a second failure (or the same URL back) shows "This image can't be shown." · `variantImage` / `primaryImage` / `imageAlt` in `@nile/domain` (backend spec 06 §8.1) · CSP `img-src` and the media origin env keys wait for phase i (TB-4).
+
+### 14.1at Decided (2026-10-28, T-J4)
+CSP `connect-src` for the upload origin waits for phase i like T-J3 (TB-4) · `storageUpload` in `@nile/api` (XHR for progress, no credentials, fields then the file last; storage refusal = client code `STORAGE_UPLOAD_REJECTED`) · new package `@nile/media` on `@nile/api` only: `checkImageFile`, `uploadImage` (`MEDIA_UPLOAD_MISSING` retried 3 × 1 s while the URL is valid), `waitForMedia` (1 s doubling to 30 s, visible tab only, `subscribe` for T-J5), `useImageUploads({ api, purpose, max, onRateLimited })` · presentational `UploadTiles` in `@nile/ui` · OA-R2-10 `UploadFormDto.fields` as a string map (design 01 R-58) · approved 2026-10-28: limit sentence "You can add up to {max} photos.", tile state "Checking…", announcement "Photo {n} of {total} failed. {reason}", E2E upload against MinIO with the first screen that has an uploader (T-L1 or T-K5).
+
+### 14.1au Decided (2026-10-28, T-J5)
+Realtime token route is `POST /api/auth/realtime-token` (browsers send no `Origin` on a same-origin GET; CSRF check unchanged) · `@nile/realtime`: one socket per tab while signed in and visible (closed after 5 min hidden), token fetched per handshake, dedupe `eventId:type` (500), `token_expired` reconnects at once, `server_shutting_down` after 0–5 s, `account_suspended` signs out, `ORIGIN_NOT_ALLOWED` / `FORBIDDEN` and repeated `UNAUTHENTICATED` leave it off, everything of the app scope refetched after each connect · invalidation maps per feature (design 02 §5.3) · fallback polling only while disconnected; SF-09 waits 30 s for `payment.updated` then polls every 5 s (spec 01 v1.2) · `NEXT_PUBLIC_REALTIME_URL` in all apps · CSP `connect-src` for the realtime origin waits for phase i (TB-4) (design 01 R-59).
+
+### 14.1av Decided (2026-10-28, TB-5)
+`next` and `eslint-config-next` pinned to 16.4.3 (16.4.1 fixes GHSA-2464-fhr4-w9xw image optimiser RCE with SVG, GHSA-673q-mjm6-r5xr `use cache` RCE, GHSA-p3m5-59mp-jv5r Server Actions DoS; 16.4.2/16.4.3 are bug-fix backports) · floor in §1 and §9.1 raised to 16.4.1 · root `overrides` pins `undici` 8.12.2 (reached only through `jsdom`, tests only) until `jsdom` requires it · the `braces` audit exception (GHSA-vfj7-8cjw-p6xm) removed: `npm audit` no longer reports it for `braces` 3.0.3 (the chain through `eslint-config-next` is still there).
+
+### 14.1aw Decided (2026-10-28, T-J6)
+Link targets of later phases get placeholder pages naming their task (storefront returns T-K6, reviews T-K5, support T-K7; seller returns T-L3, reviews T-L4, coupons T-L5, support T-L6; admin support T-M5) · notification settings save with one Save button sending only the changed categories (NO-18) · bell push card per app: storefront and seller "Get notified about your orders on this device", admin "Get notified about support messages on this device", none in the agent bell (its card is on Shipments, AG-Q-8) · sign-out hooks registered on the session client (`addSignOutHooks`), push unregistered before an explicit sign-out (cut off after 5 s) and unsubscribed locally whenever the session ends · one notification key prefix per app, list filter in the URL (`?show=unread&category=`) · `/sw.js` is an identical copy of `packages/notifications/src/service-worker.js` in each app (tested) · CSP `worker-src` / `manifest-src` wait for phase i (TB-4) (design 01 R-60).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -314,6 +348,11 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | TB-1 | ESLint 10 | Stay on ESLint 9.39.5 (npm marks it unsupported) until `eslint-config-next` supports ESLint 10: tested 2026-10-14, its bundled `eslint-plugin-react` crashes on ESLint 10 (`contextOrFilename.getFilename is not a function`). Dev-only tooling. Re-check on each Next.js upgrade |
 | SF-JSONLD | Spec 01 SF-05 [PROPOSED] asks for JSON-LD `Product`; the usual way is a `<script type="application/ld+json">` with `dangerouslySetInnerHTML`, which CLAUDE.md §7 forbids with API data | Rec: allow one exception: JSON-LD built from typed fields, `JSON.stringify` with `<` escaped as `\u003c`, in one reviewed helper. Alternative: drop JSON-LD from SF-05 |
 | TB-3 | `@nile/config/env` is one module: browser bundles that read public settings also carry the server env *schema* (key names and rules, no values) | Rec: split into `env/public` and `env/server` entry points (small change) |
+| OQ-17 | Backend `CORS_ALLOWED_ORIGINS` (socket handshake, storage bucket CORS) must list the four web origins (4100–4103 locally) | Backend env change only (release-2-plan §4.1) |
+| OQ-18 | Notification `link` values assume one prefixed web app (backend NO-12) | Ask the backend to confirm the link list as a stable contract |
+| OQ-19 | Local backend container predates R2-P6/P7 (no returns or coupon routes) | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
+| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. The env keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` / `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN` and the `img-src` additions (T-J3) and the T-I3 Lighthouse check with images also wait for the merge, as do T-J4's `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN` in `connect-src` and `blob:` in `img-src` (local previews). Rec: merge phase i before phase k |
+| TJ6-COPY | T-J6 sentences not in the specs, marked [PROPOSED] in `packages/notifications/src/copy.ts` | "No notifications yet." · "No unread notifications." · "Notifications couldn’t be marked as read. Try again." · "All categories" (chip) · "Notification settings saved." · "Notifications are on for this device." · "Notifications couldn’t be turned on. Try again." · `PUSH_ENDPOINT_NOT_ALLOWED` "This browser’s notification service isn’t supported." Rec: approve as written |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.
@@ -326,6 +365,7 @@ New ones go here as rows. When a decision is made, move it to §14.1.
 | `docs/frontend/workflows.md` | What each role can do with the current API |
 | `docs/frontend/architecture.md` | Architecture, auth, API client, structure, testing, guidelines, decisions |
 | `docs/frontend/implementation-plan.md` | Phased tasks with acceptance criteria and DoD |
+| `docs/frontend/release-2-plan.md` | Release 2: backend changes, breaking fixes, phases j–o, decisions FR2-Q1…Q9 |
 | `docs/frontend/spec/` | Business/screen specs per app: the source of truth for frontend behaviour once approved |
 | `docs/frontend/design/` | System design: packages, session and BFF, data flow, config, CI (`01`); allow-lists, query keys, mutations (`02`). Code must follow it once approved |
 | `docs/frontend/a11y-screen-reader-checklist.md` | Screen-reader spot checks (NVDA, VoiceOver) to perform and record |

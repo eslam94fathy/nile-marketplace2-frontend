@@ -7,19 +7,23 @@ export {
   MIN_REFRESH_INTERVAL_MS,
   SESSION_ENDED_NOTICE,
   sessionVersionCookieNames,
+  SIGN_OUT_HOOK_TIMEOUT_MS,
   type BrowserEnvironment,
   type RefreshOutcome,
   type SessionClient,
   type SessionClientOptions,
+  type SignOutHooks,
   type SignOutReason,
 } from './session-client';
 export { BFF_ROUTE_PREFIX } from '../config';
 export {
   acceptInvite,
   changePassword,
+  fetchRealtimeToken,
   signIn,
   verifyEmailAndSignIn,
   wrongAppRole,
+  type RealtimeToken,
   type SignedInUser,
 } from './auth-requests';
 export { safeReturnTo, type ReturnToOptions } from '../return-to';

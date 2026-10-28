@@ -36,6 +36,7 @@ function variant(options: Record<string, string>, overrides: Partial<ProductVari
     })),
     inStock: true,
     availableQuantity: 5,
+    imageId: null,
     ...overrides,
   };
 }
@@ -51,10 +52,17 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
     name: 'Tee',
     description: 'A tee.',
     category: { id: 'c', name: 'Tees', slug: 'tees', path: [] },
-    seller: { id: '01900000-0000-7000-8000-0000000000aa', businessName: 'Nile Crafts' },
+    seller: {
+      id: '01900000-0000-7000-8000-0000000000aa',
+      businessName: 'Nile Crafts',
+      ratingAvg: null,
+      ratingCount: 0,
+    },
     minPrice: '100.00',
     maxPrice: '120.00',
     inStock: true,
+    rating: { avg: null, count: 0 },
+    images: [],
     attributes: [
       {
         code: 'size',

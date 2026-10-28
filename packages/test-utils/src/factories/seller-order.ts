@@ -14,6 +14,11 @@ export const sellerOrderFactory = defineFactory<'SellerOrderDto'>((sequence) => 
   commissionRate: '0.1000',
   commission: '30.00',
   sellerNet: '270.00',
+  discountAmount: '0.00',
+  discountFunding: null,
+  returnedSubtotal: '0.00',
+  returnedCommission: '0.00',
+  returnedSellerNet: '0.00',
   items: [
     {
       id: fixtureId(7800 + sequence),
@@ -26,6 +31,10 @@ export const sellerOrderFactory = defineFactory<'SellerOrderDto'>((sequence) => 
       quantity: 2,
       cancelledQuantity: 0,
       lineTotal: '300.00',
+      returnedQuantity: 0,
+      discountAmount: '0.00',
+      paidTotal: '300.00',
+      image: null,
     },
   ],
   dropoffGovernorate: { id: fixtureId(3500), name: 'Giza' },

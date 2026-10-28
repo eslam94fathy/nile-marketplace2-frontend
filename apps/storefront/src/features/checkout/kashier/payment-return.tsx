@@ -1,6 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
+import { useRealtimeConnected } from '@nile/realtime';
 import { buttonVariants, Countdown, ErrorState, PageHeader, Skeleton } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -22,15 +23,19 @@ import {
   PAYMENT_CONFIRMATION_GRACE_MS,
   PAYMENT_RETURN_ORDER_MAX_AGE_MS,
   PAYMENT_RETURN_POLL_MS,
+  PAYMENT_RETURN_SOCKET_WAIT_MS,
 } from '../lib/constants';
 
 const COPY = CHECKOUT_COPY.kashier;
 
 const noSubscription = () => () => undefined;
 
-/** Polling stops once the order is final, and at the grace limit after the payment window. */
-function pollInterval(order: Order | undefined): number | false {
-  if (order?.status !== 'pending_payment') return false;
+/**
+ * Polling stops once the order is final, and at the grace limit after the payment window. With a socket the
+ * page first waits for `payment.updated` (spec 01 SF-09, RT-4): `waiting` is true for those first 30 s.
+ */
+function pollInterval(order: Order | undefined, waiting: boolean): number | false {
+  if (order?.status !== 'pending_payment' || waiting) return false;
   const deadline = order.paymentExpiresAt === null ? Number.NaN : Date.parse(order.paymentExpiresAt);
   return Date.now() > deadline + PAYMENT_CONFIRMATION_GRACE_MS ? false : PAYMENT_RETURN_POLL_MS;
 }
@@ -110,9 +115,12 @@ export function PaymentReturn() {
 }
 
 function OrderOutcome({ orderId }: { readonly orderId: string }) {
+  const live = useRealtimeConnected();
+  const [openedAt] = useState(() => Date.now());
+  const socketWaitOver = usePassed(openedAt + PAYMENT_RETURN_SOCKET_WAIT_MS);
   const order = useQuery({
     ...orderQuery(orderId),
-    refetchInterval: (query) => pollInterval(query.state.data),
+    refetchInterval: (query) => pollInterval(query.state.data, live && !socketWaitOver),
   });
   const data = order.data;
   const final = data !== undefined && data.status !== 'pending_payment';

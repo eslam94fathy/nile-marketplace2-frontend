@@ -128,6 +128,8 @@ export function publicEnvSchema<const T extends AppName>(app: T) {
     NEXT_PUBLIC_ADMIN_URL: origin,
     NEXT_PUBLIC_AGENT_URL: origin,
     NEXT_PUBLIC_REFRESH_SKEW_SECONDS: integer(1, 600),
+    /** The realtime service (Socket.IO, design 01 §15.3), e.g. https://api.example.com. */
+    NEXT_PUBLIC_REALTIME_URL: origin,
   });
 }
 export type PublicEnv = z.infer<ReturnType<typeof publicEnvSchema>>;

@@ -36,6 +36,8 @@ function product(overrides: Partial<ProductListItem> = {}): ProductListItem {
     minPrice: '100.00',
     maxPrice: '100.00',
     inStock: true,
+    primaryImage: null,
+    rating: { avg: null, count: 0 },
     category: { id: CATEGORY_ID, name: 'Tees', slug: 'tees' },
     seller: SELLER,
     publishedAt: '2026-10-14T08:00:00.000Z',

@@ -52,6 +52,33 @@ export function createEslintConfig({ tsconfigRootDir }) {
       },
     },
     {
+      // The Web Push service worker (design 01 §15.5): plain JavaScript served as is, in no TypeScript
+      // project, running in the worker scope.
+      files: ['apps/*/public/sw.js', 'packages/notifications/src/service-worker.js'],
+      ...tseslint.configs.disableTypeChecked,
+      languageOptions: {
+        sourceType: 'script',
+        globals: { self: 'readonly', URL: 'readonly' },
+      },
+    },
+    {
+      // The socket client lives only in @nile/realtime (design 01 §15.1): it holds the access token.
+      ignores: ['packages/realtime/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [
+              { name: 'socket.io-client', message: 'Use @nile/realtime: only it may open the socket.' },
+            ],
+            patterns: [
+              { group: ['socket.io-client/*'], message: 'Use @nile/realtime: only it may open the socket.' },
+            ],
+          },
+        ],
+      },
+    },
+    {
       files: ['**/*.{js,mjs,cjs}'],
       ...tseslint.configs.disableTypeChecked,
       rules: { ...tseslint.configs.disableTypeChecked.rules, 'no-console': 'off' },

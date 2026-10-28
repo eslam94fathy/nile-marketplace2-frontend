@@ -1,4 +1,4 @@
-import type { PaymentMethod, PaymentStatus, RefundReason, RefundStatus } from '../enums';
+import type { PaymentMethod, PaymentStatus, RefundMethod, RefundReason, RefundStatus } from '../enums';
 import type { Labels } from './types';
 
 /** Spec 01 §7.3; admin uses the same wording (decided 2026-10-14, T-B6). */
@@ -17,8 +17,8 @@ export const PAYMENT_STATUS_LABELS = {
   paid: 'Paid',
   failed: 'Payment failed',
   expired: 'Payment window expired',
-  partially_refunded_manually: 'Partly refunded',
-  refunded_manually: 'Refunded',
+  partially_refunded: 'Partly refunded',
+  refunded: 'Refunded',
 } as const satisfies Labels<PaymentStatus>;
 
 /** Spec 03 §4.1. */
@@ -29,10 +29,20 @@ export const REFUND_REASON_LABELS = {
   late_payment_after_expiry: 'Paid after the payment window',
   all_cancelled_fee: 'Delivery fee (nothing delivered)',
   amount_mismatch: 'Paid amount didn’t match',
+  return: 'Return',
 } as const satisfies Labels<RefundReason>;
 
-/** Spec 03 AD-16 tab names. */
+/** Spec 03 §7.6. */
 export const REFUND_STATUS_LABELS = {
-  pending_manual: 'To record',
+  pending_auto: 'Automatic, scheduled',
+  processing: 'Automatic, in progress',
+  succeeded: 'Refunded automatically',
+  pending_manual: 'Needs action',
   recorded: 'Recorded',
 } as const satisfies Labels<RefundStatus>;
+
+/** Spec 03 §7.6. */
+export const REFUND_METHOD_LABELS = {
+  kashier_auto: 'Automatic (Kashier)',
+  manual: 'Manual',
+} as const satisfies Labels<RefundMethod>;

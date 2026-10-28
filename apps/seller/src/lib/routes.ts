@@ -7,12 +7,26 @@ export const ROUTES = {
   finance: '/finance',
   profile: '/profile',
   security: '/security',
+  /** SE-27 / SE-28 (spec 02 §8.2). */
+  notifications: '/notifications',
+  notificationSettings: '/notifications/settings',
+  /** SE-20 Reviews (T-L4). */
+  reviews: '/reviews',
   login: '/login',
   register: '/register',
   verifyEmail: '/verify-email',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
 } as const;
+
+/** SE-19 Return (T-L3). */
+export const returnPath = (returnId: string) => `/returns/${returnId}` as const;
+
+/** SE-23 Coupon (T-L5). */
+export const couponPath = (couponId: string) => `/coupons/${couponId}` as const;
+
+/** SE-26 Support ticket (T-L6). */
+export const supportTicketPath = (ticketId: string) => `/support/${ticketId}` as const;
 
 /** Sign-in screens: never a `returnTo` destination. */
 export const AUTH_PATHS = [

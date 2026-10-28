@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { UI_COPY } from '../copy';
+import { NileLogoShort } from './logo';
 
 // Building blocks shared by the four app shells (T-C3). Links stay in the apps (Next.js `Link` with typed
 // routes); this package only provides markup and styling, so it never imports Next.js.
@@ -33,6 +34,22 @@ export function navLinkClasses(active: boolean, className?: string): string {
 export function isActivePath(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export interface PortalBrandProps {
+  /** The portal's name after the logo, e.g. `Seller`; with the logo's "Nile" it reads "Nile Seller". */
+  readonly roleLabel: string;
+}
+
+/** Brand of the seller, admin and agent portals (T-J2): the short logo and the portal's name, inside the app's link. */
+export function PortalBrand({ roleLabel }: PortalBrandProps) {
+  return (
+    <span className="flex items-center gap-2">
+      <NileLogoShort label={UI_COPY.brandName} className="h-8 w-auto" />
+      {/* Separates the two words of the accessible name; the flex layout ignores it. */}{' '}
+      <span className="text-lg font-semibold text-nile-900">{roleLabel}</span>
+    </span>
+  );
 }
 
 export interface PageHeaderProps {
