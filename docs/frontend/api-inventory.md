@@ -811,6 +811,7 @@ T-J1 (2026-10-23): `packages/api/src/error-codes.ts` holds all 171 backend codes
 | OA-R2-7 | 22 R2 request fields are `@Nullable()` in the backend DTOs but documented as optional only (images `variantId` / `altText`, review `title` / `body`, coupon `maxDiscount` / `globalLimit` / `scopeCategoryId` / `scopeSellerId`, push `expirationTime`, `AssignTicketDto.adminUserId`) [VERIFIED T-J1 against backend source] | Added to `NULLABLE_REQUEST_FIELDS` in `openapi-fix.ts` |
 | OA-R2-8 | `AssignTicketDto.adminUserId` is required (an admin or `null` to unassign) but documented optional [VERIFIED T-J1] | OA-6 rule generalised to `REQUIRED_REQUEST_FIELDS` |
 | OA-R2-9 | `AuthTokensDto.refreshToken` is now `string | null` (null only with the web cookie transport) [VERIFIED T-J1] | `@nile/auth` `bodyTokens()` fails closed on null; the BFF never selects the cookie transport |
+| OA-R2-10 | `UploadFormDto.fields` is documented `{ type: object }` without keys, so it generates `Record<string, never>` (and a closed contract validator); the backend sends the presigned form fields as strings [SPEC 14 §4, VERIFIED T-J4] | `openapi-fix.ts` `STRING_MAP_FIELDS`: `additionalProperties: { type: string }` |
 
 ### 11.8 Gaps and questions (Release 2)
 

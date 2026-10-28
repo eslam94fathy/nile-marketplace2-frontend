@@ -96,6 +96,7 @@ Inputs:
 - **Acceptance:** component tests for null, public, private-expired; Lighthouse budgets (T-I3) still met on product and category pages with images.
 
 #### T-J4 Upload pipeline
+- **Status (2026-10-28):** implemented: `storageUpload` (`@nile/api`, XHR with progress), new package `@nile/media` (`checkImageFile`, `uploadImage`, `waitForMedia` with a `subscribe` hook for T-J5, `useImageUploads`), `UploadTiles` (`@nile/ui`); OA-R2-10 fix for `UploadFormDto.fields`; MSW tests for every `MEDIA_*` code and the client refusals before any request. Deferred: CSP `connect-src` / `img-src blob:` with `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN` (phase i merge, TB-4); the E2E upload against MinIO waits for the first screen with an uploader (T-L1 or T-K5) (approved 2026-10-28).
 - **Scope:** `useImageUpload(purpose)` in a shared package: client checks (jpeg/png/webp, ≤ 5 MB, ≥ 200 × 200 read from the file) → `POST /media/uploads` (BFF) → multipart `POST` to the presigned URL with the given `fields` → `complete` → wait for `ready` (socket `media.updated` when FR2-Q1 allows, else poll `GET /media/:id` with back-off, visible tab only) → returns `mediaId` + preview; states idle / uploading (progress) / processing / ready / failed with error-code copy (`MEDIA_*`); cancel; CSP `connect-src` for the upload origin; an `ImageUploader` UI (drop zone + button, keyboard accessible, multiple files up to a limit).
 - **Acceptance:** MSW tests for each `MEDIA_*` code, size and type rejection before any request; E2E upload against MinIO.
 

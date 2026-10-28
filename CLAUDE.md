@@ -311,6 +311,9 @@ Brand from `../nile-brand`: "Nile teal" scale in `tokens.ts` (600 `#1F6F80` prim
 ### 14.1as Decided (2026-10-28, T-J3)
 `NileImage` in `@nile/ui` (no client JavaScript): `srcset` widths capped at the DTO `width` (never upscaled; equal widths listed once), `medium` as `src`, intrinsic `width`/`height`, lazy unless `priority` (eager + `fetchpriority=high`), brand placeholder named by `alt` for `null` · `PrivateImage` (client): a failed URL is never shown again, the owner is asked to refetch once per image, a second failure (or the same URL back) shows "This image can't be shown." · `variantImage` / `primaryImage` / `imageAlt` in `@nile/domain` (backend spec 06 §8.1) · CSP `img-src` and the media origin env keys wait for phase i (TB-4).
 
+### 14.1at Decided (2026-10-28, T-J4)
+CSP `connect-src` for the upload origin waits for phase i like T-J3 (TB-4) · `storageUpload` in `@nile/api` (XHR for progress, no credentials, fields then the file last; storage refusal = client code `STORAGE_UPLOAD_REJECTED`) · new package `@nile/media` on `@nile/api` only: `checkImageFile`, `uploadImage` (`MEDIA_UPLOAD_MISSING` retried 3 × 1 s while the URL is valid), `waitForMedia` (1 s doubling to 30 s, visible tab only, `subscribe` for T-J5), `useImageUploads({ api, purpose, max, onRateLimited })` · presentational `UploadTiles` in `@nile/ui` · OA-R2-10 `UploadFormDto.fields` as a string map (design 01 R-58) · approved 2026-10-28: limit sentence "You can add up to {max} photos.", tile state "Checking…", announcement "Photo {n} of {total} failed. {reason}", E2E upload against MinIO with the first screen that has an uploader (T-L1 or T-K5).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -328,7 +331,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-17 | Backend `CORS_ALLOWED_ORIGINS` (socket handshake, storage bucket CORS) must list the four web origins (4100–4103 locally) | Backend env change only (release-2-plan §4.1) |
 | OQ-18 | Notification `link` values assume one prefixed web app (backend NO-12) | Ask the backend to confirm the link list as a stable contract |
 | OQ-19 | Local backend container predates R2-P6/P7 (no returns or coupon routes) | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
-| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. The env keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` / `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN` and the `img-src` additions (T-J3) and the T-I3 Lighthouse check with images also wait for the merge. Rec: merge phase i before phase k |
+| TB-4 | Phase i (CSP, a11y, perf) is unmerged while phase j builds on `main` (2026-10-23) | When phase i merges, its CSP needs the R2 origins (storage upload, media CDN, realtime `wss:`, `worker-src 'self'`); phase j records them in design 01 so either branch can add them. The env keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN` / `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN` and the `img-src` additions (T-J3) and the T-I3 Lighthouse check with images also wait for the merge, as do T-J4's `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN` in `connect-src` and `blob:` in `img-src` (local previews). Rec: merge phase i before phase k |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.

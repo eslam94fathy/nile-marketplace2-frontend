@@ -179,13 +179,15 @@ export const BACKEND_ERROR_CODES = [
 
 /**
  * Codes that never come from the backend: produced by this client (`NETWORK_ERROR`: no usable response) or by
- * the apps' BFF routes (design 01 §4: `UPSTREAM_TIMEOUT`, `WRONG_APP`, `CSRF_REJECTED`).
+ * the apps' BFF routes (design 01 §4: `UPSTREAM_TIMEOUT`, `WRONG_APP`, `CSRF_REJECTED`), and by `storageUpload` when
+ * object storage refuses a presigned upload (`STORAGE_UPLOAD_REJECTED`, T-J4).
  */
 export const CLIENT_ERROR_CODES = [
   'NETWORK_ERROR',
   'UPSTREAM_TIMEOUT',
   'WRONG_APP',
   'CSRF_REJECTED',
+  'STORAGE_UPLOAD_REJECTED',
 ] as const;
 
 export const ERROR_CODES = [...BACKEND_ERROR_CODES, ...CLIENT_ERROR_CODES] as const;

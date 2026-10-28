@@ -46,6 +46,8 @@ export interface FixReport {
   requiredRequestProperties: number;
   /** OA-7: literal `attr.{code}[in]` query parameter removed. */
   removedAttrParameter: boolean;
+  /** OA-R2-10: free-form objects typed as string maps. */
+  stringMapProperties: number;
 }
 
 /** Request fields the backend spec documents as `opt nullable` (or `nullable`), keyed by schema name. */
@@ -83,6 +85,14 @@ export const REQUIRED_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>
  */
 export const OPTIONAL_RESPONSE_FIELDS: Readonly<Record<string, readonly string[]>> = {
   AdminShipmentDto: ['history'], // `toAdminShipmentDto(view, false)`: lists leave it out, detail includes it
+};
+
+/**
+ * OA-R2-10: object fields documented as `{ type: object }` with no keys, which generates `Record<string, never>`
+ * (and a closed contract validator). The backend fills them with string values.
+ */
+export const STRING_MAP_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  UploadFormDto: ['fields'], // spec 14 §4: the presigned POST form fields, `Record<string, string>`
 };
 
 const PHANTOM_PROPERTY = '__atLeastOneField';
@@ -168,6 +178,7 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     fixedIdOrSlug: false,
     requiredRequestProperties: 0,
     removedAttrParameter: false,
+    stringMapProperties: 0,
   };
 
   // Which schemas are reachable from request bodies and from success responses.
@@ -244,6 +255,19 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
       if (!(field in schema.properties)) throw new OpenApiFixError(`${name}.${field} is missing`);
       schema.required = [...new Set([...(schema.required ?? []), field])];
       report.requiredRequestProperties += 1;
+    }
+  }
+
+  // OA-R2-10: free-form string maps (required fields, so OA-1 above left them unwrapped).
+  for (const [name, fields] of Object.entries(STRING_MAP_FIELDS)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      const property = schema.properties[field];
+      if (property?.type !== 'object' || property.properties !== undefined) {
+        throw new OpenApiFixError(`${name}.${field} is no longer a free-form object`);
+      }
+      property.additionalProperties = { type: 'string' };
+      report.stringMapProperties += 1;
     }
   }
 

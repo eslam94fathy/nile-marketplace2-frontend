@@ -43,4 +43,5 @@ export {
   type OperationPath,
 } from './allow-lists';
 export { fetchWithTimeout, forwardToBackend, upstreamTimeout, type ForwardOptions } from './upstream';
+export { storageUpload, type StorageUploadInput } from './storage-upload';
 export type { Schema } from './types';

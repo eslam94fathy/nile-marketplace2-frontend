@@ -460,7 +460,7 @@ Notation as §2. "Live" names the realtime messages that invalidate the key (§5
 | `notifications.list(filter)` | `GET /me/notifications` | 0, infinite | `notification.created` |
 | `notifications.preferences` | `GET /me/notification-preferences` | 5 min | – |
 | `push.config` | `GET /push/config` | Infinity (per session) | – |
-| `media.detail(mediaId)` | `GET /media/{mediaId}` | 0; polled by `waitForMedia` only | `media.updated` |
+| `media.detail(mediaId)` | `GET /media/{mediaId}` | not cached: `waitForMedia` reads it directly (T-J4) | `media.updated` wakes the wait |
 | `support.list(filter)` | `GET /support/tickets` (admin: `/admin/support/tickets`) | 0, infinite | `support.ticket_updated`, `support.message_created` |
 | `support.detail(ticketId)` | `GET /support/tickets/{id}` (admin variant) | 0 | `support.ticket_updated` (that id) |
 | `support.messages(ticketId)` | `GET …/{id}/messages` | 0, infinite (newest first, reversed in the view) | `support.message_created` (that id); poll 10 s without socket while open |
@@ -519,7 +519,7 @@ R1 shipment keys gain the `kind` parameter; live: `shipment.assigned`, `shipment
 | `shipment.assigned` / `shipment.unassigned` | – | – | – | `shipments.list`, `shipments.detail(shipmentId)`, `profile` (active count) |
 | `payment.updated` | `orders.detail(orderId)`, `orders.list` | – | – | – |
 | `return.updated` | `returns.list`, `returns.detail(returnId)`, `orders.detail(orderId)` | `returns.list`, `returns.detail(returnId)`, `orders.detail(sellerOrderId)`, `finance.*` | `returns.list`, `returns.detail(returnId)` | – |
-| `media.updated` | `media.detail(mediaId)` | same | same | – |
+| `media.updated` | none: wakes `waitForMedia` through its `subscribe` option (T-J4) | same | same | – |
 | `support.ticket_updated` | `support.list`, `support.detail(ticketId)` | same | same + `dashboard` | – |
 | `support.message_created` | `support.messages(ticketId)`, `support.list` | same | same | – |
 | `notification.created` | `notifications.*` | `notifications.*` | `notifications.*` | `notifications.*` |

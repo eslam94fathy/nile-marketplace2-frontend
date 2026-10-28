@@ -11115,7 +11115,9 @@ export interface components {
         UploadFormDto: {
             /** Format: url */
             url: string;
-            fields: Record<string, never>;
+            fields: {
+                [key: string]: string;
+            };
             expiresAt: string;
         };
         UploadTicketDto: {

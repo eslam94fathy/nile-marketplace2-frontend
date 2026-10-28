@@ -482,6 +482,7 @@ The agent app has no uploads (no `MEDIA_UPLOAD_ORIGIN`). Every key goes into the
 | R-55 | Web Push service worker without a fetch handler, link mapping in one route (§15.5), manifest per app | FR2-Q2, FR2-Q4; no duplicate link map in the worker |
 | R-56 | Shared screens packages `@nile/notifications` and `@nile/support-screens` (R-24 pattern) | Same screens in three or four apps |
 | R-57 | CSP additions from env origins (§15.7) | Uploads, images, socket, worker |
+| R-58 | T-J4: `@nile/media` depends on `@nile/api` only (no query cache: `waitForMedia` polls directly and T-J5 wakes it through `subscribe`); `useImageUploads({ api, purpose, max, onRateLimited })` gets the app's browser client; the presentational `UploadTiles` lives in `@nile/ui`; storage refusals are the client code `STORAGE_UPLOAD_REJECTED`; the storage bucket CORS must also answer the preflight that upload progress listeners cause (OQ-17) | No cache entry for a one-off poll; `@nile/ui` stays below `@nile/media` |
 
 ### 15.12 Design questions (Release 2)
 

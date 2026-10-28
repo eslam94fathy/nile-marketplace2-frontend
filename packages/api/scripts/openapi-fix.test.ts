@@ -5,6 +5,7 @@ import {
   NULLABLE_REQUEST_FIELDS,
   OPTIONAL_RESPONSE_FIELDS,
   REQUIRED_REQUEST_FIELDS,
+  STRING_MAP_FIELDS,
   OpenApiFixError,
   type OpenApiDocument,
   type SchemaNode,
@@ -96,6 +97,11 @@ function fixture(): OpenApiDocument {
           type: 'object',
           required: ['__atLeastOneField'],
           properties: { name: { type: 'string' }, __atLeastOneField: {} },
+        },
+        UploadFormDto: {
+          type: 'object',
+          required: ['fields'],
+          properties: { fields: { type: 'object' } },
         },
         ...nullableRequests,
       },
@@ -230,10 +236,27 @@ describe('applyFixes', () => {
     ['the attr parameter', (doc: OpenApiDocument) => doc.paths?.['/api/v1/products']?.get?.parameters?.pop()],
     ['the product list path', (doc: OpenApiDocument) => delete doc.paths?.['/api/v1/products']],
     ['UpdateGovernorateDto', (doc: OpenApiDocument) => delete doc.components?.schemas?.UpdateGovernorateDto],
+    [
+      'the free-form upload fields',
+      (doc: OpenApiDocument) => {
+        schemaOf(doc, 'UploadFormDto').properties = { fields: { type: 'object', properties: {} } };
+      },
+    ],
   ])('throws when %s is gone', (_label, breakIt) => {
     const doc = fixture();
     breakIt(doc);
     expect(() => applyFixes(doc)).toThrow(OpenApiFixError);
+  });
+});
+
+describe('OA-R2-10 string maps', () => {
+  it('types the presigned form fields as strings', () => {
+    const { document, report } = applyFixes(fixture());
+    expect(schemaOf(document, 'UploadFormDto').properties?.fields).toEqual({
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    });
+    expect(report.stringMapProperties).toBe(Object.values(STRING_MAP_FIELDS).flat().length);
   });
 });
 
@@ -254,6 +277,7 @@ describe('the pinned snapshot', () => {
       fixedIdOrSlug: true,
       requiredRequestProperties: 2,
       removedAttrParameter: true,
+      stringMapProperties: 1,
     });
   });
 

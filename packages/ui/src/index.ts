@@ -123,3 +123,10 @@ export {
   type NileImageSource,
 } from './components/nile-image';
 export { PrivateImage, type PrivateImageProps } from './components/private-image';
+export {
+  UploadTiles,
+  type UploadRefusalView,
+  type UploadTilesProps,
+  type UploadTileView,
+  type UploadTileViewStatus,
+} from './components/upload-tiles';
