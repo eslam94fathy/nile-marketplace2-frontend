@@ -7,6 +7,7 @@ import {
   isActivePath,
   MAIN_CONTENT_ID,
   navLinkClasses,
+  PortalBrand,
   UI_COPY,
 } from '@nile/ui';
 import { LogOut, Menu, Monitor, ShieldCheck } from 'lucide-react';
@@ -136,8 +137,8 @@ function AccountMenu({ email }: { readonly email: string | null }) {
 
 function Brand() {
   return (
-    <Link href={ROUTES.dashboard} className="text-lg font-semibold text-primary">
-      {APP.title}
+    <Link href={ROUTES.dashboard} className="w-fit rounded-md">
+      <PortalBrand roleLabel={APP.roleLabel} />
     </Link>
   );
 }

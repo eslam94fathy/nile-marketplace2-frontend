@@ -305,6 +305,9 @@ Release 2 specs and design approved with every recommendation and [PROPOSED] ite
 ### 14.1aq Decided (2026-10-23, T-J1)
 Snapshot pinned to backend `ecbcd19` (217 operations) · `openapi-fix.ts`: 22 R2 nullable request fields, OA-6 generalised to `REQUIRED_REQUEST_FIELDS` (`AssignTicketDto.adminUserId`) · `@nile/auth` `bodyTokens()` refuses tokens without a refresh token (500, no cookie): the BFF never selects the web cookie transport · return pickups get no agent actions until T-N1 · the seller balance card shows Available / Pending / what the seller owes now (B-2); the seller statement describes `seller_net_released`, `seller_net_reversed`, `return_fee_charged` (links with T-L3) · the admin refund queue keeps its two tabs until T-M8; admin statement references to returns, refunds and holds show without a link until phase m · card refund copy says refunds are automatic (spec 01 §10.3) · allow-lists carry every R2 operation per design 02 §5.1, and the allow-list test reads only design 02 §1.
 
+### 14.1ar Decided (2026-10-23, T-J2)
+Brand from `../nile-brand`: "Nile teal" scale in `tokens.ts` (600 `#1F6F80` primary, 900 the brand navy `#0E2A3B`, 50 the brand surface), `NILE_GOLD` decorative only · `NileLogoShort` (artwork unchanged, viewBox cropped) in every header; portals show it with their name (`PortalBrand`, accessible name "Nile Seller" etc.) · navy app icon (`favicon.ico`, `icon.svg`, full-bleed `apple-icon.png`) in all four apps, manifest icons in `public/icons/` · storefront `opengraph-image.png` (full logo on the brand surface) · `ProductImagePlaceholder` / `CategoryImagePlaceholder` for T-J3 · re-based token page approved 2026-10-28 (FR2-Q5).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

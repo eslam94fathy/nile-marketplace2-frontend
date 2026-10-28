@@ -101,8 +101,16 @@ export {
   NotFoundScreen,
   PageHeader,
   PlaceholderScreen,
+  PortalBrand,
   SkipLink,
   type NotFoundScreenProps,
   type PageHeaderProps,
   type PlaceholderScreenProps,
+  type PortalBrandProps,
 } from './components/shell';
+export { NileLogoShort, type LogoProps } from './components/logo';
+export {
+  CategoryImagePlaceholder,
+  ProductImagePlaceholder,
+  type ImagePlaceholderProps,
+} from './components/image-placeholders';

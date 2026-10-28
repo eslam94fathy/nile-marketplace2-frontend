@@ -1,5 +1,7 @@
 // Copy owned by the shared components (CLAUDE.md §7: no inline literals). Screen copy lives with the screens.
 export const UI_COPY = {
+  /** The product name in UI copy (conventions §11); the logo's accessible name. */
+  brandName: 'Nile',
   close: 'Close',
   cancel: 'Cancel',
   confirm: 'Confirm',

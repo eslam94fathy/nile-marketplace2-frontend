@@ -10,7 +10,7 @@ describe('contrastRatio', () => {
   });
 
   it('is symmetric', () => {
-    expect(contrastRatio('#0B5C7A', '#FFFFFF')).toBe(contrastRatio('#FFFFFF', '#0B5C7A'));
+    expect(contrastRatio('#1F6F80', '#FFFFFF')).toBe(contrastRatio('#FFFFFF', '#1F6F80'));
   });
 
   it('rejects anything but #rrggbb', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn, isActivePath, MAIN_CONTENT_ID } from '@nile/ui';
+import { cn, isActivePath, MAIN_CONTENT_ID, PortalBrand } from '@nile/ui';
 import { History, Package, User, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -57,8 +57,8 @@ export function AgentShell({ children }: { readonly children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col border-x border-border">
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background px-4">
-        <Link href={ROUTES.shipments} className="text-lg font-semibold text-primary">
-          {APP.title}
+        <Link href={ROUTES.shipments} className="rounded-md">
+          <PortalBrand roleLabel={APP.roleLabel} />
         </Link>
         <ShiftSwitch />
       </header>

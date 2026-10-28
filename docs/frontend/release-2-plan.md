@@ -86,6 +86,7 @@ Inputs:
 - **Acceptance:** `api:check`, type-check, lint, tests green; existing screens behave as before against the new backend (E2E smoke per app).
 
 #### T-J2 Brand assets
+- **Status (2026-10-23):** implemented; format, lint, type-check, 1536 tests and the build green; screenshots of the four headers and the token page taken from the dev servers. Deviations: the storefront header uses the short logo (mark + "nile"): at header height the full logo's "marketplace" line is about 5 px and unreadable; the full logo is the storefront share image. No mono logos (no dark surface exists yet). Manifest icons are in `public/icons/` for T-J6. Re-based token page (`/design/tokens`, FR2-Q5) approved 2026-10-28.
 - **Scope:** SVG logo components in `packages/ui` (horizontal for the storefront header, short horizontal + role label for seller / admin / agent, mark for small widths, mono for dark surfaces), app icons and favicons per app (`app/icon.svg`, `app/apple-icon.png` 180, `favicon.ico`), Open Graph image for the storefront, product and category placeholders, `PlaceholderScreen`/auth screens with the logo; token page updated; palette per FR2-Q5 with the contrast tests.
 - **Acceptance:** every app shows the logo and its icon in the tab; axe clean; logo has an accessible name ("Nile Marketplace"); no layout shift (fixed dimensions).
 

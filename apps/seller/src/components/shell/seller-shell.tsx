@@ -7,6 +7,7 @@ import {
   isActivePath,
   MAIN_CONTENT_ID,
   navLinkClasses,
+  PortalBrand,
   UI_COPY,
 } from '@nile/ui';
 import {
@@ -76,8 +77,8 @@ function NavLinks({ onNavigate }: { readonly onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <Link href={ROUTES.overview} className="text-lg font-semibold text-primary">
-      {APP.title}
+    <Link href={ROUTES.overview} className="w-fit rounded-md">
+      <PortalBrand roleLabel={APP.roleLabel} />
     </Link>
   );
 }
