@@ -18,7 +18,7 @@ import {
 } from '@nile/ui';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useNotApprovedHandler } from '@/features/profile';
 import { adjustStock, type StockLevel, type VariantStock } from '../api';
 import { STOCK_COPY as COPY } from '../copy';

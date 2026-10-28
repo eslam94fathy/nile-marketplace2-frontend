@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { staticSecurityHeaders } from '@nile/auth/headers';
 import { parseEnv } from '@nile/config/env';
 import { publicEnvSchemaForApp } from './src/lib/env/public-schema';
 
@@ -9,6 +10,22 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   typedRoutes: true,
+  // Static security headers on every path (pages, /api/*, assets, the service worker); the per-request CSP
+  // comes from proxy.ts. The push service worker is checked for updates on every load (design 01 §15.5).
+  headers: () =>
+    Promise.resolve([
+      {
+        source: '/:path*',
+        headers: staticSecurityHeaders({ production: process.env.NODE_ENV === 'production' }),
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache' },
+          { key: 'Content-Type', value: 'text/javascript; charset=utf-8' },
+        ],
+      },
+    ]),
   transpilePackages: [
     '@nile/config',
     '@nile/api',
@@ -21,17 +38,6 @@ const nextConfig: NextConfig = {
     '@nile/realtime',
     '@nile/ui',
   ],
-  // The push service worker (design 01 §15.5): browsers check it for updates on every load.
-  headers: () =>
-    Promise.resolve([
-      {
-        source: '/sw.js',
-        headers: [
-          { key: 'Cache-Control', value: 'no-cache' },
-          { key: 'Content-Type', value: 'text/javascript; charset=utf-8' },
-        ],
-      },
-    ]),
 };
 
 export default nextConfig;

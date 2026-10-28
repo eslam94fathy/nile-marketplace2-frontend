@@ -4,15 +4,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { isApiError } from '@nile/api';
 // useSubmitFailure only: FailureAlert needs the sign-in screens' provider, which portal pages don't have.
 import { useSubmitFailure } from '@nile/auth-screens';
-import { fields, formatRatePercent, ratePercentValue } from '@nile/domain';
+import { formatRatePercent, ratePercentValue, percentRate } from '@nile/domain';
 import { Button, Field, FormAlert, Input, toast } from '@nile/ui';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { setCommissionRate, type AdminSellerDetail } from '../api';
 import { SELLERS_COPY as COPY } from '../copy';
 import { useSellerUpdates } from './seller-actions';
 
-const schema = z.object({ commissionRate: fields.percentRate });
+const schema = z.object({ commissionRate: percentRate });
 
 /** AD-05 "Change commission", any status: entered as a percent, sent as the API's fraction (12.5 → "0.1250"). */
 export function CommissionForm({ seller }: { readonly seller: AdminSellerDetail }) {

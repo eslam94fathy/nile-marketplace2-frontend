@@ -15,15 +15,13 @@ const MAX_PAYMENT_WINDOW_MS = 2 * 60_000;
 /** The expiry job and the webhook worker run on intervals: allow them this much after the window. */
 const JOB_SLACK_MS = 2 * 60_000;
 
-test('late Kashier payment → refund to record → recorded', async ({
-  page,
-  signIn,
-  accounts,
-  admin,
-  customer,
-}) => {
+test('late Kashier payment → refund to record → recorded', async ({ page, signIn, accounts, customer }) => {
+  // Release 2 backend refunds a late Kashier payment automatically (backend spec 10 §8: pending_auto →
+  // succeeded); `pending_manual` is now only the fallback. Rewritten with the R2 refund queue in T-M8.
+  test.skip(true, 'R2 refunds late Kashier payments automatically: rewritten in T-M8');
   const dir = backendDir();
   test.skip(dir === null, 'set NILE_BACKEND_DIR to the backend checkout to send Kashier webhooks');
+  // The test outlives one access token (2-minute tokens in E2E): each call asks for a current one.
   const { backend } = accounts;
   const order = await placeOrder(backend, customer.accessToken, 'kashier');
   const paymentWindow = Date.parse(order.paymentExpiresAt ?? '') - Date.parse(order.createdAt);
@@ -35,7 +33,9 @@ test('late Kashier payment → refund to record → recorded', async ({
 
   const readOrder = async () =>
     expectData(
-      await backend.request('GET', `/api/v1/admin/orders/${order.id}`, { token: admin.accessToken }),
+      await backend.request('GET', `/api/v1/admin/orders/${order.id}`, {
+        token: (await accounts.admin()).accessToken,
+      }),
       200,
     ) as Schema<'AdminOrderDetailDto'>;
   await expect
@@ -51,7 +51,7 @@ test('late Kashier payment → refund to record → recorded', async ({
       await backend.request(
         'GET',
         '/api/v1/admin/payments/refunds?status[eq]=pending_manual&sort=-createdAt&limit=100',
-        { token: admin.accessToken },
+        { token: (await accounts.admin()).accessToken },
       ),
       200,
     ) as Schema<'RefundDto'>[];

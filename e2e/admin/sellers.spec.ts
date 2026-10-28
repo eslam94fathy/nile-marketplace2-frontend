@@ -23,13 +23,13 @@ test('pending seller → approve → commission 12.5 %', async ({ page, signIn, 
 
   await page.getByRole('button', { name: 'Approve' }).click();
   await page.getByRole('dialog', { name: 'Approve' }).getByRole('button', { name: 'Approve' }).click();
-  await expect(page.getByText(`${profile.businessName} is approved.`)).toBeVisible();
+  await expect(page.getByText(`${profile.businessName} is approved.`, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Suspend' })).toBeVisible();
 
   const rate = page.getByLabel(/^Commission rate/);
   await rate.fill('12.5');
   await page.getByRole('button', { name: 'Save rate' }).click();
-  await expect(page.getByText('Commission set to 12.5%.')).toBeVisible();
+  await expect(page.getByText('Commission set to 12.5%.', { exact: true })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Commission changes, newest first' })).toContainText('12.5%');
 
   const after = expectData(

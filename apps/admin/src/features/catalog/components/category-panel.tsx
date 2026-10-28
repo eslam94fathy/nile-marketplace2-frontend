@@ -8,7 +8,7 @@ import { errorMessage } from '@nile/query';
 import { Badge, Button, ConfirmDialog, Field, FormAlert, Input, Label, Switch, toast } from '@nile/ui';
 import { useId, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { updateCategory, type CategoryNode } from '../api';
 import { CATALOG_COPY as COPY } from '../copy';
 import { canHaveChildren, pathTo } from '../lib/tree';

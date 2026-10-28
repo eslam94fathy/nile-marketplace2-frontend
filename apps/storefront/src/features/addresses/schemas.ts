@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Address form (spec 01 SF-16, `CreateAddressDto`): required fields trimmed, phone as E.164, optional fields
 // empty → omitted on create (conventions §5).

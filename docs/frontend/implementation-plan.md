@@ -453,7 +453,10 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 
 ## Phase i — Hardening & Release
 
+- **Catch-up (2026-10-28):** `main` with Release 2 phase j merged in; the CSP gains the R2 hosts from three new public settings, `worker-src` and `manifest-src` (design 01 R-61, CLAUDE.md §14.1ax). axe now also covers the R2 component tests (all pass). T-I4…T-I6 still wait for FQ-3 / FQ-8; the R2 re-checks are phase o.
+
 ### T-I1 Security headers and CSP
+- **Status (2026-10-16):** implemented; report-only run done before enforcing (violations found and fixed, then none), CSP enforced. Unit tests (policy, static headers, nonce randomness; guard: fresh nonce per request on response and forwarded request, redirects, report-only header) green; E2E: automatic CSP-violation guard on every test, per-app hardening suite (headers, nonce on server scripts, `/api/*`, CSRF, tampered and cross-role sessions). The 16 backend-free hardening tests and the storefront component/token specs ran green against local production builds; the cross-role session test and the rest of the suite (under the new guard) need the backend run. Repo type-check, lint, format, all unit tests and all four builds green. Decisions: design 01 §10, R-50.
 - **Scope:** nonce-based CSP via `proxy.ts`, HSTS, frame, referrer, permissions policies per app; CSRF and session abuse tests.
 - **Dependencies:** all feature phases.
 - **Files:** `apps/*/src/proxy.ts`, `packages/auth/src/headers.ts`.
@@ -462,12 +465,14 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 - **Exclusions / DoD:** no WAF/infra config here (T-I5); global DoD.
 
 ### T-I2 Accessibility audit
+- **Status (2026-10-16):** automated part done: axe after every component test (all 1496 pass), axe in every E2E feature spec, keyboard-only E2E per role written and type-checked (**not yet run**: they need the backend), code review for keyboard traps (none found). Screen-reader spot checks: checklist `docs/frontend/a11y-screen-reader-checklist.md`, **to be performed by a person**; findings go in its table. Decisions: design 01 R-51.
 - **Scope:** full axe pass, keyboard-only walkthrough of every workflow, screen-reader spot checks (NVDA/VoiceOver).
 - **Dependencies:** feature phases. **Files:** fixes across apps.
 - **Acceptance criteria:** zero serious/critical axe violations; every workflow completable by keyboard.
 - **Tests:** axe in all E2E specs. **Exclusions / DoD:** formal certification excluded; global DoD.
 
 ### T-I3 Performance
+- **Status (2026-10-16):** tooling and budgets in place (Lighthouse CI from `npm run perf`, nightly `perf.yml`); bundle analysis done with fixes (−59 KB compressed JavaScript per storefront page); polling and rate-limit review written (`docs/frontend/performance.md`). Local lab numbers on backend-free pages are above the LCP and TBT budgets on this machine (noisy, indicative); **the acceptance verdict on catalog, product and cart needs the first nightly (or local) run with the backend**. Decisions: design 01 R-52.
 - **Scope:** Web Vitals budgets for storefront (LCP < 2.5 s, INP < 200 ms, CLS < 0.1 on a mid-range mobile profile), bundle analysis, query/polling cost review against backend rate limits.
 - **Dependencies:** phases e–g. **Files:** config + targeted fixes.
 - **Acceptance criteria:** Lighthouse CI budgets green on catalog, product, cart pages.

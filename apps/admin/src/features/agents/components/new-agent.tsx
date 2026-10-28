@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { adminGovernoratesQuery, agentKeys } from '@/features/lookups';
 import { agentPath, ROUTES } from '@/lib/routes';
 import { createAgent } from '../api';

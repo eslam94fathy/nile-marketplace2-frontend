@@ -4,9 +4,12 @@ import { test as base, expect, type Page } from '@playwright/test';
 import { appUrl, type E2eAppName } from '../apps';
 
 // Per-role fixtures (design 01 §12.3): each test that asks for a role gets a fresh account made through the
-// backend (Mailpit for codes and invites); the seeded admin is signed in once per worker. `signIn(app)` gives
+// backend (Mailpit for codes and invites); the seeded admin is shared, its token renewed before it expires. `signIn(app)` gives
 // the test's browser a real session in that app through its BFF (one account per role and worker, a fresh
 // sign-in per test: sharing session cookies between tests would replay rotated refresh tokens).
+
+/** How Chromium reports a blocked (or report-only) resource in the console. */
+const CSP_VIOLATION = /Content Security Policy/i;
 
 interface RoleFixtures {
   /** Signs the test's browser context in to `app` with an account of that app's role. */
@@ -14,16 +17,30 @@ interface RoleFixtures {
   readonly customer: Account;
   readonly seller: Account & { readonly sellerId: string };
   readonly agent: Account & { readonly agentId: string };
+  /** The seeded admin with a token valid for this test (renewed before it expires, 2-minute tokens in E2E). */
+  readonly admin: Account;
+  /** Automatic (T-I1): fails the test when the browser reports a CSP violation on any of our pages. */
+  readonly cspGuard: undefined;
 }
 
 interface WorkerFixtures {
   readonly accounts: Accounts;
-  readonly admin: Account;
   /** One account per app's role, created on first use and reused by the worker's tests. */
   readonly accountFor: (app: E2eAppName) => Promise<Account>;
 }
 
 export const test = base.extend<RoleFixtures, WorkerFixtures>({
+  cspGuard: [
+    async ({ page }, provide) => {
+      const violations: string[] = [];
+      page.on('console', (message) => {
+        if (CSP_VIOLATION.test(message.text())) violations.push(`${page.url()}: ${message.text()}`);
+      });
+      await provide(undefined);
+      expect(violations, 'Content Security Policy violations').toEqual([]);
+    },
+    { auto: true },
+  ],
   accounts: [
     // eslint-disable-next-line no-empty-pattern -- Playwright reads fixture dependencies from this pattern
     async ({}, provide) => {
@@ -31,12 +48,9 @@ export const test = base.extend<RoleFixtures, WorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-  admin: [
-    async ({ accounts }, provide) => {
-      await provide(await accounts.admin());
-    },
-    { scope: 'worker' },
-  ],
+  admin: async ({ accounts }, provide) => {
+    await provide(await accounts.admin());
+  },
   accountFor: [
     async ({ accounts }, provide) => {
       const cache = new Map<E2eAppName, Promise<Account>>();

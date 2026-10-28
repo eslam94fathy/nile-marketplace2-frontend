@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 import type { CategoryNode } from './api';
 import { SORT_ORDER_MAX } from './lib/tree';
 

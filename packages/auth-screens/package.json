@@ -4,6 +4,7 @@
   "private": true,
   "description": "Sign-in screens shared by the four apps: sign in, verify email, forgot and reset password (design 01 R-24)",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./params": "./src/params.ts"

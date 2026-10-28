@@ -4,6 +4,7 @@
   "private": true,
   "description": "TanStack Query foundation: query client, provider, key factory, cursor lists, shared public queries",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },

@@ -1,3 +1,4 @@
+import './zod-config';
 export * from './enums';
 export {
   addMoney,
@@ -24,6 +25,7 @@ export {
 } from './dates';
 export * from './labels';
 export * as fields from './fields';
+export { percentRate } from './rate-field';
 export {
   defineNotificationLinks,
   mapNotificationLink,

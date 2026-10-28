@@ -18,7 +18,7 @@ test('adjust stock (add, then set the counted number) → history shows both', a
   await expect(dialog.getByText('This will add 3 units (on hand 5 → 8).')).toBeVisible();
   await expectNoBlockingA11yViolations(page);
   await dialog.getByRole('button', { name: 'Adjust stock' }).click();
-  await expect(page.getByText('Stock updated.')).toBeVisible();
+  await expect(page.getByText('Stock updated.', { exact: true })).toBeVisible();
   await expect(dialog).toHaveCount(0);
 
   await page

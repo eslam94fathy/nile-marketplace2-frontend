@@ -1,6 +1,6 @@
 import { inValues } from '@nile/api';
 import { cairoDayBounds, isCalendarDay, type OrderStatus } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // AD-14 filters, URL ⇄ API: `?status=<tab>&number=&customer=&from=&to=`, newest first. Invalid values are
 // dropped, never sent (R-28). Tabs are the storefront SF-17 groups; no tab is "All" (as SF-17).

@@ -4,9 +4,11 @@
   "private": true,
   "description": "Session cookie, BFF auth and proxy route handlers, CSRF checks (design 01 §3, §4)",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     "./server": "./src/server.ts",
-    "./client": "./src/client/index.ts"
+    "./client": "./src/client/index.ts",
+    "./headers": "./src/headers.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

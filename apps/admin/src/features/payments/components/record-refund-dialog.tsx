@@ -9,7 +9,7 @@ import { applyServerErrors, useIdempotentMutation } from '@nile/query';
 import { ConfirmDialog, Field, FormAlert, Input, toast } from '@nile/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { paymentKeys, recordRefund, type Refund } from '../api';
 import { PAYMENTS_COPY as COPY } from '../copy';
 

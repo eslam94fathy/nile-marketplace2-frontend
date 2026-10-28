@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   checkEnvConsistency,
   EnvError,
   parseEnv,
   publicEnvSchema,
   serverEnvSchema,
+  mediaUploadPublicEnvExtension,
   storefrontPublicEnvExtension,
   type PublicEnv,
   type ServerEnv,
@@ -35,6 +36,7 @@ const validPublic = {
   NEXT_PUBLIC_AGENT_URL: 'http://localhost:4103',
   NEXT_PUBLIC_REFRESH_SKEW_SECONDS: '60',
   NEXT_PUBLIC_REALTIME_URL: 'http://localhost:3001',
+  NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN: 'http://localhost:9100',
 } satisfies Record<keyof PublicEnv, string>;
 
 function parseServer(overrides: Record<string, string | undefined> = {}): ServerEnv {
@@ -184,6 +186,28 @@ describe('publicEnvSchema', () => {
       'public',
     );
     expect(env.NEXT_PUBLIC_KASHIER_PAYMENT_WINDOW_MINUTES).toBe(15);
+  });
+
+  it('adds the private-image and upload origins for the apps that upload (design 01 §15.8)', () => {
+    const schema = publicEnvSchema('seller').extend(mediaUploadPublicEnvExtension);
+    const seller = { ...validPublic, NEXT_PUBLIC_APP_NAME: 'seller' };
+    expect(errorOf(() => parseEnv(schema, seller, 'public')).keys).toEqual([
+      'NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN',
+      'NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN',
+    ]);
+    expect(
+      errorOf(() =>
+        parseEnv(
+          schema,
+          {
+            ...seller,
+            NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN: 'http://localhost:9100/nile-private',
+            NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN: 'http://localhost:9100',
+          },
+          'public',
+        ),
+      ).keys,
+    ).toEqual(['NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN']);
   });
 });
 

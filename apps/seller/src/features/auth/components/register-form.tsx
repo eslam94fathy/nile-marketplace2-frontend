@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { browserApi } from '@/lib/browser-api';
 import { ROUTES } from '@/lib/routes';
 import { registerSeller } from '../api';

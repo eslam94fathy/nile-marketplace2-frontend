@@ -27,7 +27,7 @@ test('create draft → add variant → publish → visible on the storefront', a
   await page.getByLabel(/^Description/).fill('Made by the end-to-end tests.');
   await page.getByRole('button', { name: 'Create draft' }).click();
 
-  await expect(page.getByText('Draft created. Add a variant to publish it.')).toBeVisible();
+  await expect(page.getByText('Draft created. Add a variant to publish it.', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Publish' })).toBeDisabled();
   await expectNoBlockingA11yViolations(page);
@@ -43,12 +43,12 @@ test('create draft → add variant → publish → visible on the storefront', a
   await expectNoBlockingA11yViolations(page);
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
-  await expect(page.getByText('Variant added.')).toBeVisible();
+  await expect(page.getByText('Variant added.', { exact: true })).toBeVisible();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('cell', { name: sku })).toBeVisible();
+  await expect(page.getByRole('cell', { name: sku, exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Publish' }).click();
-  await expect(page.getByText('Product published.')).toBeVisible();
+  await expect(page.getByText('Product published.', { exact: true })).toBeVisible();
   await expect(page.getByText('Visible in store')).toBeVisible();
 
   const storeLink = page.getByRole('link', { name: 'View in store' });

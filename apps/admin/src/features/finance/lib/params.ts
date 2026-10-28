@@ -8,7 +8,7 @@ import {
   type LedgerEntryType,
   type LedgerReferenceType,
 } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // URL ⇄ API for the finance screens (spec 03 AD-18…AD-22). Invalid values are dropped, never sent (R-28).
 // The parameter names `owner`/`type` (AD-18), `agent` (AD-20), `payeeType`/`payeeId` (AD-21) and

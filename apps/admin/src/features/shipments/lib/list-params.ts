@@ -1,6 +1,6 @@
 import { inValues } from '@nile/api';
 import { cairoDayBounds, isCalendarDay, type ShipmentStatus } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // AD-12 filters, URL ⇄ API: `?status=<tab>&agent=&order=&from=&to=`. Invalid values are dropped, never sent
 // (R-28). No tab is "Unassigned", the work queue, oldest first (spec 03 AD-12); the others newest first.

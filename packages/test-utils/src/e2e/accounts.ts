@@ -29,6 +29,12 @@ const PATHS = {
   createAgent: '/api/v1/admin/delivery-agents',
 } as const;
 
+/**
+ * The test admin signs in again this long before its access token expires: E2E runs with 2-minute tokens
+ * (design 01 R-21), so one token doesn't last a whole run.
+ */
+export const ADMIN_TOKEN_RENEW_MARGIN_MS = 30_000;
+
 const TEST_EMAIL_DOMAIN = 'example.test';
 const DEVICE_NAME = 'Nile web tests';
 
@@ -60,7 +66,10 @@ function toAccount(tokens: Schema<'AuthTokensDto'>, password: string): Account {
 export interface Accounts {
   readonly backend: Backend;
   readonly mailpit: Mailpit;
-  /** The seeded test admin, signed in once and reused (strict-auth rate limits count per email). */
+  /**
+   * The seeded test admin, signed in once per access token and reused (strict-auth rate limits count per email);
+   * signed in again shortly before the token expires.
+   */
   admin(): Promise<Account>;
   customer(): Promise<Account>;
   /** A seller with a verified email; `approved: true` (default) also has the admin approve it. */
@@ -69,10 +78,18 @@ export interface Accounts {
   agent(): Promise<Account & { readonly agentId: string }>;
 }
 
-export function createAccounts(env: E2eEnv = e2eEnv()): Accounts {
-  const backend = createBackend(env.NILE_API_BASE_URL);
+export interface AccountsOptions {
+  /** Tests only: a fake backend. */
+  readonly backend?: Backend;
+  /** Tests only: a fixed clock. */
+  readonly now?: () => number;
+}
+
+export function createAccounts(env: E2eEnv = e2eEnv(), options: AccountsOptions = {}): Accounts {
+  const backend = options.backend ?? createBackend(env.NILE_API_BASE_URL);
+  const now = options.now ?? Date.now;
   const mailpit = createMailpit(env.MAILPIT_URL);
-  let adminSession: Promise<Account> | undefined;
+  let adminSession: Promise<{ readonly account: Account; readonly expiresAtMs: number }> | undefined;
 
   async function verifyEmail(email: string, password: string, register: () => Promise<unknown>) {
     const text = await mailpit.awaitEmail(email, 'verification', register);
@@ -96,27 +113,41 @@ export function createAccounts(env: E2eEnv = e2eEnv()): Accounts {
     return first.id;
   }
 
-  async function signInAdmin(): Promise<Account> {
-    const { E2E_ADMIN_EMAIL: email, E2E_ADMIN_PASSWORD: password } = env;
-    const response = await backend.request('POST', PATHS.login, {
-      body: { email, password, deviceName: DEVICE_NAME } satisfies Schema<'LoginDto'>,
+  const adminLogin = () =>
+    backend.request('POST', PATHS.login, {
+      body: {
+        email: env.E2E_ADMIN_EMAIL,
+        password: env.E2E_ADMIN_PASSWORD,
+        deviceName: DEVICE_NAME,
+      } satisfies Schema<'LoginDto'>,
     });
-    if (response.status === 200) {
-      return toAccount(expectData(response, 200) as Schema<'AuthTokensDto'>, password);
+
+  async function signInAdmin() {
+    const { E2E_ADMIN_EMAIL: email, E2E_ADMIN_PASSWORD: password } = env;
+    let response = await adminLogin();
+    if (response.status !== 200) {
+      // First run after `seed-admin`: the admin is still invited. Accept its invite with the configured password.
+      const invite = await mailpit.latestEmail(email, 'invite');
+      if (invite === undefined) {
+        throw new Error(
+          `Test admin can't sign in (${response.status}) and has no invite: run the backend's seed-admin`,
+        );
+      }
+      await acceptInvite(invite, password);
+      response = await adminLogin();
     }
-    // First run after `seed-admin`: the admin is still invited. Accept its invite with the configured password.
-    const invite = await mailpit.latestEmail(email, 'invite');
-    if (invite === undefined) {
-      throw new Error(
-        `Test admin can't sign in (${response.status}) and has no invite: run the backend's seed-admin`,
-      );
-    }
-    return acceptInvite(invite, password);
+    const tokens = expectData(response, 200) as Schema<'AuthTokensDto'>;
+    return { account: toAccount(tokens, password), expiresAtMs: Date.parse(tokens.accessTokenExpiresAt) };
   }
 
-  function admin(): Promise<Account> {
-    adminSession ??= signInAdmin();
-    return adminSession;
+  async function admin(): Promise<Account> {
+    // A failed sign-in isn't remembered: the next caller tries again.
+    const current = await adminSession?.catch(() => undefined);
+    if (current === undefined || current.expiresAtMs - now() < ADMIN_TOKEN_RENEW_MARGIN_MS) {
+      adminSession = signInAdmin();
+      return (await adminSession).account;
+    }
+    return current.account;
   }
 
   return {

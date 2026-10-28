@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { fields, parseMoney, VARIANT_STATUSES } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 import type { EffectiveAttribute, SellerProduct, SellerVariant } from './api';
 import { PRODUCTS_COPY } from './copy';
 

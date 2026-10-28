@@ -39,15 +39,19 @@ export function isActivePath(pathname: string, href: string): boolean {
 export interface PortalBrandProps {
   /** The portal's name after the logo, e.g. `Seller`; with the logo's "Nile" it reads "Nile Seller". */
   readonly roleLabel: string;
+  /** Phones (below 640 px): the portal's name only for screen readers, so a full header fits 360 px. */
+  readonly compact?: boolean;
 }
 
 /** Brand of the seller, admin and agent portals (T-J2): the short logo and the portal's name, inside the app's link. */
-export function PortalBrand({ roleLabel }: PortalBrandProps) {
+export function PortalBrand({ roleLabel, compact = false }: PortalBrandProps) {
   return (
     <span className="flex items-center gap-2">
       <NileLogoShort label={UI_COPY.brandName} className="h-8 w-auto" />
       {/* Separates the two words of the accessible name; the flex layout ignores it. */}{' '}
-      <span className="text-lg font-semibold text-nile-900">{roleLabel}</span>
+      <span className={cn('text-lg font-semibold text-nile-900', compact && 'sr-only sm:not-sr-only')}>
+        {roleLabel}
+      </span>
     </span>
   );
 }

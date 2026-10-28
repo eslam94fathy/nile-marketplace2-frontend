@@ -8,7 +8,7 @@ import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input, Notice, toast, useCooldown } from '@nile/ui';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
 import { RESEND_COOLDOWN_SECONDS } from '../constants';

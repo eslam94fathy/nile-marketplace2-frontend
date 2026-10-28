@@ -4,8 +4,12 @@
   "private": true,
   "description": "Domain utilities: money, dates, enum labels, display-only status helpers, shared Zod field schemas",
   "type": "module",
+  "sideEffects": [
+    "./src/zod-config.ts"
+  ],
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./zod-config": "./src/zod-config.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"

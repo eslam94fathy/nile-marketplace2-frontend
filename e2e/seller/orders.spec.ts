@@ -32,13 +32,13 @@ test('customer COD order → seller confirms → ready for pickup', async ({
   await expectNoBlockingA11yViolations(page);
 
   await page.getByRole('button', { name: 'Confirm order' }).click();
-  await expect(page.getByText('Order confirmed.')).toBeVisible();
+  await expect(page.getByText('Order confirmed.', { exact: true })).toBeVisible();
   await expect(page.getByText('Confirmed — prepare')).toBeVisible();
 
   await page.getByRole('button', { name: 'Mark ready for pickup' }).click();
   const dialog = page.getByRole('dialog', { name: 'Mark ready for pickup' });
   await dialog.getByRole('button', { name: 'Mark ready for pickup' }).click();
-  await expect(page.getByText('Marked ready for pickup.')).toBeVisible();
+  await expect(page.getByText('Marked ready for pickup.', { exact: true })).toBeVisible();
   await expect(page.getByText('Ready for pickup', { exact: true }).first()).toBeVisible();
 
   await page.goto('/orders?tab=awaiting-pickup');

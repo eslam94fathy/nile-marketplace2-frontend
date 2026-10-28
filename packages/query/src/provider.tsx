@@ -1,5 +1,7 @@
 'use client';
 
+// Before any schema runs in the browser: no JIT, so no `eval` under the CSP (T-I1).
+import '@nile/domain/zod-config';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { getQueryClient } from './query-client';

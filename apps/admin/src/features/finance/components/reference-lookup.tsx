@@ -25,7 +25,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { accountPath, ROUTES } from '@/lib/routes';
 import { accountQuery, referenceQuery, type ReferenceEntry } from '../api';
 import { FINANCE_COPY as COPY } from '../copy';

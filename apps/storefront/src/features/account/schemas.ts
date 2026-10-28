@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { fields } from '@nile/domain';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // SF-15 Profile form, from the shared field rules that mirror `UpdateCustomerProfileDto` (same as SF-11).
 

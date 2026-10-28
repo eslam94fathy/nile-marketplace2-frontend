@@ -4,6 +4,7 @@
   "private": true,
   "description": "Structured JSON-line logger with redaction for the apps' server code (design 01 §11)",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts"
   },

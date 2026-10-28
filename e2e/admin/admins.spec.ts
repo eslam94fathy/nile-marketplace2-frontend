@@ -20,7 +20,9 @@ test('invite → accept → suspend → sign-in refused', async ({ page, signIn,
   const text = await accounts.mailpit.awaitEmail(email, 'invite', () =>
     invite.getByRole('button', { name: 'Send invitation' }).click(),
   );
-  await expect(page.getByText(`Invitation sent to ${email}. It's valid for 72 hours.`)).toBeVisible();
+  await expect(
+    page.getByText(`Invitation sent to ${email}. It's valid for 72 hours.`, { exact: true }),
+  ).toBeVisible();
 
   expectData(
     await accounts.backend.request('POST', '/api/v1/auth/invite/accept', {
@@ -35,7 +37,7 @@ test('invite → accept → suspend → sign-in refused', async ({ page, signIn,
   const suspend = page.getByRole('dialog', { name: 'Suspend admin' });
   await suspend.getByLabel(/^Reason/).fill('End-to-end test');
   await suspend.getByRole('button', { name: 'Suspend' }).click();
-  await expect(page.getByText(`${email} was suspended.`)).toBeVisible();
+  await expect(page.getByText(`${email} was suspended.`, { exact: true })).toBeVisible();
   await expect(
     page
       .getByRole('row')

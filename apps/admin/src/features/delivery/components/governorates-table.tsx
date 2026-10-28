@@ -18,7 +18,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { FormDialog } from '@/components/form-dialog';
 import { adminGovernoratesQuery, lookupKeys } from '@/features/lookups';
 import { setDeliveryFee, type Governorate } from '../api';

@@ -5,7 +5,7 @@ import { fields } from '@nile/domain';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input } from '@nile/ui';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
 import { CODE_SENT_PARAM, CODE_SENT_VALUE, EMAIL_PARAM } from '../params';

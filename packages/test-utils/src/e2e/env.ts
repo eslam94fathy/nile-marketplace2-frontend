@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 // Settings for suites that run against a real backend (contract tests, Playwright). No defaults
 // (CLAUDE.md §11): a missing key stops the run and the message names the key, never the value.

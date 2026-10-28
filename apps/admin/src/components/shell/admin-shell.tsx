@@ -121,7 +121,8 @@ function AccountMenu({ email }: { readonly email: string | null }) {
         className={navLinkClasses(active)}
       >
         <ShieldCheck aria-hidden="true" />
-        Security
+        {/* Icon only on phones (the name stays for screen readers), so the header fits 360 px. */}
+        <span className="sr-only sm:not-sr-only">Security</span>
       </Link>
       <Button
         variant="ghost"
@@ -131,16 +132,16 @@ function AccountMenu({ email }: { readonly email: string | null }) {
         }}
       >
         <LogOut aria-hidden="true" />
-        {UI_COPY.signOut}
+        <span className="sr-only sm:not-sr-only">{UI_COPY.signOut}</span>
       </Button>
     </div>
   );
 }
 
-function Brand() {
+function Brand({ compact = false }: { readonly compact?: boolean }) {
   return (
     <Link href={ROUTES.dashboard} className="w-fit rounded-md">
-      <PortalBrand roleLabel={APP.roleLabel} />
+      <PortalBrand roleLabel={APP.roleLabel} compact={compact} />
     </Link>
   );
 }
@@ -174,7 +175,7 @@ export function AdminShell({
             >
               <Menu aria-hidden="true" />
             </Button>
-            <Brand />
+            <Brand compact />
           </div>
           <div className="ms-auto">
             <AccountMenu email={email} />

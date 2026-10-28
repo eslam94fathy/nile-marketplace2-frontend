@@ -28,10 +28,12 @@
     "test:watch": "vitest",
     "audit": "node scripts/audit.mjs",
     "test:contract": "vitest run --config packages/api/contract/vitest.config.ts",
-    "e2e": "playwright test --config e2e/playwright.config.ts"
+    "e2e": "playwright test --config e2e/playwright.config.ts",
+    "perf": "playwright test --config e2e/playwright.perf.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
+    "@lhci/cli": "0.15.1",
     "@nile/config": "*",
     "@nile/test-utils": "*",
     "@playwright/test": "1.63.0",
@@ -45,6 +47,11 @@
   "overrides": {
     "openapi-typescript": {
       "typescript": "$typescript"
+    },
+    "@lhci/cli": {
+      "basic-ftp": "6.2.3",
+      "lighthouse": "13.5.0",
+      "tmp": "0.2.7"
     },
     "undici": "8.12.2"
   }

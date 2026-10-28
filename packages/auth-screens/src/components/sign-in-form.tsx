@@ -6,7 +6,7 @@ import { signIn } from '@nile/auth/client';
 import { applyServerErrors } from '@nile/query';
 import { Button, Field, Input, Notice, PasswordInput } from '@nile/ui';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import type * as z from 'zod';
 import { useAuthScreens, withQuery } from '../config';
 import { AUTH_COPY } from '../copy';
 import { destinationAfterSignIn, loadPage } from '../navigation';

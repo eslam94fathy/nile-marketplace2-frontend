@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./react": "./src/react.tsx",
     "./e2e": "./src/e2e/index.ts",
-    "./jsdom-setup": "./src/jsdom-setup.ts"
+    "./jsdom-setup": "./src/jsdom-setup.ts",
+    "./axe": "./src/axe.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
@@ -22,6 +23,7 @@
     "@tanstack/react-query": "5.104.2",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
+    "axe-core": "4.13.0",
     "msw": "3.0.3",
     "zod": "4.6.7"
   },

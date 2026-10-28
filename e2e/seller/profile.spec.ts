@@ -1,6 +1,7 @@
 // T-H1 journey (workflow S-1, spec 02 SE-07) against the real backend: an admin rejects the application
 // (seeded through the API), the seller sees the reason, updates the profile and re-applies.
 import type { Schema } from '@nile/api';
+import { formatRatePercent } from '@nile/domain';
 import { expectData } from '@nile/test-utils/e2e';
 import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 
@@ -16,6 +17,12 @@ test('rejected → edit profile → re-apply → waiting for approval', async ({
     200,
   );
 
+  // The seller's rate as the API gives it (the platform default differs between seeds).
+  const { commissionRate } = expectData(
+    await accounts.backend.request('GET', '/api/v1/seller/profile', { token: seller.accessToken }),
+    200,
+  ) as Schema<'SellerProfileDto'>;
+
   await page.goto('/login?returnTo=%2Fprofile');
   await page.getByLabel(/^Email/).fill(seller.email);
   await page.getByLabel(/^Password/).fill(seller.password);
@@ -24,14 +31,14 @@ test('rejected → edit profile → re-apply → waiting for approval', async ({
   await expect(page.getByRole('heading', { level: 1, name: 'Profile' })).toBeVisible();
   await expect(page.getByText(`Your application was rejected: ${REASON}.`)).toBeVisible();
   await expect(page.getByText('Rejected', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Nile's commission: 10%")).toBeVisible();
+  await expect(page.getByText(`Nile's commission: ${formatRatePercent(commissionRate)}`)).toBeVisible();
   await expectNoBlockingA11yViolations(page);
 
   const save = page.getByRole('button', { name: 'Save' });
   await expect(save).toBeDisabled();
   await page.getByLabel(/^Landmark/).fill('Opposite the metro station');
   await save.click();
-  await expect(page.getByText('Profile saved.')).toBeVisible();
+  await expect(page.getByText('Profile saved.', { exact: true })).toBeVisible();
   await expect(save).toBeDisabled();
 
   await page.getByRole('button', { name: 'Re-apply' }).click();
@@ -40,7 +47,7 @@ test('rejected → edit profile → re-apply → waiting for approval', async ({
   await expectNoBlockingA11yViolations(page);
   await dialog.getByRole('button', { name: 'Send for review' }).click();
 
-  await expect(page.getByText('Your application was sent for review.')).toBeVisible();
+  await expect(page.getByText('Your application was sent for review.', { exact: true })).toBeVisible();
   await expect(page.getByText('Waiting for approval', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Re-apply' })).toHaveCount(0);
 

@@ -8,7 +8,7 @@ import { applyServerErrors } from '@nile/query';
 import { Button, Field, FormAlert, PageHeader, PasswordInput, toast, UI_COPY } from '@nile/ui';
 import { LogOut } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { AUTH_COPY } from '../copy';
 import { confirmationMatches } from '../schemas';
 import { useSubmitFailure } from '../submit-failure';

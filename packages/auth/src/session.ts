@@ -1,6 +1,6 @@
 import type { Schema } from '@nile/api';
 import { CompactEncrypt, compactDecrypt, decodeProtectedHeader } from 'jose';
-import { z } from 'zod';
+import * as z from 'zod';
 
 // The session lives only in an encrypted, httpOnly cookie (design 01 §3.1): a compact JWE (`dir` +
 // `A256GCM`) whose `kid` header names the key, so keys can be rotated without logging everyone out.

@@ -14,8 +14,10 @@ test.describe('product page', () => {
     for (const item of (list.body as { data: { slug: string }[] }).data) {
       const detail = await accounts.backend.request('GET', `/api/v1/products/${item.slug}`);
       const candidate = (detail.body as { data: ProductDetail }).data;
+      // An attribute with one option starts selected (spec 01 SF-05): only one with a choice makes the
+      // shopper's click change the selection, and so the URL. Other specs create one-option products.
       if (
-        candidate.attributes.length > 0 &&
+        candidate.attributes.some((attribute) => attribute.options.length > 1) &&
         candidate.variants.some((v) => v.inStock && v.availableQuantity >= 2)
       ) {
         product = candidate;

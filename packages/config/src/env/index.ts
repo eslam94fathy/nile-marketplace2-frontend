@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 /**
  * Environment schemas shared by the four apps (CLAUDE.md §11, design 01 §9).
@@ -130,9 +130,20 @@ export function publicEnvSchema<const T extends AppName>(app: T) {
     NEXT_PUBLIC_REFRESH_SKEW_SECONDS: integer(1, 600),
     /** The realtime service (Socket.IO, design 01 §15.3), e.g. https://api.example.com. */
     NEXT_PUBLIC_REALTIME_URL: origin,
+    /** Public images (the media CDN; locally MinIO), allowed in CSP `img-src` (design 01 §15.7, §15.8). */
+    NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN: origin,
   });
 }
 export type PublicEnv = z.infer<ReturnType<typeof publicEnvSchema>>;
+
+/**
+ * Public keys of the apps that upload (storefront, seller, admin; the agent app uploads nothing): the host of
+ * presigned private images (`img-src`) and of presigned uploads (`connect-src`) (design 01 §15.7, §15.8).
+ */
+export const mediaUploadPublicEnvExtension = {
+  NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN: origin,
+  NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN: origin,
+};
 
 /** Storefront-only public keys (spec 01 SF-Q-5). */
 export const storefrontPublicEnvExtension = {

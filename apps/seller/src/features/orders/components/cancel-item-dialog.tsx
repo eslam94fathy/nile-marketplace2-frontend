@@ -9,7 +9,7 @@ import { useIdempotentMutation } from '@nile/query';
 import { ConfirmDialog, Field, FormAlert, Input, Notice, Select, Textarea, toast } from '@nile/ui';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import { cancelItem, type SellerOrder, type SellerOrderItem } from '../api';
 import { ORDERS_COPY as COPY } from '../copy';
 import { cancelsWholeOrder, openQuantity } from '../lib/order-math';
