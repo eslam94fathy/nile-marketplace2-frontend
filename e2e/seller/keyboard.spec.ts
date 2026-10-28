@@ -41,7 +41,7 @@ test('seller journey by keyboard only', async ({ page, accounts, seller, custome
   await press(page, dialog.getByRole('button', { name: 'Save', exact: true }));
   await expect(dialog).toHaveCount(0);
   await press(page, page.getByRole('button', { name: 'Publish' }));
-  await expect(page.getByText('Product published.')).toBeVisible();
+  await expect(page.getByText('Product published.', { exact: true })).toBeVisible();
 
   // S-5 a customer's COD order for it: confirm, then ready for pickup.
   const product = expectData(
@@ -57,10 +57,10 @@ test('seller journey by keyboard only', async ({ page, accounts, seller, custome
   await press(page, page.getByRole('link', { name: `Order ${order.orderNumber}` }));
   await expect(page.getByRole('heading', { level: 1, name: `Order ${order.orderNumber}` })).toBeVisible();
   await press(page, page.getByRole('button', { name: 'Confirm order' }));
-  await expect(page.getByText('Order confirmed.')).toBeVisible();
+  await expect(page.getByText('Order confirmed.', { exact: true })).toBeVisible();
   await press(page, page.getByRole('button', { name: 'Mark ready for pickup' }));
   const ready = page.getByRole('dialog', { name: 'Mark ready for pickup' });
   await expect(ready).toBeVisible();
   await press(page, ready.getByRole('button', { name: 'Mark ready for pickup' }));
-  await expect(page.getByText('Marked ready for pickup.')).toBeVisible();
+  await expect(page.getByText('Marked ready for pickup.', { exact: true })).toBeVisible();
 });

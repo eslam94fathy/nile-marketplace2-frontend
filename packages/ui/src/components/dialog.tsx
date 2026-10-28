@@ -2,13 +2,15 @@
 
 import { X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
-import { useState, type ComponentProps, type ReactNode } from 'react';
+import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { UI_COPY } from '../copy';
 import { Button } from './button';
 
 // Radix Dialog: focus moves into the dialog and back to the trigger, Escape closes, the rest of the page is
 // inert (conventions §10). Every dialog has a title; the description states the consequence (§9).
+// Radix returns focus only to a `DialogTrigger`; dialogs opened from state (a switch, a table action) get it
+// back on the control that had focus when they opened.
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -25,7 +27,9 @@ interface DialogContentProps extends ComponentProps<typeof DialogPrimitive.Conte
 }
 
 const PLACEMENT = {
-  center: 'top-1/2 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg',
+  // Capped at the viewport so long content (an agent list) scrolls inside the dialog instead of off screen.
+  center:
+    'top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg',
   bottom: 'inset-x-0 bottom-0 max-h-[85vh] rounded-t-lg',
   start: 'inset-y-0 start-0 w-full max-w-xs',
   end: 'inset-y-0 end-0 w-full max-w-md',
@@ -38,8 +42,11 @@ export function DialogContent({
   placement = 'center',
   className,
   children,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: DialogContentProps) {
+  const returnFocusTo = useRef<HTMLElement | null>(null);
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={OVERLAY} />
@@ -51,6 +58,20 @@ export function DialogContent({
         )}
         // Without a description Radix warns; `undefined` tells it the omission is deliberate.
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
+        onOpenAutoFocus={(event) => {
+          // Still the control that opened the dialog: Radix moves focus in after this event.
+          returnFocusTo.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          onOpenAutoFocus?.(event);
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const target = returnFocusTo.current;
+          returnFocusTo.current = null;
+          if (event.defaultPrevented || !target?.isConnected) return;
+          event.preventDefault();
+          target.focus();
+        }}
         {...props}
       >
         <div className="space-y-1.5 pe-8">

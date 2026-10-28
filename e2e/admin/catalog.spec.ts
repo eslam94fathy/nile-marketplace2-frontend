@@ -18,7 +18,7 @@ test('category → attribute → option → a seller uses it', async ({ page, si
   const create = page.getByRole('dialog', { name: 'Add category' });
   await create.getByLabel(/^Name/).fill(name);
   await create.getByRole('button', { name: 'Add category' }).click();
-  await expect(page.getByText(`${name} was added.`)).toBeVisible();
+  await expect(page.getByText(`${name} was added.`, { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
   await expect(page).toHaveURL(/\?category=/);
   await expectNoBlockingA11yViolations(page);
@@ -29,14 +29,14 @@ test('category → attribute → option → a seller uses it', async ({ page, si
   await attribute.getByLabel(/^Name/).fill('Size');
   await attribute.getByLabel(/^Code/).fill(code);
   await attribute.getByRole('button', { name: 'Add attribute' }).click();
-  await expect(page.getByText('Size was added.')).toBeVisible();
+  await expect(page.getByText('Size was added.', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add option to Size' }).click();
   const optionDialog = page.getByRole('dialog', { name: 'Add option' });
   await optionDialog.getByLabel(/^Value/).fill('Large');
   await optionDialog.getByLabel(/^Code/).fill('large');
   await optionDialog.getByRole('button', { name: 'Add option' }).click();
-  await expect(page.getByText('Large was added.')).toBeVisible();
+  await expect(page.getByText('Large was added.', { exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Options of Size' })).toContainText('Large');
   await expectNoBlockingA11yViolations(page);
 

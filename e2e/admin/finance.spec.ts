@@ -6,7 +6,7 @@ import type { Schema } from '@nile/api';
 import { expectData } from '@nile/test-utils/e2e';
 import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
-import { placeCodOrder } from '../fixtures/orders';
+import { placeCodOrder, shipmentOfOrder } from '../fixtures/orders';
 
 /** The ledger is booked by the backend worker after delivery [SPEC 12]: allow it this long. */
 const LEDGER_WAIT_MS = 60_000;
@@ -36,13 +36,7 @@ test('delivered COD order → agent holds cash → admin records it received', a
       200,
     );
   }
-  const [shipment] = expectData(
-    await backend.request('GET', `/api/v1/admin/shipments?orderId[eq]=${order.id}`, {
-      token: admin.accessToken,
-    }),
-    200,
-  ) as Schema<'AdminShipmentDto'>[];
-  if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
+  const shipment = await shipmentOfOrder(backend, admin.accessToken, order.id);
   if (shipment.agentId !== agent.agentId) {
     expectData(
       await backend.request('POST', `/api/v1/admin/shipments/${shipment.id}/assign`, {
@@ -60,11 +54,16 @@ test('delivered COD order → agent holds cash → admin records it received', a
       200,
     );
   }
+  // The amount as the agent sees it now: the shipment's fee carrier is settled just after it is created.
+  const { amountToCollect } = expectData(
+    await backend.request('GET', `/api/v1/agent/shipments/${shipment.id}`, { token: agent.accessToken }),
+    200,
+  ) as Schema<'AgentShipmentDto'>;
   expectData(
     await backend.request('POST', `/api/v1/agent/shipments/${shipment.id}/delivered`, {
       token: agent.accessToken,
       idempotencyKey: randomUUID(),
-      body: { codCollectedAmount: shipment.amountToCollect },
+      body: { codCollectedAmount: amountToCollect },
     }),
     200,
   );
@@ -80,7 +79,7 @@ test('delivered COD order → agent holds cash → admin records it received', a
     ) as Schema<'AccountDto'>[];
     return accountsOfAgent[0]?.balance ?? '0.00';
   };
-  await expect.poll(codCash, { timeout: LEDGER_WAIT_MS }).toBe(shipment.amountToCollect);
+  await expect.poll(codCash, { timeout: LEDGER_WAIT_MS }).toBe(amountToCollect);
 
   // AD-18: the agent's COD cash, then AD-20 prefilled from the row.
   await signIn('admin');
@@ -93,7 +92,7 @@ test('delivered COD order → agent holds cash → admin records it received', a
   await page.getByRole('button', { name: 'Record cash received' }).click();
   const dialog = page.getByRole('dialog', { name: 'Record cash received' });
   await expect(dialog.getByText(/^Holds .+ in COD cash\.$/)).toBeVisible();
-  await dialog.getByLabel(/^Amount/).fill(shipment.amountToCollect);
+  await dialog.getByLabel(/^Amount/).fill(amountToCollect);
   await dialog.getByLabel(/^Note/).fill(`E2E ${suffix}`);
   await expectNoBlockingA11yViolations(page);
   await dialog.getByRole('button', { name: 'Continue' }).click();

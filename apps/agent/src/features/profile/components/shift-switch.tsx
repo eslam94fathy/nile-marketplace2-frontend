@@ -42,8 +42,11 @@ export function ShiftSwitch() {
       <Switch
         id={id}
         checked={onShift}
-        disabled={profile.data === undefined || profile.data.status === 'inactive' || pending}
+        // Not disabled while saving: a disabled control loses keyboard focus. A change while saving is ignored.
+        disabled={profile.data === undefined || profile.data.status === 'inactive'}
+        aria-busy={pending}
         onCheckedChange={(next) => {
+          if (pending) return;
           if (next) void send(true);
           else setConfirmOff(true);
         }}

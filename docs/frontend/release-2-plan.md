@@ -145,7 +145,7 @@ Inputs:
 | T-M5 Support console | Queue (status, category, opener role, assigned / mine, SLA breached, oldest waiting), thread with internal notes, reply, assign / unassign, resolve, close, realtime new tickets | `/admin/support/tickets*` |
 | T-M6 Review moderation | Reviews list (status, product, seller, customer, rating), hide / unhide review and reply with reason | `/admin/reviews*` |
 | T-M7 Returns | Returns list and detail with history, decide escalated / requested, resolve dispute (idempotent); return shipments in shipment views (`kind` filter) | `/admin/returns*`, `/admin/shipments` |
-| T-M8 Refunds and finance | Refund queue on every status (work queue `pending_manual`), detail with decrypted COD payout details (never logged), retry, record; new account and entry types in finance | `/admin/payments/refunds*`, `/admin/finance/*` |
+| T-M8 Refunds and finance | Refund queue on every status (work queue `pending_manual`), detail with decrypted COD payout details (never logged), retry, record; new account and entry types in finance; rewrite the skipped E2E `e2e/admin/refunds.spec.ts` (the R2 backend refunds late Kashier payments automatically) | `/admin/payments/refunds*`, `/admin/finance/*` |
 | T-M9 Coupons | Platform coupons list / create / edit, seller coupons block / unblock with reason, redemptions on the detail | `/admin/coupons*` |
 | T-M10 Audit log | Audit list with filters and entry detail (before / after) | `/admin/audit-log*` |
 

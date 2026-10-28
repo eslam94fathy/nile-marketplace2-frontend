@@ -71,9 +71,10 @@ export async function chooseFirst(page: Page, trigger: Locator): Promise<void> {
 
 /** A radio group: Tab into it (focus lands on the checked or first radio), then arrows until `radio` is checked. */
 export async function check(page: Page, group: Locator, radio: Locator): Promise<void> {
-  const radios = group.getByRole('radio');
-  const count = await radios.count();
+  // Counted only once the group is on screen: right after a navigation it can still have no radios.
   await tabTo(page, group);
+  await expect(radio).toBeAttached();
+  const count = await group.getByRole('radio').count();
   for (let moves = 0; moves < count; moves += 1) {
     if (await radio.isChecked()) return;
     await page.keyboard.press('ArrowDown');

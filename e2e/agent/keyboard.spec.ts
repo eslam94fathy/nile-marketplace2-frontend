@@ -7,7 +7,7 @@ import { expectData } from '@nile/test-utils/e2e';
 import { expect, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
 import { press, toggle } from '../fixtures/keyboard';
-import { placeCodOrder } from '../fixtures/orders';
+import { placeCodOrder, shipmentOfOrder } from '../fixtures/orders';
 
 test('agent delivery by keyboard only', async ({ page, signIn, accounts, admin, seller, customer }) => {
   test.slow();
@@ -30,13 +30,7 @@ test('agent delivery by keyboard only', async ({ page, signIn, accounts, admin, 
       200,
     );
   }
-  const [shipment] = expectData(
-    await backend.request('GET', `/api/v1/admin/shipments?orderId[eq]=${order.id}`, {
-      token: admin.accessToken,
-    }),
-    200,
-  ) as Schema<'AdminShipmentDto'>[];
-  if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
+  const shipment = await shipmentOfOrder(backend, admin.accessToken, order.id);
   if (shipment.agentId !== profile.id) {
     expectData(
       await backend.request('POST', `/api/v1/admin/shipments/${shipment.id}/assign`, {
@@ -67,16 +61,16 @@ test('agent delivery by keyboard only', async ({ page, signIn, accounts, admin, 
   await press(page, bar.getByRole('button', { name: 'Picked up' }));
   const pickedUp = page.getByRole('dialog', { name: 'Collected the parcel?' });
   await press(page, pickedUp.getByRole('button', { name: 'Picked up' }));
-  await expect(page.getByText('Marked as picked up.')).toBeVisible();
+  await expect(page.getByText('Marked as picked up.', { exact: true })).toBeVisible();
   await press(page, bar.getByRole('button', { name: 'Start delivery' }));
-  await expect(page.getByText('Delivery started.')).toBeVisible();
+  await expect(page.getByText('Delivery started.', { exact: true })).toBeVisible();
 
   await press(page, bar.getByRole('button', { name: 'Delivered' }));
   const sheet = page.getByRole('dialog', { name: 'Deliver the parcel' });
   await expect(sheet).toBeVisible();
   await toggle(page, sheet.getByRole('checkbox', { name: /^I collected / }));
   await press(page, sheet.getByRole('button', { name: 'Confirm delivery' }));
-  await expect(page.getByText(`Order ${order.orderNumber} is delivered.`)).toBeVisible();
+  await expect(page.getByText(`Order ${order.orderNumber} is delivered.`, { exact: true })).toBeVisible();
   await press(page, page.getByRole('link', { name: 'Back to shipments' }));
   await expect(page.getByRole('heading', { level: 1, name: 'Shipments' })).toBeVisible();
 });

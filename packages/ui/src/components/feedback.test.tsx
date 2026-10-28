@@ -38,6 +38,36 @@ describe('Dialog', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
+
+  it('opened from state (no trigger), it returns focus to the control that opened it', async () => {
+    const user = userEvent.setup();
+    function FromState() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            Go off shift
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent title="Go off shift?">
+              <input aria-label="Note" />
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    }
+    render(<FromState />);
+    const opener = screen.getByRole('button', { name: 'Go off shift' });
+    await user.click(opener);
+    expect(screen.getByRole('dialog', { name: 'Go off shift?' })).toBeDefined();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
 });
 
 function Confirming({ onConfirm }: { readonly onConfirm: () => Promise<void> }) {

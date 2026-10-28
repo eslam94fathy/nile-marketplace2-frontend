@@ -6,7 +6,7 @@ import type { Schema } from '@nile/api';
 import { expectData } from '@nile/test-utils/e2e';
 import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
-import { placeCodOrder } from '../fixtures/orders';
+import { placeCodOrder, shipmentOfOrder } from '../fixtures/orders';
 
 /** Spec 04 §2.1: designed for a phone in one hand, from 360 px. */
 const PHONE = { width: 360, height: 780 } as const;
@@ -32,13 +32,7 @@ test('full COD delivery in the agent app', async ({ page, signIn, accounts, admi
       200,
     );
   }
-  const [shipment] = expectData(
-    await backend.request('GET', `/api/v1/admin/shipments?orderId[eq]=${order.id}`, {
-      token: admin.accessToken,
-    }),
-    200,
-  ) as Schema<'AdminShipmentDto'>[];
-  if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
+  const shipment = await shipmentOfOrder(backend, admin.accessToken, order.id);
   if (shipment.agentId !== profile.id) {
     expectData(
       await backend.request('POST', `/api/v1/admin/shipments/${shipment.id}/assign`, {
@@ -65,17 +59,17 @@ test('full COD delivery in the agent app', async ({ page, signIn, accounts, admi
     .getByRole('dialog', { name: 'Collected the parcel?' })
     .getByRole('button', { name: 'Picked up' })
     .click();
-  await expect(page.getByText('Marked as picked up.')).toBeVisible();
+  await expect(page.getByText('Marked as picked up.', { exact: true })).toBeVisible();
 
   await bar.getByRole('button', { name: 'Start delivery' }).click();
-  await expect(page.getByText('Delivery started.')).toBeVisible();
+  await expect(page.getByText('Delivery started.', { exact: true })).toBeVisible();
 
   await bar.getByRole('button', { name: 'Delivered' }).click();
   const sheet = page.getByRole('dialog', { name: 'Deliver the parcel' });
   await expectNoBlockingA11yViolations(page);
   await sheet.getByRole('checkbox', { name: /^I collected / }).click();
   await sheet.getByRole('button', { name: 'Confirm delivery' }).click();
-  await expect(page.getByText(`Order ${order.orderNumber} is delivered.`)).toBeVisible();
+  await expect(page.getByText(`Order ${order.orderNumber} is delivered.`, { exact: true })).toBeVisible();
 
   // AG-06: it is in the history now.
   await page.getByRole('link', { name: 'History' }).click();

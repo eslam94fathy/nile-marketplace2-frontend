@@ -56,3 +56,15 @@ describe('PortalBrand', () => {
     expect(screen.getByRole('link', { name: 'Nile Seller' })).toBeDefined();
   });
 });
+
+describe('PortalBrand compact (phones)', () => {
+  it('keeps the name "Nile <portal>" while the portal word is visible only from 640 px', () => {
+    render(
+      <a href="#top">
+        <PortalBrand roleLabel="Admin" compact />
+      </a>,
+    );
+    expect(screen.getByRole('link', { name: 'Nile Admin' })).toBeDefined();
+    expect(screen.getByText('Admin').getAttribute('class')).toContain('sr-only sm:not-sr-only');
+  });
+});

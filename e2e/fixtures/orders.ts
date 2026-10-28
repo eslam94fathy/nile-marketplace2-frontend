@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Schema } from '@nile/api';
 import { addMoney } from '@nile/domain';
-import type { Accounts } from '@nile/test-utils/e2e';
+import { expectData, type Accounts } from '@nile/test-utils/e2e';
 import type { Page } from '@playwright/test';
 import { expect } from './index';
 
@@ -86,4 +86,30 @@ export async function placeOrder(
   });
   expect(placed.status).toBe(201);
   return (placed.body as { data: Schema<'CheckoutResultDto'> }).data.order;
+}
+
+/** The backend's worker creates the shipment shortly after "ready for pickup" (outbox, not in the request). */
+const SHIPMENT_WAIT_MS = 15_000;
+
+/** The order's shipment, waiting for the worker to create it after "ready for pickup". */
+export async function shipmentOfOrder(
+  backend: Accounts['backend'],
+  adminToken: string,
+  orderId: string,
+): Promise<Schema<'AdminShipmentDto'>> {
+  let shipment: Schema<'AdminShipmentDto'> | undefined;
+  await expect
+    .poll(
+      async () => {
+        const response = await backend.request('GET', `/api/v1/admin/shipments?orderId[eq]=${orderId}`, {
+          token: adminToken,
+        });
+        [shipment] = expectData(response, 200) as Schema<'AdminShipmentDto'>[];
+        return shipment !== undefined;
+      },
+      { message: 'No shipment after "ready for pickup"', timeout: SHIPMENT_WAIT_MS },
+    )
+    .toBe(true);
+  if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
+  return shipment;
 }

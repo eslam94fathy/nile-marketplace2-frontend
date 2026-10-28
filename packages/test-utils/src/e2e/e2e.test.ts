@@ -1,8 +1,8 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { randomPhone, uniqueEmail } from './accounts';
-import { describeResponse, expectData } from './backend';
+import { ADMIN_TOKEN_RENEW_MARGIN_MS, createAccounts, randomPhone, uniqueEmail } from './accounts';
+import { describeResponse, expectData, type Backend } from './backend';
 import { e2eEnv } from './env';
 import { createMailpit, EMAIL_SUBJECTS, inviteTokenFromEmail, otpFromEmail } from './mailpit';
 
@@ -93,5 +93,48 @@ describe('backend helpers', () => {
   it('makes unique test data in the backend formats', () => {
     expect(uniqueEmail('seller')).toMatch(/^e2e\+seller-[0-9a-f-]{36}@example\.test$/);
     expect(randomPhone()).toMatch(/^\+20(10|11|12|15)\d{8}$/);
+  });
+});
+
+describe('accounts.admin (2-minute tokens in E2E, design 01 R-21)', () => {
+  const MINUTE = 60_000;
+
+  function fakeBackend(clock: { now: number }) {
+    let logins = 0;
+    const backend: Backend = {
+      baseUrl: VALID_ENV.NILE_API_BASE_URL,
+      request: (method, path) => {
+        logins += 1;
+        return Promise.resolve({
+          method,
+          path,
+          status: 200,
+          body: {
+            success: true,
+            data: {
+              accessToken: `token-${String(logins)}`,
+              accessTokenExpiresAt: new Date(clock.now + 2 * MINUTE).toISOString(),
+              refreshToken: 'unused',
+              refreshTokenExpiresAt: new Date(clock.now + 60 * MINUTE).toISOString(),
+              user: { id: 'admin-1', email: VALID_ENV.E2E_ADMIN_EMAIL, role: 'admin', status: 'active' },
+            },
+          },
+        });
+      },
+    };
+    return { backend, logins: () => logins };
+  }
+
+  it('reuses one sign-in while the token is fresh, and signs in again before it expires', async () => {
+    const clock = { now: Date.parse('2026-10-28T20:00:00.000Z') };
+    const { backend, logins } = fakeBackend(clock);
+    const accounts = createAccounts(e2eEnv(VALID_ENV), { backend, now: () => clock.now });
+
+    expect((await accounts.admin()).accessToken).toBe('token-1');
+    clock.now += MINUTE;
+    expect((await accounts.admin()).accessToken).toBe('token-1');
+    clock.now += 2 * MINUTE - ADMIN_TOKEN_RENEW_MARGIN_MS;
+    expect((await accounts.admin()).accessToken).toBe('token-2');
+    expect(logins()).toBe(2);
   });
 });

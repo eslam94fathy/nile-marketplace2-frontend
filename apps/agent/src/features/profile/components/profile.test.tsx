@@ -3,7 +3,7 @@ import type { Schema } from '@nile/api';
 import { agentProfileFactory, fixtureId, governorateFactory, mockApi } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { Toaster } from '@nile/ui';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
@@ -57,6 +57,27 @@ describe('shift switch (spec 04 AG-03)', { timeout: 15_000 }, () => {
     expect(await screen.findByText("You're on shift.")).toBeDefined();
     expect(bodies).toEqual([{ onShift: true }]);
     expect(screen.getByRole('switch', { name: 'On shift' }).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('keeps keyboard focus on the switch while saving and after the off-shift question is dismissed', async () => {
+    const user = userEvent.setup();
+    const { bodies } = serveProfile(agentProfileFactory({ onShift: false }));
+    renderSwitch();
+    const off = await screen.findByRole('switch', { name: 'Off shift' });
+    // Disabled until the profile has loaded.
+    await waitFor(() => {
+      expect(off.hasAttribute('disabled')).toBe(false);
+    });
+    off.focus();
+    await user.keyboard(' ');
+    const on = await screen.findByRole('switch', { name: 'On shift' });
+    expect(bodies).toEqual([{ onShift: true }]);
+    expect(document.activeElement).toBe(on);
+    await user.keyboard(' ');
+    expect(await screen.findByRole('dialog', { name: 'Go off shift?' })).toBeDefined();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(on);
   });
 
   it('going off shift says how many shipments are still to finish', async () => {

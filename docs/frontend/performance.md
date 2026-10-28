@@ -68,6 +68,19 @@ Local production build, Lighthouse mobile profile, on a development machine also
 - TBT is mostly React and the Next.js runtime evaluating at 4× CPU slowdown (≈ 0.8 s in one chunk).
 - CLS is 0 everywhere measured (self-hosted font with size-adjusted fallback, no images in R1).
 
+First run on the budgeted pages (2026-10-28, `npm run perf` against the local backend in Docker, phase i with
+the R2 merge; median of 3, mobile profile):
+
+| Page | FCP | LCP (simulated) | Observed LCP | TBT | CLS | JS transferred |
+|---|---|---|---|---|---|---|
+| `/` | 0.80 s | 3.7 s | 0.29 – 0.39 s | 594 ms | 0 | 341 KB |
+| `/c/women` | 0.96 s | 3.9 s | 0.31 – 0.46 s | 620 ms | 0.002 | 341 KB |
+| `/p/[slug]` | 0.79 s | 3.7 s | 0.28 – 0.44 s | 558 ms | 0 | 341 KB |
+| `/cart` (signed in) | 0.78 s | 3.7 s | 0.27 – 0.30 s | 507 ms | 0 | 341 KB |
+
+Same picture as `/login`: CLS and the JavaScript weight are within budget, the page paints its largest element
+at first paint, and the simulated LCP and TBT miss (TBT varies 387 – 1259 ms between runs on this machine).
+
 **Not yet met in this local lab**: LCP and TBT on these pages. Whether the real catalog, product and cart pages
 meet them is the first nightly run's verdict; if they don't, the next levers are (in order) moving
 interactive-only shell parts (account menu, phone drawer, toasts) to load after first paint, checking the
