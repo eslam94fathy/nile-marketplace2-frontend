@@ -17,9 +17,21 @@ const nextConfig: NextConfig = {
     '@nile/domain',
     '@nile/logger',
     '@nile/query',
+    '@nile/notifications',
     '@nile/realtime',
     '@nile/ui',
   ],
+  // The push service worker (design 01 §15.5): browsers check it for updates on every load.
+  headers: () =>
+    Promise.resolve([
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache' },
+          { key: 'Content-Type', value: 'text/javascript; charset=utf-8' },
+        ],
+      },
+    ]),
 };
 
 export default nextConfig;

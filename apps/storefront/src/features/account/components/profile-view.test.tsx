@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type * as Notifications from '@nile/notifications';
 import type { Schema } from '@nile/api';
 import { mockApi } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
@@ -8,6 +9,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
 import { AccountArea } from './account-area';
 import { ProfileView } from './profile-view';
+
+// The bell has its own tests in @nile/notifications; here only whether the header shows it.
+vi.mock('@nile/notifications', async (importOriginal) => ({
+  ...(await importOriginal<typeof Notifications>()),
+  NotificationBell: () => <button type="button">Notifications bell</button>,
+}));
 
 vi.mock('@/lib/session-client', () => ({
   sessionClient: { hasSession: () => true, signOut: vi.fn() },

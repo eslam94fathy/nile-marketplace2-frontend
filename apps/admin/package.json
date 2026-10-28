@@ -17,6 +17,7 @@
     "@nile/config": "*",
     "@nile/domain": "*",
     "@nile/logger": "*",
+    "@nile/notifications": "*",
     "@nile/query": "*",
     "@nile/realtime": "*",
     "@nile/ui": "*",

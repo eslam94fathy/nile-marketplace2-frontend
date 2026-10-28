@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { QueryProvider } from '@nile/query';
 import { SkipLink, Toaster } from '@nile/ui';
+import { NotificationsKeeper } from '@/components/notifications/notifications-keeper';
 import { RealtimeKeeper } from '@/components/realtime/realtime-keeper';
 import { SessionKeeper } from '@/components/session/session-keeper';
 import { APP } from '@/lib/app';
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
       <body>
         <SkipLink />
         <QueryProvider>
-          <RealtimeKeeper>{children}</RealtimeKeeper>
+          <RealtimeKeeper>
+            <NotificationsKeeper>{children}</NotificationsKeeper>
+          </RealtimeKeeper>
           <Toaster />
           <SessionKeeper />
         </QueryProvider>

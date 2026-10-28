@@ -23,6 +23,7 @@ function fakeClient(...outcomes: RefreshOutcome[]): SessionClient & { stop: Retu
     signOut: vi.fn(),
     start: vi.fn(() => stop),
     hasSession: vi.fn(() => true),
+    addSignOutHooks: vi.fn(() => () => undefined),
     stop,
   };
 }

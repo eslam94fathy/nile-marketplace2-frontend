@@ -52,6 +52,7 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './components/dropdown-menu';
+export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './components/popover';
 export { useCooldown, type Cooldown } from './use-cooldown';
 export { Label } from './components/label';
 export { Select, type SelectOption, type SelectProps } from './components/select';

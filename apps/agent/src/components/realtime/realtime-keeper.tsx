@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchRealtimeToken } from '@nile/auth/client';
+import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useSyncExternalStore } from 'react';
@@ -10,7 +11,10 @@ import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
 /** This app's message → query map (design 02 §5.3); each feature owns its part. */
-const INVALIDATION_MAP: InvalidationMap = { ...SHIPMENTS_INVALIDATION };
+const INVALIDATION_MAP: InvalidationMap = {
+  ...SHIPMENTS_INVALIDATION,
+  ...notificationsInvalidation(APP.name),
+};
 
 const noSubscription = () => () => undefined;
 const fetchToken = async () => (await fetchRealtimeToken()).token;

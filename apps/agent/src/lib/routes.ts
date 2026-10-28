@@ -5,6 +5,9 @@ export const ROUTES = {
   finance: '/finance',
   me: '/me',
   security: '/security',
+  /** AG-09 / AG-10 (spec 04 §7.2). */
+  notifications: '/notifications',
+  notificationSettings: '/notifications/settings',
   login: '/login',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',

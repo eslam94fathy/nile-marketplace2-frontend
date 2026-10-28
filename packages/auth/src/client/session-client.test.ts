@@ -1,6 +1,10 @@
 import { ApiError, browserTransport, createApiClient, unwrap } from '@nile/api';
-import { describe, expect, it } from 'vitest';
-import { MIN_REFRESH_INTERVAL_MS, sessionVersionCookieNames } from './session-client';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  MIN_REFRESH_INTERVAL_MS,
+  sessionVersionCookieNames,
+  SIGN_OUT_HOOK_TIMEOUT_MS,
+} from './session-client';
 import { ACCESS_TTL_MS, FakeBrowser, settle, SKEW_SECONDS, START, type Tab } from './test/fake-browser';
 
 const BFF = 'http://app.test/api/bff';
@@ -131,6 +135,88 @@ describe('session end', () => {
     await tab.client.signOut();
     expect(tab.reload).toHaveBeenCalled();
     expect(tab.assign).not.toHaveBeenCalled();
+  });
+});
+
+describe('sign-out hooks (design 01 §15.5, R-60)', () => {
+  it('beforeSignOut runs while the session exists, before the logout call', async () => {
+    const browser = new FakeBrowser();
+    const tab = browser.openTab('/account');
+    const order: string[] = [];
+    tab.client.addSignOutHooks({
+      beforeSignOut: () => {
+        order.push(`before (logout calls: ${String(browser.logoutCalls)})`);
+        return Promise.resolve();
+      },
+    });
+
+    await tab.client.signOut();
+
+    expect(order).toEqual(['before (logout calls: 0)']);
+    expect(browser.logoutCalls).toBe(1);
+  });
+
+  it('a failing hook never stops the sign-out', async () => {
+    const browser = new FakeBrowser();
+    const tab = browser.openTab('/account');
+    tab.client.addSignOutHooks({ beforeSignOut: () => Promise.reject(new Error('offline')) });
+    tab.client.addSignOutHooks({
+      onSessionEnd: () => {
+        throw new Error('broken');
+      },
+    });
+
+    await tab.client.signOut();
+
+    expect(browser.logoutCalls).toBe(1);
+    expect(tab.assign).toHaveBeenCalledWith('/');
+  });
+
+  it('a hook that never settles is cut off after the timeout', async () => {
+    const browser = new FakeBrowser();
+    const tab = browser.openTab('/account');
+    tab.client.addSignOutHooks({ beforeSignOut: () => new Promise<void>(() => undefined) });
+
+    const signingOut = tab.client.signOut();
+    await settle();
+    expect(browser.logoutCalls).toBe(0);
+    const cutOff = tab.timers.find((timer) => timer.ms === SIGN_OUT_HOOK_TIMEOUT_MS && !timer.cleared);
+    cutOff?.callback();
+    await signingOut;
+
+    expect(cutOff).toBeDefined();
+    expect(browser.logoutCalls).toBe(1);
+  });
+
+  it('an ended session skips beforeSignOut; onSessionEnd runs in every tab', async () => {
+    const browser = new FakeBrowser();
+    const a = browser.openTab('/account');
+    const b = browser.openTab('/cart');
+    b.client.start();
+    const before = vi.fn(() => Promise.resolve());
+    const endedA = vi.fn();
+    const endedB = vi.fn();
+    a.client.addSignOutHooks({ beforeSignOut: before, onSessionEnd: endedA });
+    b.client.addSignOutHooks({ onSessionEnd: endedB });
+
+    await a.client.signOut('session-ended');
+    await settle();
+
+    expect(before).not.toHaveBeenCalled();
+    expect(endedA).toHaveBeenCalledTimes(1);
+    expect(endedB).toHaveBeenCalledTimes(1);
+  });
+
+  it('a removed hook no longer runs', async () => {
+    const browser = new FakeBrowser();
+    const tab = browser.openTab('/account');
+    const ended = vi.fn();
+    const remove = tab.client.addSignOutHooks({ onSessionEnd: ended });
+    remove();
+
+    await tab.client.signOut();
+
+    expect(ended).not.toHaveBeenCalled();
   });
 });
 

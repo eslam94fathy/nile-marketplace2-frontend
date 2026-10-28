@@ -458,6 +458,7 @@ Notation as §2. "Live" names the realtime messages that invalidate the key (§5
 |---|---|---|---|
 | `notifications.unreadCount` | `GET /me/notifications/unread-count` | 0; poll 60 s without socket | `notification.created` |
 | `notifications.list(filter)` | `GET /me/notifications` | 0, infinite | `notification.created` |
+| `notifications.latest` | `GET /me/notifications?limit=10` (the bell panel, T-J6) | 0 | `notification.created` |
 | `notifications.preferences` | `GET /me/notification-preferences` | 5 min | – |
 | `push.config` | `GET /push/config` | Infinity (per session) | – |
 | `media.detail(mediaId)` | `GET /media/{mediaId}` | not cached: `waitForMedia` reads it directly (T-J4) | `media.updated` wakes the wait |

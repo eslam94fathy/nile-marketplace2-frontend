@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchRealtimeToken } from '@nile/auth/client';
+import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useSyncExternalStore } from 'react';
@@ -8,8 +9,8 @@ import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
-/** No admin screen listens yet: returns and support arrive with phase m, notifications with T-J6 (design 02 §5.3). */
-const INVALIDATION_MAP: InvalidationMap = {};
+/** Notifications from T-J6; returns and support arrive with phase m (design 02 §5.3). */
+const INVALIDATION_MAP: InvalidationMap = { ...notificationsInvalidation(APP.name) };
 
 const noSubscription = () => () => undefined;
 const fetchToken = async () => (await fetchRealtimeToken()).token;

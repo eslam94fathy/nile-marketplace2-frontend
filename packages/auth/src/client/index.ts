@@ -7,10 +7,12 @@ export {
   MIN_REFRESH_INTERVAL_MS,
   SESSION_ENDED_NOTICE,
   sessionVersionCookieNames,
+  SIGN_OUT_HOOK_TIMEOUT_MS,
   type BrowserEnvironment,
   type RefreshOutcome,
   type SessionClient,
   type SessionClientOptions,
+  type SignOutHooks,
   type SignOutReason,
 } from './session-client';
 export { BFF_ROUTE_PREFIX } from '../config';

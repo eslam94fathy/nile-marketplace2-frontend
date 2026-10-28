@@ -1,6 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
+import { PushPromptCard } from '@nile/notifications';
 import { buttonVariants, cn, EmptyState, ErrorState, LoadMore, PageHeader, Skeleton } from '@nile/ui';
 import { useRealtimeConnected } from '@nile/realtime';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -24,6 +25,8 @@ export function ActiveShipments({ tab: tabParam }: { readonly tab: string | null
   return (
     <div className="space-y-4">
       <PageHeader title={COPY.title} />
+      {/* Until dismissed or accepted: assignments are the agent's main trigger (AG-Q-8). */}
+      <PushPromptCard text={COPY.pushCard} />
       <InactiveGate>
         <nav aria-label={COPY.tabsLabel}>
           <ul className="grid grid-cols-3 gap-2">

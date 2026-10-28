@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type * as Notifications from '@nile/notifications';
 import { mockApi } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { screen } from '@testing-library/react';
@@ -9,6 +10,12 @@ import { AccountArea } from './account-area';
 const session = vi.hoisted(() => ({ present: false, signOut: vi.fn() }));
 vi.mock('@/lib/session-client', () => ({
   sessionClient: { hasSession: () => session.present, signOut: session.signOut },
+}));
+
+// The bell has its own tests in @nile/notifications; here only whether the header shows it.
+vi.mock('@nile/notifications', async (importOriginal) => ({
+  ...(await importOriginal<typeof Notifications>()),
+  NotificationBell: () => <button type="button">Notifications bell</button>,
 }));
 
 const server = setupMswServer();
@@ -38,6 +45,7 @@ describe('header account area (spec 01 §2.2)', () => {
       '/register?returnTo=%2Fp%2Fred-shirt',
     );
     expect(screen.getByRole('link', { name: 'Cart' }).getAttribute('href')).toBe('/login?returnTo=%2Fcart');
+    expect(screen.queryByRole('button', { name: 'Notifications bell' })).toBeNull();
   });
 
   it('signed in: greets by first name; the menu has the account pages and sign-out', async () => {
@@ -46,6 +54,7 @@ describe('header account area (spec 01 §2.2)', () => {
     const view = renderWithProviders(<AccountArea pathname="/" />);
     const trigger = await screen.findByRole('button', { name: 'Hi, Mona' });
     expect(screen.getByRole('link', { name: 'Cart' }).getAttribute('href')).toBe('/cart');
+    expect(screen.getByRole('button', { name: 'Notifications bell' })).toBeDefined();
 
     await view.user.click(trigger);
     const items = screen
@@ -53,6 +62,7 @@ describe('header account area (spec 01 §2.2)', () => {
       .map((item) => [item.textContent, item.getAttribute('href')]);
     expect(items).toEqual([
       ['Orders', '/account/orders'],
+      ['Notifications', '/account/notifications'],
       ['Addresses', '/account/addresses'],
       ['Account', '/account'],
       ['Security', '/account/security'],
