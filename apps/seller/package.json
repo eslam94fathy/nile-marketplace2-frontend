@@ -7,6 +7,7 @@
     "dev": "next dev --port 4101",
     "build": "next build",
     "start": "next start --port 4101",
+    "typegen": "next typegen",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

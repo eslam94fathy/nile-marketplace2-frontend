@@ -35,6 +35,11 @@ jobs:
       - name: Env files
         run: npm run dev:env
 
+      # Type-aware lint rules need the Next.js route types (global PageProps, typed Route) in .next/types,
+      # which a fresh checkout lacks: without them pages lint as unresolved types.
+      - name: Next.js route types
+        run: npm run typegen
+
       - name: Lint
         run: npm run lint && npm run format:check
 
