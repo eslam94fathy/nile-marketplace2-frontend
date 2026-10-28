@@ -8,6 +8,8 @@ import { resolve } from 'node:path';
 const APPS = { storefront: 4100, seller: 4101, admin: 4102, agent: 4103 };
 const BACKEND_ORIGIN = 'http://localhost:3100'; // backend api on host port 3100 (CLAUDE.md §13)
 const REALTIME_ORIGIN = 'http://localhost:3001'; // backend realtime service (design 01 §15.8)
+const MEDIA_ORIGIN = 'http://localhost:9100'; // MinIO: public images, presigned images and uploads (design 01 §15.8)
+const UPLOADING_APPS = new Set(['storefront', 'seller', 'admin']); // the agent app uploads nothing
 const force = process.argv.includes('--force');
 const root = resolve(import.meta.dirname, '..');
 
@@ -39,6 +41,13 @@ for (const [app, port] of Object.entries(APPS)) {
     `NEXT_PUBLIC_AGENT_URL=${url(APPS.agent)}`,
     'NEXT_PUBLIC_REFRESH_SKEW_SECONDS=60',
     `NEXT_PUBLIC_REALTIME_URL=${REALTIME_ORIGIN}`,
+    `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN=${MEDIA_ORIGIN}`,
+    ...(UPLOADING_APPS.has(app)
+      ? [
+          `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN=${MEDIA_ORIGIN}`,
+          `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN=${MEDIA_ORIGIN}`,
+        ]
+      : []),
     ...(app === 'storefront' ? ['NEXT_PUBLIC_KASHIER_PAYMENT_WINDOW_MINUTES=15'] : []),
   ];
   writeFileSync(file, `${lines.join('\n')}\n`, { encoding: 'utf8', mode: 0o600 });

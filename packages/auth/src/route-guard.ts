@@ -8,6 +8,7 @@ import {
   CSP_HEADER,
   CSP_REPORT_ONLY_HEADER,
   NONCE_HEADER,
+  type CspOrigins,
 } from './headers';
 import { safeReturnTo } from './return-to';
 import { unsealSession, type SessionKeyRing, type SessionV1 } from './session';
@@ -37,6 +38,8 @@ export interface RouteGuardConfig {
     development: boolean;
     /** Report violations without blocking: the T-I1 evidence run before enforcing. */
     reportOnly: boolean;
+    /** Media, upload and realtime hosts (design 01 §15.7). */
+    origins: CspOrigins;
   };
   /** Tests only: fixed clock. */
   now?: () => Date;
@@ -80,7 +83,11 @@ export function createRouteGuard(getConfig: () => RouteGuardConfig) {
     const { pathname } = request.nextUrl;
     const currentPath = currentPathOf(request.nextUrl);
     const nonce = createNonce();
-    const csp = contentSecurityPolicy({ nonce, development: config.csp.development });
+    const csp = contentSecurityPolicy({
+      nonce,
+      development: config.csp.development,
+      origins: config.csp.origins,
+    });
     const cspHeader = config.csp.reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_HEADER;
 
     let response: NextResponse;

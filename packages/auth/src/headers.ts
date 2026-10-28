@@ -20,18 +20,43 @@ export function createNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
+/** Hosts beyond the app's own origin that its pages use (design 01 §15.7), from the app's settings. */
+export interface CspOrigins {
+  /** Image hosts: the media CDN, and the presigned private-image host where the app shows private images. */
+  readonly images: readonly string[];
+  /** Hosts the browser posts files to directly (presigned uploads); none for an app that uploads nothing. */
+  readonly uploads: readonly string[];
+  /** The realtime service's http(s) origin; the policy allows its WebSocket form. */
+  readonly realtime: string | null;
+}
+
+/** No host beyond the app's own origin. */
+export const NO_EXTRA_ORIGINS: CspOrigins = { images: [], uploads: [], realtime: null };
+
 export interface CspOptions {
   readonly nonce: string;
   /** `next dev`: React needs `eval` for its debugging aids. */
   readonly development: boolean;
+  readonly origins: CspOrigins;
 }
 
+/** `https://api.example.com` → `wss://api.example.com` (the socket uses WebSocket only, design 01 §15.3). */
+export function webSocketOrigin(origin: string): string {
+  const url = new URL(origin);
+  return `${url.protocol === 'https:' ? 'wss:' : 'ws:'}//${url.host}`;
+}
+
+/** Sources in order, each once (the same storage host often serves uploads and private images). */
+const unique = (sources: readonly string[]): string[] => [...new Set(sources)];
+
 /**
- * The page policy (design 01 §10): scripts only with this request's nonce (and what they load,
- * `'strict-dynamic'`); everything else from the app's own origin; no framing, no
- * plugins, no foreign `<base>`, forms only to the app itself. Browsers talk only to their own BFF.
+ * The page policy (design 01 §10, §15.7): scripts only with this request's nonce (and what they load,
+ * `'strict-dynamic'`); everything else from the app's own origin, except the configured media hosts (images,
+ * direct uploads, local `blob:` previews where the app uploads) and the realtime socket; the push service worker
+ * and the manifest from the app itself; no framing, no plugins, no foreign `<base>`, forms only to the app
+ * itself. API calls still go only to the app's own BFF.
  */
-export function contentSecurityPolicy({ nonce, development }: CspOptions): string {
+export function contentSecurityPolicy({ nonce, development, origins }: CspOptions): string {
   const directives: readonly (readonly [string, ...string[]])[] = [
     ['default-src', "'self'"],
     [
@@ -45,9 +70,22 @@ export function contentSecurityPolicy({ nonce, development }: CspOptions): strin
     // run found Radix `style` attributes in server HTML and scroll-lock `<style>` elements without a nonce
     // (design 01 §10 rule, R-50). Inline styles can't run code; scripts stay nonce-only.
     ['style-src', "'self'", "'unsafe-inline'"],
-    ['img-src', "'self'", 'data:'],
+    [
+      'img-src',
+      ...unique(["'self'", 'data:', ...(origins.uploads.length > 0 ? ['blob:'] : []), ...origins.images]),
+    ],
     ['font-src', "'self'"],
-    ['connect-src', "'self'", ...(development ? ['ws:'] : [])],
+    [
+      'connect-src',
+      ...unique([
+        "'self'",
+        ...origins.uploads,
+        ...(origins.realtime === null ? [] : [webSocketOrigin(origins.realtime)]),
+        ...(development ? ['ws:'] : []),
+      ]),
+    ],
+    ['worker-src', "'self'"],
+    ['manifest-src', "'self'"],
     ['frame-ancestors', "'none'"],
     ['form-action', "'self'"],
     ['base-uri', "'self'"],

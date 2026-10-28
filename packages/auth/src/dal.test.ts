@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDal } from './dal';
 import { PATHNAME_HEADER, type RouteGuardConfig } from './route-guard';
+import { NO_EXTRA_ORIGINS } from './headers';
 import { KEY_RING, NOW, sessionCookie, tokensFor } from './test/fixtures';
 
 const state = vi.hoisted(() => ({ cookie: '', pathname: null as string | null }));
@@ -36,7 +37,7 @@ const config = (overrides: Partial<RouteGuardConfig> = {}): RouteGuardConfig => 
   homePath: '/',
   isProtectedPath: () => true,
   signedInRedirectPaths: ['/login'],
-  csp: { development: false, reportOnly: false },
+  csp: { development: false, reportOnly: false, origins: NO_EXTRA_ORIGINS },
   now: () => NOW,
   ...overrides,
 });

@@ -453,6 +453,8 @@ Agent app (FQ-2 = yes; workflows A-1…A-4):
 
 ## Phase i — Hardening & Release
 
+- **Catch-up (2026-10-28):** `main` with Release 2 phase j merged in; the CSP gains the R2 hosts from three new public settings, `worker-src` and `manifest-src` (design 01 R-61, CLAUDE.md §14.1ax). axe now also covers the R2 component tests (all pass). T-I4…T-I6 still wait for FQ-3 / FQ-8; the R2 re-checks are phase o.
+
 ### T-I1 Security headers and CSP
 - **Status (2026-10-16):** implemented; report-only run done before enforcing (violations found and fixed, then none), CSP enforced. Unit tests (policy, static headers, nonce randomness; guard: fresh nonce per request on response and forwarded request, redirects, report-only header) green; E2E: automatic CSP-violation guard on every test, per-app hardening suite (headers, nonce on server scripts, `/api/*`, CSRF, tampered and cross-role sessions). The 16 backend-free hardening tests and the storefront component/token specs ran green against local production builds; the cross-role session test and the rest of the suite (under the new guard) need the backend run. Repo type-check, lint, format, all unit tests and all four builds green. Decisions: design 01 §10, R-50.
 - **Scope:** nonce-based CSP via `proxy.ts`, HSTS, frame, referrer, permissions policies per app; CSRF and session abuse tests.

@@ -44,6 +44,16 @@ export function securityTests(app: E2eAppName): void {
   const loginBody = { email: 'nobody@example.test', password: 'not-a-real-password' };
 
   test.describe(`${app}: security headers and abuse (T-I1)`, () => {
+    test('the push service worker: static security headers and checked for updates on every load (design 01 §15.5)', async ({
+      request,
+    }) => {
+      const response = await request.get(`${origin}/sw.js`);
+      expect(response.status()).toBe(200);
+      expectStaticHeaders(response);
+      expect(response.headers()['cache-control']).toBe('no-cache');
+      expect(response.headers()['content-type']).toContain('javascript');
+    });
+
     test('a page: enforced CSP with a fresh nonce on every request, carried by the server-sent scripts', async ({
       request,
     }) => {
@@ -56,6 +66,9 @@ export function securityTests(app: E2eAppName): void {
       expect(policy).toContain("'strict-dynamic'");
       expect(policy).toContain("frame-ancestors 'none'");
       expect(policy).toContain("object-src 'none'");
+      // Release 2 (design 01 §15.7): the push service worker and the manifest come from the app itself.
+      expect(policy).toContain("worker-src 'self'");
+      expect(policy).toContain("manifest-src 'self'");
       expect(policy).not.toContain('unsafe-eval');
       expect(first.headers()['content-security-policy-report-only']).toBeUndefined();
       expect(nonceOf(second.headers()['content-security-policy'])).not.toBe(nonceOf(policy));

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 import { cookieNames } from './cookies';
 import { createRouteGuard, PATHNAME_HEADER, type RouteGuardConfig } from './route-guard';
+import { NO_EXTRA_ORIGINS } from './headers';
 import { APP_ORIGIN, KEY_RING, NOW, sessionCookie, setCookies, tokensFor } from './test/fixtures';
 
 const PORTAL_PUBLIC = ['/login', '/register', '/forgot-password'];
@@ -14,7 +15,7 @@ const config = (overrides: Partial<RouteGuardConfig> = {}): RouteGuardConfig => 
   homePath: '/',
   isProtectedPath: (pathname) => !PORTAL_PUBLIC.some((p) => pathname === p || pathname.startsWith(`${p}/`)),
   signedInRedirectPaths: ['/login', '/register'],
-  csp: { development: false, reportOnly: false },
+  csp: { development: false, reportOnly: false, origins: NO_EXTRA_ORIGINS },
   now: () => NOW,
   ...overrides,
 });
@@ -165,7 +166,7 @@ describe('page CSP (design 01 §10, T-I1)', () => {
     const response = await run(
       '/login',
       undefined,
-      config({ csp: { development: false, reportOnly: true } }),
+      config({ csp: { development: false, reportOnly: true, origins: NO_EXTRA_ORIGINS } }),
     );
     expect(response.headers.get('Content-Security-Policy')).toBeNull();
     expect(response.headers.get('Content-Security-Policy-Report-Only')).toContain("'strict-dynamic'");
