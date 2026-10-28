@@ -18,6 +18,8 @@ export const adminSellerDetailFactory = defineFactory<'AdminSellerDetailDto'>((s
   contactPhone: '+201112345678',
   status: 'pending_approval',
   commissionRate: '0.1000',
+  ratingAvg: null,
+  ratingCount: 0,
   pickupGovernorateId: fixtureId(9700),
   createdAt: '2026-10-14T08:00:00.000Z',
   approvedAt: null,

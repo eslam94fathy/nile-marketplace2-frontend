@@ -45,6 +45,7 @@
   "overrides": {
     "openapi-typescript": {
       "typescript": "$typescript"
-    }
+    },
+    "undici": "8.12.2"
   }
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { NotificationBell } from '@nile/notifications';
 import {
   Button,
   Dialog,
@@ -7,6 +8,7 @@ import {
   isActivePath,
   MAIN_CONTENT_ID,
   navLinkClasses,
+  PortalBrand,
   UI_COPY,
 } from '@nile/ui';
 import {
@@ -28,7 +30,7 @@ import { ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 
 // Seller shell (spec 02 §2.1): sidebar on desktop, bottom-sheet menu on mobile; header with the business
-// name and status badge, and the status banner (§2.2) above every portal page, from `GET /seller/profile`.
+// name and status badge, the notification bell (T-J6), and the status banner (§2.2) above every portal page, from `GET /seller/profile`.
 
 const NAV = [
   { href: ROUTES.overview, label: 'Overview', icon: LayoutDashboard },
@@ -76,8 +78,8 @@ function NavLinks({ onNavigate }: { readonly onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <Link href={ROUTES.overview} className="text-lg font-semibold text-primary">
-      {APP.title}
+    <Link href={ROUTES.overview} className="w-fit rounded-md">
+      <PortalBrand roleLabel={APP.roleLabel} />
     </Link>
   );
 }
@@ -106,7 +108,8 @@ export function SellerShell({ children }: { readonly children: ReactNode }) {
             </Button>
             <Brand />
           </div>
-          <div className="ms-auto min-w-0">
+          <div className="ms-auto flex min-w-0 items-center gap-2">
+            <NotificationBell />
             <BusinessIdentity />
           </div>
         </header>

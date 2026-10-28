@@ -1,12 +1,17 @@
 import type {
   AgentStatus,
+  CouponDisplayStatus,
   OrderStatus,
   PaymentStatus,
   ProductStatus,
   RefundStatus,
+  ReturnRefundStatus,
+  ReturnStatus,
+  ReviewStatus,
   SellerOrderStatus,
   SellerStatus,
   ShipmentStatus,
+  TicketStatus,
   UserStatus,
   VariantStatus,
 } from '@nile/domain';
@@ -53,6 +58,7 @@ export const SHIPMENT_STATUS_TONES = {
   returned_to_seller: 'neutral',
   delivered: 'success',
   cancelled: 'neutral',
+  pickup_failed: 'warning',
 } as const satisfies Tones<ShipmentStatus>;
 
 export const PAYMENT_STATUS_TONES = {
@@ -64,11 +70,14 @@ export const PAYMENT_STATUS_TONES = {
   paid: 'success',
   failed: 'destructive',
   expired: 'destructive',
-  partially_refunded_manually: 'neutral',
-  refunded_manually: 'neutral',
+  partially_refunded: 'neutral',
+  refunded: 'neutral',
 } as const satisfies Tones<PaymentStatus>;
 
 export const REFUND_STATUS_TONES = {
+  pending_auto: 'info',
+  processing: 'info',
+  succeeded: 'success',
   pending_manual: 'warning',
   recorded: 'success',
 } as const satisfies Tones<RefundStatus>;
@@ -102,3 +111,46 @@ export const AGENT_STATUS_TONES = {
   active: 'success',
   inactive: 'neutral',
 } as const satisfies Tones<AgentStatus>;
+
+// Release 2
+
+export const TICKET_STATUS_TONES = {
+  open: 'warning',
+  awaiting_admin: 'warning',
+  awaiting_user: 'info',
+  resolved: 'success',
+  closed: 'neutral',
+} as const satisfies Tones<TicketStatus>;
+
+export const RETURN_STATUS_TONES = {
+  requested: 'warning',
+  rejected: 'destructive',
+  escalated: 'warning',
+  approved: 'info',
+  picked_up: 'info',
+  received: 'warning',
+  disputed: 'warning',
+  completed: 'success',
+  refused: 'destructive',
+  cancelled: 'neutral',
+  pickup_failed: 'destructive',
+} as const satisfies Tones<ReturnStatus>;
+
+export const RETURN_REFUND_STATUS_TONES = {
+  pending: 'warning',
+  processing: 'info',
+  succeeded: 'success',
+  manual: 'warning',
+} as const satisfies Tones<ReturnRefundStatus>;
+
+export const REVIEW_STATUS_TONES = {
+  published: 'success',
+  hidden: 'destructive',
+} as const satisfies Tones<ReviewStatus>;
+
+export const COUPON_DISPLAY_STATUS_TONES = {
+  scheduled: 'info',
+  active: 'success',
+  expired: 'neutral',
+  inactive: 'neutral',
+} as const satisfies Tones<CouponDisplayStatus>;

@@ -21,13 +21,18 @@ export { TokenSheet } from './token-sheet';
 export { UI_COPY } from './copy';
 export {
   AGENT_STATUS_TONES,
+  COUPON_DISPLAY_STATUS_TONES,
   ORDER_STATUS_TONES,
   PAYMENT_STATUS_TONES,
   PRODUCT_STATUS_TONES,
   REFUND_STATUS_TONES,
+  RETURN_REFUND_STATUS_TONES,
+  RETURN_STATUS_TONES,
+  REVIEW_STATUS_TONES,
   SELLER_ORDER_STATUS_TONES,
   SELLER_STATUS_TONES,
   SHIPMENT_STATUS_TONES,
+  TICKET_STATUS_TONES,
   USER_STATUS_TONES,
   VARIANT_STATUS_TONES,
   type Tone,
@@ -47,6 +52,7 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './components/dropdown-menu';
+export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './components/popover';
 export { useCooldown, type Cooldown } from './use-cooldown';
 export { Label } from './components/label';
 export { Select, type SelectOption, type SelectProps } from './components/select';
@@ -96,8 +102,32 @@ export {
   NotFoundScreen,
   PageHeader,
   PlaceholderScreen,
+  PortalBrand,
   SkipLink,
   type NotFoundScreenProps,
   type PageHeaderProps,
   type PlaceholderScreenProps,
+  type PortalBrandProps,
 } from './components/shell';
+export { NileLogoShort, type LogoProps } from './components/logo';
+export {
+  CategoryImagePlaceholder,
+  ProductImagePlaceholder,
+  type ImagePlaceholderProps,
+} from './components/image-placeholders';
+export {
+  IMAGE_WIDTHS,
+  imageSrcSet,
+  NileImage,
+  type ImagePlaceholderKind,
+  type NileImageProps,
+  type NileImageSource,
+} from './components/nile-image';
+export { PrivateImage, type PrivateImageProps } from './components/private-image';
+export {
+  UploadTiles,
+  type UploadRefusalView,
+  type UploadTilesProps,
+  type UploadTileView,
+  type UploadTileViewStatus,
+} from './components/upload-tiles';

@@ -7,6 +7,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
+import { renderWithNotifications } from '@/test/notifications';
 import { InactiveBanner } from './inactive';
 import { MeView } from './me-view';
 import { ShiftSwitch } from './shift-switch';
@@ -106,11 +107,23 @@ describe('me (spec 04 AG-02)', { timeout: 15_000 }, () => {
         { base: BFF_BASE },
       ),
     );
-    renderWithProviders(<MeView />);
+    renderWithNotifications(<MeView />);
     expect(await screen.findByText('Sam Nabil')).toBeDefined();
     expect(await screen.findByText('Cairo')).toBeDefined();
     expect(screen.getByText('To change your details, contact your admin.')).toBeDefined();
     expect(screen.getByRole('link', { name: 'Security' }).getAttribute('href')).toBe('/security');
+    expect(screen.getByRole('link', { name: 'Notifications' }).getAttribute('href')).toBe(
+      '/notifications/settings',
+    );
     expect(screen.getByRole('button', { name: /sign out/i })).toBeDefined();
+    expect(screen.queryByText('Add to Home Screen to get notifications.')).toBeNull();
+  });
+
+  it('on iPhone / iPad outside the installed app: says push needs the Home Screen (AG-02)', async () => {
+    serveProfile(agentProfileFactory());
+    server.use(mockApi('get', '/governorates', ({ reply }) => reply.ok([]), { base: BFF_BASE }));
+    renderWithNotifications(<MeView />, { needsInstall: true });
+
+    expect(await screen.findByText('Add to Home Screen to get notifications.')).toBeDefined();
   });
 });

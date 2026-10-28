@@ -232,7 +232,7 @@ No authenticated response is ever stored in a shared cache.
 
 ## 9. Security guidelines (binding once approved)
 
-1. Run a patched Next.js release (at least the July 2026 security release, 16.2.11 on the 16.x line) and keep it patched; `npm audit` in CI.
+1. Run a patched Next.js release (at least the October 2026 security release, 16.4.1 on the 16.x line) and keep it patched; `npm audit` in CI.
 2. CSP with per-request nonces from `proxy.ts`; no `unsafe-inline` scripts; `frame-ancestors 'none'`; HSTS, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
 3. No `dangerouslySetInnerHTML` with API data. No user-provided URLs rendered as links without scheme validation (the Kashier `checkoutUrl` is used only for `window.location.assign` after checking it is `https:`).
 4. Server-only modules import `server-only`; env vars split into a server schema and a public schema (zod-validated at startup, no defaults, mirroring the backend rule); only `NEXT_PUBLIC_*` values reach the browser and none are secrets.

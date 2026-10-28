@@ -24,4 +24,8 @@ export const PROFILE_COPY = {
   activeShipments: 'Active shipments',
   contactAdmin: 'To change your details, contact your admin.',
   security: 'Security',
+  /** AG-10, linked from Me (spec 04 §7.2). */
+  notifications: 'Notifications',
+  /** iPhone / iPad outside the installed app (spec 04 AG-02, conventions §12.6). */
+  installHint: 'Add to Home Screen to get notifications.',
 } as const;

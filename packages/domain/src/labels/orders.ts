@@ -68,14 +68,26 @@ export const SELLER_ORDER_STATUS_LABELS = {
   },
 } as const satisfies Readonly<Record<'customer' | 'seller' | 'admin', Labels<SellerOrderStatus>>>;
 
-/** Seller view: spec 02 §5.2. Admin view: neutral wording decided 2026-10-16 (OQ-16). */
+/**
+ * Customer view: spec 01 §10.6. Seller view: spec 02 §5.2 and §8.6. Admin view: neutral wording decided
+ * 2026-10-16 (OQ-16) and spec 03 §7.6.
+ */
 export const SELLER_ORDER_CANCEL_REASON_LABELS = {
+  customer: {
+    customer_cancelled: 'Cancelled by you',
+    seller_cancelled: 'Cancelled by the seller',
+    seller_acceptance_timeout: 'Cancelled: the seller didn’t confirm in time',
+    payment_failed: 'Cancelled: payment not completed',
+    payment_expired: 'Cancelled: payment not completed',
+    admin_cancelled: 'Cancelled by Nile',
+  },
   seller: {
     customer_cancelled: 'Cancelled by the customer',
     seller_cancelled: 'Cancelled by you',
     seller_acceptance_timeout: 'Not confirmed within 24 hours',
     payment_failed: 'The customer’s card payment failed',
     payment_expired: 'The customer didn’t complete the card payment',
+    admin_cancelled: 'Cancelled by Nile',
   },
   admin: {
     customer_cancelled: 'Cancelled by the customer',
@@ -83,8 +95,9 @@ export const SELLER_ORDER_CANCEL_REASON_LABELS = {
     seller_acceptance_timeout: 'Not confirmed within 24 hours',
     payment_failed: 'Card payment failed',
     payment_expired: 'Card payment not completed',
+    admin_cancelled: 'Cancelled by an admin',
   },
-} as const satisfies Readonly<Record<'seller' | 'admin', Labels<SellerOrderCancelReason>>>;
+} as const satisfies Readonly<Record<'customer' | 'seller' | 'admin', Labels<SellerOrderCancelReason>>>;
 
 /** Spec 02 SE-15 A4. */
 export const ITEM_CANCEL_REASON_LABELS = {

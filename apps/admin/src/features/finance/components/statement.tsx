@@ -46,7 +46,8 @@ const linkClass = 'text-primary underline-offset-4 hover:underline';
 
 /**
  * Where an entry's reference is shown (spec 03 AD-19): a seller order in the reference lookup, an order on
- * AD-15, a remittance or payout on AD-20 / AD-21 filtered to this account's owner.
+ * AD-15, a remittance or payout on AD-20 / AD-21 filtered to this account's owner. Release 2 references
+ * (returns, refunds, holds) have no screen yet (AD-33, AD-34 in phase m): `null`, shown without a link.
  */
 export function referenceHref(entry: Pick<LedgerEntry, 'referenceType' | 'referenceId'>, account: Account) {
   switch (entry.referenceType) {
@@ -61,6 +62,10 @@ export function referenceHref(entry: Pick<LedgerEntry, 'referenceType' | 'refere
       return account.accountType === 'seller_payable'
         ? sellerPayoutPath(account.ownerId)
         : agentPayoutPath(account.ownerId);
+    case 'return':
+    case 'refund':
+    case 'seller_order_hold':
+      return null;
   }
 }
 
@@ -141,11 +146,17 @@ function StatementContent({
     {
       id: 'reference',
       header: COPY.entryColumns.reference,
-      cell: (row) => (
-        <Link href={referenceHref(row, account)} className={linkClass}>
-          {`${LEDGER_REFERENCE_TYPE_LABELS[row.referenceType]} ${COPY.shortId(row.referenceId)}`}
-        </Link>
-      ),
+      cell: (row) => {
+        const text = `${LEDGER_REFERENCE_TYPE_LABELS[row.referenceType]} ${COPY.shortId(row.referenceId)}`;
+        const href = referenceHref(row, account);
+        return href === null ? (
+          <span>{text}</span>
+        ) : (
+          <Link href={href} className={linkClass}>
+            {text}
+          </Link>
+        );
+      },
     },
   ];
 

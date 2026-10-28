@@ -11,16 +11,17 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  --color-nile-50: #e8f3f7;
-  --color-nile-100: #c9e2ec;
-  --color-nile-200: #9cc9da;
-  --color-nile-300: #66a9c2;
-  --color-nile-400: #348aa8;
-  --color-nile-500: #136f8e;
-  --color-nile-600: #0b5c7a;
-  --color-nile-700: #094a63;
-  --color-nile-800: #073a4e;
-  --color-nile-900: #052a39;
+  --color-nile-50: #e8f0f2;
+  --color-nile-100: #cfe3e8;
+  --color-nile-200: #a3ccd5;
+  --color-nile-300: #5fb3c2;
+  --color-nile-400: #3a93a4;
+  --color-nile-500: #2a8091;
+  --color-nile-600: #1f6f80;
+  --color-nile-700: #185a68;
+  --color-nile-800: #134652;
+  --color-nile-900: #0e2a3b;
+  --color-nile-gold: #e2a93b;
 
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
@@ -71,15 +72,15 @@
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #0b5c7a;
-  --primary-hover: #094a63;
+  --primary: #1f6f80;
+  --primary-hover: #185a68;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #475569;
-  --accent: #e8f3f7;
-  --accent-foreground: #094a63;
+  --accent: #e8f0f2;
+  --accent-foreground: #185a68;
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
   --destructive-muted: #fef2f2;
@@ -91,7 +92,7 @@
   --warning-muted: #fffbeb;
   --border: #e2e8f0;
   --input: #7c8ba1;
-  --ring: #136f8e;
+  --ring: #2a8091;
 }
 
 @theme inline {

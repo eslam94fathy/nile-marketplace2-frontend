@@ -1,6 +1,6 @@
 # Workflows — what each role can do with the current API
 
-Status: **DRAFT v0.2 (2026-10-14), for review.** v0.2: decisions FQ-1, FQ-2, FQ-6 and the invite flow (architecture §5.7) applied. Labels ([VERIFIED], [SPEC], [ASSUMPTION], [OPEN]) and question ids (OQ-n, FQ-n) are defined in `api-inventory.md` §0 and `architecture.md` §11.
+Status: **DRAFT v0.2 (2026-10-14), for review.** §6 (2026-10-23, T-J0): Release 2 workflows. v0.2: decisions FQ-1, FQ-2, FQ-6 and the invite flow (architecture §5.7) applied. Labels ([VERIFIED], [SPEC], [ASSUMPTION], [OPEN]) and question ids (OQ-n, FQ-n) are defined in `api-inventory.md` §0 and `architecture.md` §11.
 
 Rules that apply to every workflow:
 - The backend decides. The UI never computes prices, stock, permissions or state transitions on its own; it shows what the API returns and offers only the actions the API documents for the current state. The one client-side computation the API requires is `expectedTotal` at checkout (C-6, OQ-15).
@@ -228,3 +228,126 @@ delivered ─► ledger: seller net, commission, agent fee share ─► admin re
 ```
 
 Each role sees only its own slice; nothing in the API lets one role see another's live state beyond what is listed above.
+
+---
+
+## 6. Release 2 workflows (backend `ecbcd19`, T-J0, 2026-10-23)
+
+Labels as above; endpoint details in `api-inventory.md` §11. Release 2 workflows are added here, never renumbered; R1 workflows that changed get an "(R2)" addition.
+
+### 6.1 All roles
+
+#### X-1 Upload an image [VERIFIED, SPEC 14]
+1. `POST /media/uploads { purpose, contentType, sizeBytes }` → `201 { media (pending), upload { url, fields, expiresAt } }`. Purposes by role: seller `product_image`, admin `category_image`, customer `review_image`, customer and seller `return_photo`, all three `support_attachment`.
+2. The **browser** posts the file straight to storage: a multipart form to `upload.url` with every `fields` entry, the file last (presigned; ≤ 5 MB, jpeg / png / webp, ≥ 200 × 200). The URL expires after 5 min.
+3. `POST /media/uploads/{mediaId}/complete` → `202` `processing` (`200` when already processing / ready). `MEDIA_UPLOAD_MISSING` → the file hasn't reached storage yet: retry until the URL expires.
+4. Wait for `ready`: socket `media.updated`, or `GET /media/{mediaId}` polling. `failed` + `failureReason` → say why; the user picks another file.
+5. Only a `ready` media id can be attached (product image, review, ticket message, return, dispute); unattached uploads are deleted after 24 h. Max 20 open uploads per user, 30 upload requests per 10 min.
+
+#### X-2 Notifications and push [VERIFIED, SPEC 13 §8]
+1. Bell: `GET /me/notifications/unread-count` (capped at 100), list `GET /me/notifications` (filters `read`, `category`), `POST …/{id}/read`, `POST …/read-all`. Each item has a `link` to a web route written for one prefixed app; each app maps it (FR2-Q4).
+2. Preferences: `GET /me/notification-preferences` (four categories, push only; in-app is always on), `PUT` with only the changed categories.
+3. Web Push: `GET /push/config` → VAPID public key → `PushManager.subscribe` (after a user gesture) → `POST /me/push-subscriptions` (the `toJSON()` body). Before sign-out: `POST /me/push-subscriptions/unregister { endpoint }`. A password reset or a suspension removes every subscription server-side.
+4. Texts carry order and ticket numbers only (no names, addresses, amounts).
+
+#### X-3 Live updates (realtime) [SPEC 15, backend `docs/realtime.md`]
+1. Connect with the access token (FR2-Q1: fetched from the app's BFF), WebSocket only, from an allowed `Origin`.
+2. On each message: drop duplicates (`eventId` + `type`), then refetch what the screen shows (messages carry ids and statuses only).
+3. `session.ended` `token_expired` → refresh the session, reconnect. After any reconnect, refetch everything on screen. `account_suspended`, or a refused reconnect after a failed refresh → sign out.
+4. Support threads: `ticket.subscribe { ticketId }` while the thread is open; `support.typing` signals.
+
+#### X-4 Support ticket (customer, seller) [VERIFIED, SPEC 16]
+1. Open: `POST /support/tickets` (Idempotency-Key) `{ category, subject, body, orderId? / sellerOrderId?, attachmentMediaIds? (≤ 3) }`. Customers may link an order (optionally one of its seller orders); sellers a seller order only. `seller_onboarding` is seller-only. Max 20 open tickets.
+2. List `GET /support/tickets` (`status`, `category`, sort `-lastMessageAt`) with `hasUnread`. Thread `GET …/{id}/messages` (newest first; the client reverses), post `POST …/{id}/messages` (Idempotency-Key), mark read `POST …/{id}/read`.
+3. Admins appear as "Nile Support"; internal notes never reach users. A `closed` ticket takes no message (`SUPPORT_TICKET_CLOSED`): open a new one. A message on `resolved` reopens it (auto-closed 7 days after resolution).
+
+### 6.2 Visitor and customer
+
+#### C-1 (R2) Catalog with images and ratings [VERIFIED]
+Cards gain `primaryImage` and `rating { avg, count }`; the detail gains `images` (ordered; `variants[].imageId` picks the variant's image, else the primary), product rating and seller rating; categories gain `image`. Filter `rating[gte]`, sort `-rating` (unrated last). Public seller page: `GET /sellers/{sellerId}` + `GET /products?sellerId[eq]=`.
+
+#### C-9 Product reviews (public) [VERIFIED, SPEC 17]
+`GET /products/{id}/reviews/summary` (average, count, distribution) and `GET /products/{id}/reviews` (filters `rating[eq,in]`, `hasImages`; sort `-createdAt`, `rating`). Reviewer shown as "Mona A."; the seller's reply unless hidden.
+
+#### C-10 Wishlist [VERIFIED, SPEC 04 §8]
+`GET /me/wishlist/product-ids` once per session (hearts), `PUT /me/wishlist/{productId}` (idempotent, `204`), `DELETE …` (`204`), page `GET /me/wishlist` with product cards (`available: false` kept and marked). Max 200 (`WISHLIST_LIMIT_REACHED`).
+
+#### C-11 Write and manage reviews [VERIFIED, SPEC 17]
+1. Candidates: `GET /me/reviewable-items` (delivered items inside 60 days whose product isn't reviewed).
+2. `POST /reviews { orderItemId, rating 1..5, title?, body?, imageMediaIds? (≤ 4) }` → published at once. One live review per product (`REVIEW_ALREADY_EXISTS`).
+3. Mine: `GET /me/reviews`; edit (`PATCH`) within 30 days (`canEdit`); delete any time, after which a new one may be written while the window is open. A hidden review shows the author its status, not the reason.
+
+#### C-6 (R2) Checkout with a coupon [SPEC 19, 09 §8.8]
+1. Optional preview: `POST /cart/coupon-preview { code }` → discount total, per seller, per line, items total after discount. Nothing is stored (20 previews per minute).
+2. Checkout sends `couponCode` again; `expectedTotal` = items total − discount + delivery fee (decimal). A coupon `422` aborts the checkout: the UI removes the coupon, explains, and the shopper confirms again (new intent, new key).
+3. Order views show `coupon { code, discountTotal }` and per-line `discountAmount`, `paidTotal`. Cancelling the whole checkout before any delivery frees the coupon use.
+
+#### C-12 Return items [SPEC 18]
+1. From a `delivered` seller order inside 14 days: `GET /orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items` → returnable quantity and paid unit amount per item, the return fee, the window end.
+2. `POST /returns` (Idempotency-Key) `{ sellerOrderId, reason, description?, items[{ orderItemId, quantity }], photoMediaIds? (≥ 1 for damaged / wrong_item / not_as_described, ≤ 4), refundPayout? (COD only: mobile wallet number or InstaPay address) }`. One reason per request; one open return per seller order. `changed_mind` deducts the return fee from the refund (`RETURN_AMOUNT_TOO_LOW` when nothing is left); seller-fault reasons cost the customer nothing. The original delivery fee is never refunded.
+3. Track `GET /returns`, `GET /returns/{id}` (timeline, deadlines, estimated then final refund, refund status). Cancel (`POST …/cancel`) before pickup. Rejected → escalate (`POST …/escalate { note }`) within 7 days.
+4. Lifecycle: `requested → approved (seller, silence 48 h, or admin) → picked_up → received → completed` (refund) · `rejected → escalated → approved | refused` · `received → disputed → completed | refused` · `pickup_failed` after 3 failed pickups.
+
+#### C-13 Refund visibility [SPEC 10 §8, 18]
+Card refunds are automatic (Kashier); `paymentStatus` becomes `partially_refunded` / `refunded`. COD return refunds are paid by an admin to the wallet / InstaPay given in the return. The order shows its refunds; the customer gets a "Refund issued" notification.
+
+#### C-14 Support (customer)
+X-4 with order links.
+
+### 6.3 Seller
+
+#### S-7 Product images [VERIFIED, SPEC 06 §8]
+Upload (X-1, `product_image`), then `POST /seller/products/{id}/images { mediaId, variantId?, altText?, position? }` (max 8) → all images in order. Edit `PATCH …/images/{imageId} { variantId?, altText? }`; reorder `PUT …/images/order { imageIds }` (every id once); remove `DELETE …`. The first image is the primary. Approved sellers only. A product blocked by an admin carries `adminBlocked` + reason, and its status can't change (`PRODUCT_BLOCKED`).
+
+#### S-6 (R2) Finance with the holding period [SPEC 12 §8]
+Balance `{ available, pending }`: delivered earnings stay `pending` until the 14-day return window closes with no open return, then become `available`. `available` may be negative after a seller-fault return fee. Holds: `GET /seller/finance/holds` (`blockedByReturn`). Payouts come from `available` only. New ledger entry types (`api-inventory.md` §11.5).
+
+#### S-8 Returns [SPEC 18]
+Queue `GET /seller/returns` (sort by decision deadline), detail (no customer contact data). `requested`: approve, or reject with a reason (48 h; silence = approve). `received`: confirm receipt with a restock choice per item (Idempotency-Key; 48 h, silence = confirmed without restock), or dispute with a reason and optional photos. Seller-fault reasons charge the seller the return fee.
+
+#### S-9 Reviews [VERIFIED, SPEC 17]
+`GET /seller/reviews` (filters product, rating, replied, dates); reply once with `POST /seller/reviews/{id}/reply { body }` (approved sellers; not on hidden reviews).
+
+#### S-10 Coupons [SPEC 19]
+Approved sellers create seller-funded coupons for their own products (scope `seller`, or `category` within their products): code, percent (1–90 %) or fixed amount, maximum discount (percent), minimum eligible subtotal, dates, global and per-customer limits. After the first redemption only the end date, the global limit and the status change (`COUPON_LOCKED`). Commission is on the discounted subtotal. An admin may block a seller coupon (`COUPON_BLOCKED` on re-activation).
+
+#### S-11 Support (seller)
+X-4 with seller-order links and `seller_onboarding`.
+
+#### S-5 (R2) Fulfilment changes
+Seller orders may be cancelled by an admin (`admin_cancelled`); seller order views show the coupon discount, its funding and the returned sums.
+
+### 6.4 Delivery agent
+
+#### A-5 Return pickups [SPEC 11 §8]
+Return shipments (`kind = return`) are auto-assigned by the customer's governorate. The agent collects at `dropoff` (the customer) and hands over at `pickup` (the seller); nothing to collect (`amountToCollect "0.00"`). Actions: picked up (from `assigned | pickup_failed`), failed attempt (`customer_unreachable, customer_refused, wrong_address, customer_rescheduled`; refused ends it, the third failure cancels it), delivered (handed to the seller, no amount). Lists filter `kind[eq]`.
+
+#### A-6 New assignments live
+`shipment.assigned` / `shipment.unassigned` (X-3) and a high-urgency push "New pickup" (X-2).
+
+### 6.5 Admin
+
+| Id | Workflow | Endpoints | Source |
+|---|---|---|---|
+| AD-8 | Dashboard figures (cached up to 60 s, `generatedAt`) | `GET /admin/dashboard` | VERIFIED, SPEC 20 §3.2 |
+| AD-9 | User directory and customers (email prefix, role, status; customer name / phone; a customer's orders through `GET /admin/orders?customerId[eq]=`) | `/admin/users`, `/admin/customers*` | VERIFIED |
+| AD-10 | Cancel a seller order (from `placed`, `accepted`, `ready_for_pickup`) or a whole order (all or nothing) with a reason (3..500, internal) | `/admin/seller-orders/{id}/cancel`, `/admin/orders/{id}/cancel` (Idempotency-Key) | VERIFIED |
+| AD-11 | Block / unblock a product with a reason; category image set / remove | `/admin/products/{id}*`, `/admin/categories/{id}/image` | VERIFIED |
+| AD-12 | Support console: queue, thread with internal notes, assign (the first public reply assigns), resolve, close | `/admin/support/tickets*` | VERIFIED |
+| AD-13 | Review moderation: hide / unhide reviews and replies with a reason | `/admin/reviews*` | VERIFIED |
+| AD-14 | Returns: decide `requested` / `escalated` (approve, reject; final), resolve a dispute (refund / no refund) | `/admin/returns*` | SPEC 18 |
+| AD-15 | Refunds: every status; work queue `pending_manual`; detail with COD payout details; retry a Kashier refund; record a manual refund | `/admin/payments/refunds*` | SPEC 10 §8.4 |
+| AD-16 | Coupons: platform coupons create / edit; seller coupons block / unblock | `/admin/coupons*` | SPEC 19 |
+| AD-17 | Audit log: every admin write; filters actor, action, target, dates | `/admin/audit-log*` | VERIFIED |
+
+### 6.6 Cross-role journeys (Release 2)
+
+```
+return:   customer requests (photos, COD payout) ─► seller approves (≤48 h, silence = approve) | rejects ─► customer escalates (≤7 d) ─► admin decides
+          approved ─► return shipment auto-assigned ─► agent picks up at the customer (≤3 attempts) ─► hands over to the seller
+          ─► seller confirms (restock per item, ≤48 h) | disputes ─► admin refund / no refund
+          completed ─► Kashier refund automatic (retries, else manual) | COD refund paid by an admin and recorded ─► customer notified
+holding:  delivered ─► seller net pending ─(14 days, no open return)─► available ─► payouts
+coupon:   customer previews ─► checkout with couponCode ─► discount per seller order and item ─► whole checkout cancelled before delivery frees the use
+support:  customer / seller opens ─► admins see it live ─► first admin reply assigns ─► resolve ─► 7 days ─► closed
+```

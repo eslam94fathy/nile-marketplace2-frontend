@@ -1,5 +1,6 @@
 'use client';
 
+import { NileLogoShort } from '@nile/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountArea } from '@/features/account';
@@ -16,8 +17,8 @@ export function Header() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-        <Link href={ROUTES.home} className="text-xl font-semibold text-primary">
-          {APP.title}
+        <Link href={ROUTES.home} className="shrink-0 rounded-md">
+          <NileLogoShort label={APP.title} className="h-9 w-auto" />
         </Link>
         <CategoriesMenu />
         <SearchBox className="order-last w-full md:order-none md:w-auto md:flex-1" />

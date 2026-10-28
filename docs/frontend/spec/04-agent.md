@@ -1,6 +1,6 @@
 # Spec 04 — Delivery agent app
 
-Status: **v1.0 APPROVED (2026-10-14).** Approved by the user with every recommendation in §6 (AG-Q-1…AG-Q-6) and every [PROPOSED] item. Changes from now on need explicit approval and a version bump.
+Status: **v1.0 APPROVED (2026-10-14); v1.1 APPROVED (2026-10-23): §7 Release 2, every recommendation and [PROPOSED] item accepted (T-J0).** Approved by the user with every recommendation in §6 (AG-Q-1…AG-Q-6) and every [PROPOSED] item. Changes from now on need explicit approval and a version bump.
 Conventions: `00-conventions.md` v1.0. Backend specs cited as [SPEC nn] = `../nile-marketplace2/docs/spec/<nn>-*.md`; [VERIFIED] = running API / OpenAPI / backend code.
 App: `apps/agent`, dev port 4103. Access roles: public (sign-in, password reset), `delivery_agent`. Screen ids `AG-nn`.
 
@@ -208,3 +208,80 @@ As storefront SF-19 within the agent app.
 | AG-Q-4 | Installable app / offline support | **Not in R1 (Rec)** · installable web app (no offline actions) |
 | AG-Q-5 | Tabs on the active list | **To pick up / To deliver / Returns (Rec)** · one list sorted by status |
 | AG-Q-6 | Desktop use | **Same mobile layout centred (Rec)** · phone only |
+
+---
+
+## 7. Release 2 [v1.1 APPROVED 2026-10-23, T-J0]
+
+Backend inputs at `ecbcd19`: specs 11 §8, 13 §8 (NO-10), 15. Conventions: `00-conventions.md` §12. Plan: `release-2-plan.md` (phase n). Workflows: `workflows.md` §6.4.
+
+### 7.1 Scope changes
+- **Now in scope:** return pickups (reverse shipments from the customer to the seller); live updates of the shipment lists; Web Push for new assignments (`high` urgency [SPEC 13 NO-10]); the notification centre; a web app manifest so the app can be added to the Home Screen (FR2-Q2: needed for push on iPhone).
+- **§1 row changed:** "Offline mode, push notifications, installable app" → offline mode is still out of scope (AG-Q-4 unchanged); push and Home Screen install are in.
+- **Still out of scope:** rejecting assignments, live location, proof of delivery or of pickup.
+
+### 7.2 Route map and navigation additions
+Bottom navigation unchanged (Shipments · History · Finance · Me); the bell sits in the top bar next to the shift switch.
+
+| Route | Screen |
+|---|---|
+| `/notifications` | AG-09 Notifications |
+| `/notifications/settings` | AG-10 Notification settings (linked from Me) |
+
+### 7.3 Changes to existing screens
+
+**AG-04 Active shipments:**
+- Tabs (AG-Q-7):
+
+| Tab | Query | Sort |
+|---|---|---|
+| To pick up | `status[in]=assigned,pickup_failed` (both kinds) | `createdAt` |
+| To deliver | `kind[eq]=delivery`, `status[in]=picked_up,out_for_delivery,delivery_failed` | `createdAt` |
+| To the seller | `status[in]=returning_to_seller` (failed deliveries) and `kind[eq]=return`, `status[eq]=picked_up` (customer returns) — two requests merged by `createdAt` [PROPOSED] | `createdAt` |
+
+- A return shipment's card is marked **"Return pickup"** (text badge) and shows: collect from the customer (area, city, governorate), deliver to the seller (business name, area, city), "Nothing to collect", and "Pickup attempt {n + 1} of 3" when `pickup_failed`.
+- Live: `shipment.assigned` (new card + polite announcement "New pickup assigned."), `shipment.unassigned` (card removed, "A shipment was reassigned."), `shipment.updated` refresh the tabs; the 30 s polling stays only without a socket.
+
+**AG-05 Shipment, `kind = return`** [SPEC 11 §8, DE-26]:
+1. Header: "Return pickup", order number, status.
+2. **Collect from (customer)** card: the `dropoff` party — recipient, phone (tap to call), full address, "Open in maps".
+3. **Deliver to (seller)** card: the `pickup` party — business name, phone, address, "Open in maps".
+4. Payment card: "Nothing to collect." (never an amount).
+5. Attempts: pickup attempts with reasons.
+6. Actions:
+
+| Status | Primary | Secondary |
+|---|---|---|
+| `assigned`, `pickup_failed` | R1 Collected from the customer | R2 Pickup failed |
+| `picked_up` | R3 Handed to the seller | – |
+| `delivered`, `cancelled` | none | – |
+
+- **R1** confirm "Did you collect the items from {recipientName}?" → `POST /agent/shipments/{id}/picked-up` → `200`.
+- **R2** sheet with the reason (Customer unreachable · Customer refused · Wrong address · Customer rescheduled) and an optional note (1..500); consequences stated before submit: `customer_refused` → "The return is closed. No more attempts."; third attempt → "This was the last attempt. The return is closed." → `POST …/failed-attempt { reason, note? }` with Idempotency-Key (as A4).
+- **R3** confirm "Hand the items to {businessName}? Nothing to collect." → `POST …/delivered` with an empty body and Idempotency-Key.
+- Errors as R1 delivery actions (`SHIPMENT_INVALID_STATUS_TRANSITION` → refetch; `SHIPMENT_NOT_FOUND` → "This shipment isn't assigned to you any more.").
+
+**AG-06 History:** + kind filter chips (All · Deliveries · Return pickups) → `kind[eq]`; return rows marked "Return pickup".
+
+**AG-07 Finance:** no change (the agent's fee share of a return is booked when the return completes [SPEC 12 §8.4]; it appears in the fee statement as "Delivery fee share" (R1 label)).
+
+**AG-02 Me:** + "Notifications" (AG-10) and, on iPhone / iPad outside the installed app, the hint "Add to Home Screen to get notifications." (conventions §12.6).
+
+### AG-09 / AG-10 Notifications
+As conventions §12.4–§12.6 with the agent link map. On the agent app the push card is shown on the Shipments screen until dismissed or accepted: "Get notified when a new shipment is assigned to you." (AG-Q-8).
+
+### 7.4 Acceptance across Release 2 (agent)
+1. A return shipment never offers delivery actions and never shows an amount to collect.
+2. The address shown as "Collect from" is the customer for returns and the seller for deliveries.
+3. A new assignment appears without reload when a socket is connected, and within 30 s otherwise.
+
+### 7.5 Copy
+**Shipment kind:** Delivery · Return pickup. **Status** (+): `pickup_failed` Pickup failed — try again. Return shipment `picked_up` reads "Collected — take to the seller"; `delivered` reads "Handed to the seller".
+**Notification category:** Orders · Deliveries · Support · Offers (agents only receive Deliveries in R2).
+
+### 7.6 Questions (Release 2)
+
+| # | Question | Options (recommendation first) |
+|---|---|---|
+| AG-Q-7 | Where return pickups appear | **In the same tabs as deliveries, by what the agent does next: To pick up (both kinds), To deliver (deliveries), To the seller (failed deliveries and collected returns) (Rec)** · a separate "Return pickups" tab |
+| AG-Q-8 | Asking agents to turn on push | **A card on the Shipments screen until dismissed or accepted (Rec: assignments are the agent's main trigger)** · only in settings |

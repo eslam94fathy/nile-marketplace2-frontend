@@ -10,6 +10,7 @@ const SIGN_IN_ROUTES = {
   verifyEmail: '/api/auth/verify-email',
   invite: '/api/auth/invite',
   passwordChange: '/api/auth/password-change',
+  realtimeToken: '/api/auth/realtime-token',
 } as const;
 
 /** POSTs JSON to an auth route; resolves to the parsed body, throws ApiError for a non-2xx answer. */
@@ -84,6 +85,20 @@ export async function changePassword(
     if (!isApiError(error, 'UNAUTHENTICATED') || !(await onUnauthenticated())) throw error;
     await post(SIGN_IN_ROUTES.passwordChange, body);
   }
+}
+
+export interface RealtimeToken {
+  readonly token: string;
+  readonly expiresAt: string;
+}
+
+/**
+ * The access token for one socket handshake (CLAUDE.md §4 exception, design 01 §15.2). Only `@nile/realtime`
+ * calls this, and keeps the value in its connection closure. `401 UNAUTHENTICATED` when the token is about to
+ * expire: refresh through the coordinator, then ask again.
+ */
+export function fetchRealtimeToken(): Promise<RealtimeToken> {
+  return postJson(SIGN_IN_ROUTES.realtimeToken, {});
 }
 
 /** The role of a `WRONG_APP` error (`details[0].value`), so the screen can point to the right site. */

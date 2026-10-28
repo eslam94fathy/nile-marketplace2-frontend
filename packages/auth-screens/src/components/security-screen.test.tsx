@@ -16,6 +16,7 @@ function fakeSessionClient(refreshes = true) {
     signOut: vi.fn(() => Promise.resolve()),
     start: vi.fn(() => () => undefined),
     hasSession: vi.fn(() => true),
+    addSignOutHooks: vi.fn(() => () => undefined),
   } satisfies SessionClient;
 }
 

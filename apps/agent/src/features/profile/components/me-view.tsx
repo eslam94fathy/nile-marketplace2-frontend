@@ -2,6 +2,7 @@
 
 import { isApiError } from '@nile/api';
 import { AGENT_STATUS_LABELS } from '@nile/domain';
+import { usePushSubscription } from '@nile/notifications';
 import { governoratesQuery } from '@nile/query';
 import { AGENT_STATUS_TONES, ErrorState, PageHeader, Skeleton, StatusBadge } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -13,9 +14,13 @@ import { ROUTES } from '@/lib/routes';
 import { profileQuery } from '../api';
 import { PROFILE_COPY as COPY } from '../copy';
 
-/** AG-02 Me: the agent's details (read-only), Security and Sign out. Shown even while inactive. */
+/**
+ * AG-02 Me: the agent's details (read-only), Notifications, Security and Sign out. Shown even while inactive.
+ * On iPhone / iPad outside the installed app it says push needs the Home Screen (spec 04 §7.2).
+ */
 export function MeView() {
   const profile = useQuery(profileQuery());
+  const push = usePushSubscription();
   const governorates = useQuery(governoratesQuery(browserApi));
   const governorateName = (id: string) => governorates.data?.find((item) => item.id === id)?.name ?? '—';
 
@@ -54,7 +59,16 @@ export function MeView() {
     <div className="space-y-6">
       <PageHeader title={COPY.meTitle} />
       {body}
+      {push.state === 'needs-install' ? (
+        <p className="text-sm text-muted-foreground">{COPY.installHint}</p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-4">
+        <Link
+          href={ROUTES.notificationSettings}
+          className="inline-flex min-h-12 items-center font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {COPY.notifications}
+        </Link>
         <Link
           href={ROUTES.security}
           className="inline-flex min-h-12 items-center font-medium text-primary underline-offset-4 hover:underline"

@@ -45,6 +45,7 @@ describe('server render (before hydration)', () => {
           signOut: () => Promise.resolve(),
           start: () => () => undefined,
           hasSession: () => true,
+          addSignOutHooks: () => () => undefined,
         }}
       />,
     ],

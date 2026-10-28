@@ -5,3 +5,4 @@ export { OrderDetail } from './components/order-detail';
 export { OrdersList } from './components/orders-list';
 export { openItemCount } from './lib/order-math';
 export { ORDER_TAB_PARAM } from './lib/tabs';
+export { ORDERS_INVALIDATION } from './realtime';

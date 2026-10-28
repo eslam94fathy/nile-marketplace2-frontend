@@ -1,6 +1,6 @@
 # API Inventory — Nile Marketplace (frontend view)
 
-Status: **DRAFT v0.2 (2026-10-14), for review.** v0.2: recommendations for the backend-side questions (§10.4); OQ-3 resolved without a backend change. Task 001 (API Discovery). No frontend code exists yet.
+Status: **DRAFT v0.2 (2026-10-14), for review.** v0.2: recommendations for the backend-side questions (§10.4); OQ-3 resolved without a backend change. **§11 (2026-10-23, T-J0): Release 2 additions against backend `ecbcd19`.**
 Backend: `nile-marketplace2` @ `4ad89a6` (`main`, clean working tree), read locally at `C:\Eslam\nile-marketplace2`, remote `github.com/eslam94fathy/nile-marketplace2`.
 
 ## 0. How this was produced, and how to read it
@@ -506,3 +506,321 @@ You delegated the open choices to my recommendations. Items that need a backend 
 | OQ-12 | Handle `AGENT_INACTIVE` by code whatever the status (403 or 409); confirm the intended status in the backend spec when convenient | Doc fix only | – |
 | OQ-14 | Frontend dev ports outside every excluded range on this machine (implementation-plan T-B1). The backend's own port 3000 is blocked here; running it with a local compose override (e.g. host port 3100) is your call in the backend repo. Excluded ranges are assigned by Windows and can change after a reboot (`netsh interface ipv4 show excludedportrange protocol=tcp`) | No (local override file only) | Local development |
 | OQ-15 | Yes: `expectedTotal = cart.itemsTotal + deliveryFee` of the chosen address's governorate, decimal arithmetic, both values fetched fresh on the review step; that is the total shown to the shopper (spec 09 S-8) | No | – |
+
+---
+
+## 11. Release 2 (backend `main` `ecbcd19`, 2026-10-23) [T-J0]
+
+Status of this section: **v1.0 APPROVED (2026-10-23) with T-J0.** Plan: `release-2-plan.md`.
+
+### 11.0 Sources and how far each is verified
+
+1. **OpenAPI served by the local backend container** (built at R2-P5, before returns and coupons): 187 operations, fetched 2026-10-23 from `GET /api/v1/docs/openapi.json`. The 64 operations it adds to the pinned snapshot are listed in §11.1 as generated from that document **[VERIFIED]**.
+2. **Backend source at `ecbcd19`** (`src/app/{returns,promotions,payments,finance,cart}/constants.ts` and `routes.ts`) for the 30 operations of R2-P6/R2-P7 that the container doesn't serve yet: §11.2 **[VERIFIED paths and guards; bodies and DTOs SPEC]**.
+3. **Backend specs** 00 §10, 01 §9, 03…13 Release 2 sections, 14…20, `docs/realtime.md`.
+
+T-J1 rebuilds the backend at `ecbcd19`, pulls the snapshot and re-checks every row of this section against it (OQ-19). Expected total: **217** operations.
+
+### 11.1 New operations served by the R2-P5 container [VERIFIED, generated]
+
+"Documented errors" are parsed from the operation summaries as in §6. Rows showing `–` have their errors only in the backend spec (listed in §11.4). Role is read from the security block and the path prefix.
+
+#### admin: audit
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/audit-log` | admin | – | `limit`, `cursor`, `sort`, `actorUserId[eq]`, `action[eq]`, `action[in]`, `targetType[eq]`, `targetId[eq]`, `createdAt[gte]`, `createdAt[lte]` | – | 200 `AuditEntryDto[]` | INVALID_QUERY |
+| GET | `/admin/audit-log/{entryId}` | admin | – | – | – | 200 `AuditEntryDto` | AUDIT_ENTRY_NOT_FOUND |
+
+#### admin: catalog
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| PUT | `/admin/categories/{categoryId}/image` | admin | `SetCategoryImageDto` | – | – | 200 `AdminCategoryNodeDto` | CATEGORY_NOT_FOUND, MEDIA_NOT_ATTACHABLE |
+| DELETE | `/admin/categories/{categoryId}/image` | admin | – | – | – | 204 | CATEGORY_NOT_FOUND |
+| GET | `/admin/products/{productId}` | admin | – | – | – | 200 `AdminProductDetailDto` | PRODUCT_NOT_FOUND |
+| POST | `/admin/products/{productId}/block` | admin | `BlockProductDto` | – | – | 200 `AdminProductDetailDto` | PRODUCT_NOT_FOUND, PRODUCT_BLOCK_INVALID_STATUS |
+| POST | `/admin/products/{productId}/unblock` | admin | – | – | – | 200 `AdminProductDetailDto` | PRODUCT_NOT_FOUND, PRODUCT_BLOCK_INVALID_STATUS |
+
+#### admin: customers
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/customers` | admin | – | `limit`, `cursor`, `sort`, `name[like]`, `phone[eq]` | – | 200 `AdminCustomerDto[]` | – |
+| GET | `/admin/customers/{customerId}` | admin | – | – | – | 200 `AdminCustomerDetailDto` | CUSTOMER_NOT_FOUND |
+
+#### admin: dashboard
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/dashboard` | admin | – | – | – | 200 `DashboardDto` | – |
+
+#### admin: orders
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| POST | `/admin/orders/{orderId}/cancel` | admin | `AdminCancelDto` | – | required | 200 `AdminOrderDetailDto` | ORDER_NOT_FOUND, ORDER_NOT_CANCELLABLE |
+| POST | `/admin/seller-orders/{sellerOrderId}/cancel` | admin | `AdminCancelDto` | – | required | 200 `AdminOrderDetailDto` | SELLER_ORDER_NOT_FOUND, SELLER_ORDER_NOT_CANCELLABLE |
+
+#### admin: reviews
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/reviews` | admin | – | `limit`, `cursor`, `status[eq]`, `productId[eq]`, `sellerId[eq]`, `customerId[eq]`, `rating[lte]` | – | 200 `AdminReviewDto[]` | – |
+| GET | `/admin/reviews/{reviewId}` | admin | – | – | – | 200 `AdminReviewDto` | REVIEW_NOT_FOUND |
+| POST | `/admin/reviews/{reviewId}/hide` | admin | `HideDto` | – | – | 200 `AdminReviewDto` | REVIEW_NOT_FOUND, REVIEW_INVALID_STATUS_TRANSITION |
+| POST | `/admin/reviews/{reviewId}/reply/hide` | admin | `HideDto` | – | – | 200 `AdminReviewDto` | REVIEW_NOT_FOUND, REVIEW_REPLY_NOT_FOUND, REVIEW_INVALID_STATUS_TRANSITION |
+| POST | `/admin/reviews/{reviewId}/reply/unhide` | admin | – | – | – | 200 `AdminReviewDto` | REVIEW_NOT_FOUND, REVIEW_REPLY_NOT_FOUND, REVIEW_INVALID_STATUS_TRANSITION |
+| POST | `/admin/reviews/{reviewId}/unhide` | admin | – | – | – | 200 `AdminReviewDto` | REVIEW_NOT_FOUND, REVIEW_INVALID_STATUS_TRANSITION |
+
+#### admin: support
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/support/tickets` | admin | – | `limit`, `cursor`, `sort`, `status[eq]`, `status[in]`, `category[eq]`, `category[in]`, `openerRole[eq]`, `assignedAdminId[eq]`, `assigned[eq]`, `slaBreached[eq]`, `createdAt[gte]`, `createdAt[lte]` | – | 200 `AdminTicketSummaryDto[]` | INVALID_QUERY |
+| GET | `/admin/support/tickets/{ticketId}` | admin | – | – | – | 200 `AdminTicketSummaryDto` | SUPPORT_TICKET_NOT_FOUND |
+| POST | `/admin/support/tickets/{ticketId}/assign` | admin | `AssignTicketDto` | – | – | 200 `AdminTicketSummaryDto` | SUPPORT_TICKET_NOT_FOUND, SUPPORT_ASSIGNEE_INVALID, SUPPORT_TICKET_CLOSED |
+| POST | `/admin/support/tickets/{ticketId}/close` | admin | – | – | – | 200 `AdminTicketSummaryDto` | SUPPORT_TICKET_NOT_FOUND, SUPPORT_TICKET_INVALID_STATUS_TRANSITION |
+| GET | `/admin/support/tickets/{ticketId}/messages` | admin | – | `limit`, `cursor`, `sort` | – | 200 `TicketMessageDto[]` | SUPPORT_TICKET_NOT_FOUND |
+| POST | `/admin/support/tickets/{ticketId}/messages` | admin | `AdminPostMessageDto` | – | required | 201 `TicketMessageDto` | SUPPORT_TICKET_NOT_FOUND, SUPPORT_TICKET_CLOSED, MEDIA_NOT_ATTACHABLE |
+| POST | `/admin/support/tickets/{ticketId}/read` | admin | – | – | – | 204 | SUPPORT_TICKET_NOT_FOUND |
+| POST | `/admin/support/tickets/{ticketId}/resolve` | admin | – | – | – | 200 `AdminTicketSummaryDto` | SUPPORT_TICKET_NOT_FOUND, SUPPORT_TICKET_INVALID_STATUS_TRANSITION |
+
+#### admin: users
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/users` | admin | – | `limit`, `cursor`, `sort`, `role[eq]`, `status[eq]`, `status[in]`, `email[like]`, `createdAt[gte]`, `createdAt[lte]` | – | 200 `AdminUserListItemDto[]` | – |
+
+#### catalog: reviews
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/products/{productId}/reviews` | public | – | `limit`, `cursor`, `sort`, `rating[eq]`, `rating[in]`, `hasImages[eq]` | – | 200 `ReviewDto[]` | PRODUCT_NOT_FOUND |
+| GET | `/products/{productId}/reviews/summary` | public | – | – | – | 200 `RatingSummaryDto` | PRODUCT_NOT_FOUND |
+
+#### customer: wishlist
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/me/wishlist` | customer | – | `limit`, `cursor` | – | 200 `WishlistItemDto[]` | – |
+| PUT | `/me/wishlist/{productId}` | customer | – | – | – | 204 | PRODUCT_NOT_FOUND, WISHLIST_LIMIT_REACHED |
+| DELETE | `/me/wishlist/{productId}` | customer | – | – | – | 204 | – |
+| GET | `/me/wishlist/product-ids` | customer | – | – | – | 200 `WishlistProductIdsDto` | – |
+
+#### media
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/media/{mediaId}` | any role | – | – | – | 200 `MediaDto` | MEDIA_NOT_FOUND |
+| POST | `/media/uploads` | any role | `CreateUploadDto` | – | – | 201 `UploadTicketDto` | MEDIA_PURPOSE_NOT_ALLOWED, MEDIA_OPEN_UPLOAD_LIMIT_REACHED |
+| POST | `/media/uploads/{mediaId}/complete` | any role | – | – | – | 200 `MediaDto` | MEDIA_NOT_FOUND, MEDIA_UPLOAD_MISSING, MEDIA_UPLOAD_INVALID, MEDIA_INVALID_STATUS, SERVICE_UNAVAILABLE |
+
+#### notifications
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/me/notification-preferences` | any role | – | – | – | 200 `NotificationPreferenceDto[]` | – |
+| PUT | `/me/notification-preferences` | any role | `UpdatePreferencesDto` | – | – | 200 `NotificationPreferenceDto[]` | – |
+| GET | `/me/notifications` | any role | – | `limit`, `cursor`, `sort`, `read[eq]`, `category[eq]`, `category[in]` | – | 200 `UserNotificationDto[]` | – |
+| POST | `/me/notifications/{notificationId}/read` | any role | – | – | – | 204 | NOTIFICATION_NOT_FOUND |
+| POST | `/me/notifications/read-all` | any role | – | – | – | 204 | – |
+| GET | `/me/notifications/unread-count` | any role | – | – | – | 200 `UnreadCountDto` | – |
+| POST | `/me/push-subscriptions` | any role | `RegisterPushSubscriptionDto` | – | – | 201 | PUSH_ENDPOINT_NOT_ALLOWED |
+| POST | `/me/push-subscriptions/unregister` | any role | `UnregisterPushSubscriptionDto` | – | – | 204 | – |
+| GET | `/push/config` | any role | – | – | – | 200 `PushConfigDto` | – |
+
+#### reviews
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/me/reviewable-items` | customer | – | `limit`, `cursor`, `sort` | – | 200 `ReviewableItemDto[]` | – |
+| GET | `/me/reviews` | customer | – | `limit`, `cursor`, `sort` | – | 200 `MyReviewDto[]` | – |
+| GET | `/me/reviews/{reviewId}` | customer | – | – | – | 200 `MyReviewDto` | REVIEW_NOT_FOUND |
+| PATCH | `/me/reviews/{reviewId}` | customer | `EditReviewDto` | – | – | 200 `MyReviewDto` | REVIEW_NOT_FOUND, REVIEW_EDIT_WINDOW_CLOSED, MEDIA_NOT_ATTACHABLE |
+| DELETE | `/me/reviews/{reviewId}` | customer | – | – | – | 204 | REVIEW_NOT_FOUND |
+| POST | `/reviews` | customer | `CreateReviewDto` | – | – | 201 `MyReviewDto` | REVIEW_NOT_ALLOWED, REVIEW_WINDOW_CLOSED, REVIEW_ALREADY_EXISTS, MEDIA_NOT_ATTACHABLE |
+
+#### seller: catalog
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| POST | `/seller/products/{productId}/images` | seller | `AddProductImageDto` | – | – | 201 `ProductImageDto[]` | PRODUCT_NOT_FOUND, SELLER_NOT_APPROVED, PRODUCT_IMAGE_LIMIT_REACHED, VARIANT_NOT_FOUND, MEDIA_NOT_ATTACHABLE |
+| PATCH | `/seller/products/{productId}/images/{imageId}` | seller | `UpdateProductImageDto` | – | – | 200 `ProductImageDto` | PRODUCT_IMAGE_NOT_FOUND, SELLER_NOT_APPROVED, VARIANT_NOT_FOUND |
+| DELETE | `/seller/products/{productId}/images/{imageId}` | seller | – | – | – | 204 | PRODUCT_IMAGE_NOT_FOUND, SELLER_NOT_APPROVED |
+| PUT | `/seller/products/{productId}/images/order` | seller | `ReorderProductImagesDto` | – | – | 200 `ProductImageDto[]` | PRODUCT_NOT_FOUND, SELLER_NOT_APPROVED, PRODUCT_IMAGE_ORDER_INVALID |
+
+#### seller: reviews
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/seller/reviews` | seller | – | `limit`, `cursor`, `sort`, `productId[eq]`, `rating[in]`, `replied[eq]`, `createdAt[gte]` | – | 200 `SellerReviewDto[]` | – |
+| POST | `/seller/reviews/{reviewId}/reply` | seller | `ReplyDto` | – | – | 201 `SellerReviewDto` | SELLER_NOT_APPROVED, REVIEW_NOT_FOUND, REVIEW_HIDDEN, REVIEW_ALREADY_REPLIED |
+
+#### sellers
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/sellers/{sellerId}` | public | – | – | – | 200 `PublicSellerDto` | SELLER_NOT_FOUND |
+
+#### support
+
+| Method | Path | Role | Body | Query | Idem | Success | Documented errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/support/tickets` | customer, seller | – | `limit`, `cursor`, `sort`, `status[eq]`, `status[in]`, `category[eq]`, `category[in]`, `createdAt[gte]`, `createdAt[lte]` | – | 200 `TicketSummaryDto[]` | – |
+| POST | `/support/tickets` | customer, seller | `CustomerOpenTicketDto` | – | required | 201 `TicketSummaryDto` | SUPPORT_CATEGORY_NOT_ALLOWED, ORDER_NOT_FOUND, SELLER_ORDER_NOT_FOUND, SUPPORT_OPEN_TICKET_LIMIT_REACHED, MEDIA_NOT_ATTACHABLE |
+| GET | `/support/tickets/{ticketId}` | customer, seller | – | – | – | 200 `TicketSummaryDto` | SUPPORT_TICKET_NOT_FOUND |
+| GET | `/support/tickets/{ticketId}/messages` | customer, seller | – | `limit`, `cursor`, `sort` | – | 200 `TicketMessageDto[]` | SUPPORT_TICKET_NOT_FOUND |
+| POST | `/support/tickets/{ticketId}/messages` | customer, seller | `PostMessageDto` | – | required | 201 `TicketMessageDto` | SUPPORT_TICKET_NOT_FOUND, SUPPORT_TICKET_CLOSED, MEDIA_NOT_ATTACHABLE |
+| POST | `/support/tickets/{ticketId}/read` | customer, seller | – | – | – | 204 | SUPPORT_TICKET_NOT_FOUND |
+
+### 11.2 New operations on `main` not yet served locally (R2-P6 returns and refunds, R2-P7 coupons) [VERIFIED paths, SPEC bodies]
+
+#### returns (spec 18 §4)
+
+| Method | Path | Role | Body | Query | Idem | Success | Errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/orders/{orderId}/seller-orders/{sellerOrderId}/returnable-items` | customer | – | – | – | 200 `{ windowEndsAt, items: { orderItemId, returnable, paidUnitAmount }[], returnFee }` | ORDER_NOT_FOUND, SELLER_ORDER_NOT_FOUND, RETURN_NOT_ALLOWED, RETURN_WINDOW_CLOSED, RETURN_PICKUP_UNAVAILABLE |
+| POST | `/returns` | customer | `sellerOrderId`, `reason`, `description?`, `items[{ orderItemId, quantity }]`, `photoMediaIds?`, `refundPayout?` | – | required | 201 `ReturnDto` | + RETURN_QUANTITY_INVALID, RETURN_ALREADY_OPEN, RETURN_AMOUNT_TOO_LOW, RETURN_PHOTOS_REQUIRED, MEDIA_NOT_ATTACHABLE |
+| GET | `/returns` | customer | – | `status[eq,in]`, `createdAt[gte,lte]`, sort | – | 200 `ReturnDto[]` | – |
+| GET | `/returns/{returnId}` | customer | – | – | – | 200 `ReturnDto` | RETURN_NOT_FOUND |
+| POST | `/returns/{returnId}/cancel` | customer | – | – | – | 200 `ReturnDto` | RETURN_NOT_FOUND, RETURN_INVALID_STATUS_TRANSITION |
+| POST | `/returns/{returnId}/escalate` | customer | `note` (3..500) | – | – | 200 `ReturnDto` | + RETURN_ESCALATION_WINDOW_CLOSED |
+| GET | `/seller/returns` | seller | – | `status[eq,in]`, sort `createdAt`, `sellerDecisionDeadlineAt` | – | 200 `SellerReturnDto[]` | – |
+| GET | `/seller/returns/{returnId}` | seller | – | – | – | 200 `SellerReturnDto` | RETURN_NOT_FOUND |
+| POST | `/seller/returns/{returnId}/approve` | seller | – | – | – | 200 | RETURN_NOT_FOUND, RETURN_INVALID_STATUS_TRANSITION |
+| POST | `/seller/returns/{returnId}/reject` | seller | `reason` (3..500) | – | – | 200 | same |
+| POST | `/seller/returns/{returnId}/confirm-receipt` | seller | `items[{ returnItemId, restock }]` (every item once) | – | required | 200 | + RETURN_ITEMS_MISMATCH |
+| POST | `/seller/returns/{returnId}/dispute` | seller | `reason` (3..500), `photoMediaIds?` (≤ 4) | – | – | 200 | + RETURN_INSPECTION_WINDOW_CLOSED, MEDIA_NOT_ATTACHABLE |
+| GET | `/admin/returns` | admin | – | `status`, `reason` (`eq,in`), `sellerId`, `customerId`, sort `createdAt` | – | 200 `AdminReturnDto[]` | – |
+| GET | `/admin/returns/{returnId}` | admin | – | – | – | 200 `AdminReturnDto` | RETURN_NOT_FOUND |
+| POST | `/admin/returns/{returnId}/decide` | admin | `decision` (`approve`, `reject`), `note` (3..500) | – | – | 200 | RETURN_NOT_FOUND, RETURN_INVALID_STATUS_TRANSITION |
+| POST | `/admin/returns/{returnId}/resolve-dispute` | admin | `decision` (`refund`, `no_refund`), `note` (3..500) | – | required | 200 | same |
+
+#### coupons (spec 19 §4) and coupon preview (spec 08 §8)
+
+| Method | Path | Role | Body | Query | Idem | Success | Errors |
+|---|---|---|---|---|---|---|---|
+| POST | `/cart/coupon-preview` | customer | `code` (4..32) | – | – | 200 `CouponQuoteDto` | COUPON_NOT_FOUND, COUPON_INACTIVE, COUPON_NOT_ACTIVE_YET, COUPON_EXPIRED, COUPON_LIMIT_REACHED, COUPON_CUSTOMER_LIMIT_REACHED, COUPON_NOT_APPLICABLE, COUPON_MIN_SUBTOTAL_NOT_MET, CART_EMPTY, RATE_LIMITED (`coupon-preview`, 20/min) |
+| GET | `/seller/coupons` | seller | – | `status[eq]`, sort `createdAt` | – | 200 `CouponDto[]` | – |
+| POST | `/seller/coupons` | seller | `CreateCouponDto` (scope `seller` / `category`) | – | – | 201 `CouponDto` | SELLER_NOT_APPROVED, COUPON_INVALID, COUPON_CODE_TAKEN, CATEGORY_NOT_FOUND |
+| GET | `/seller/coupons/{couponId}` | seller | – | – | – | 200 `CouponDto` | COUPON_NOT_FOUND |
+| PATCH | `/seller/coupons/{couponId}` | seller | create fields, all optional, `code` excluded | – | – | 200 `CouponDto` | COUPON_NOT_FOUND, COUPON_LOCKED, COUPON_INVALID, COUPON_BLOCKED, SELLER_NOT_APPROVED |
+| GET | `/admin/coupons` | admin | – | `funding`, `status`, `sellerId`, `code` (`eq`), sort `createdAt` | – | 200 `CouponDto[]` | – |
+| POST | `/admin/coupons` | admin | `CreateCouponDto` (platform-funded) | – | – | 201 `CouponDto` | COUPON_INVALID, COUPON_CODE_TAKEN, CATEGORY_NOT_FOUND, SELLER_NOT_FOUND |
+| GET | `/admin/coupons/{couponId}` | admin | – | – | – | 200 `CouponDto` + last 50 redemptions | COUPON_NOT_FOUND |
+| PATCH | `/admin/coupons/{couponId}` | admin | as seller, platform coupons only | – | – | 200 `CouponDto` | + COUPON_SELLER_FUNDED |
+| POST | `/admin/coupons/{couponId}/block` | admin | `reason` (3..500) | – | – | 200 `CouponDto` | COUPON_NOT_FOUND, COUPON_BLOCK_INVALID_STATUS |
+| POST | `/admin/coupons/{couponId}/unblock` | admin | – | – | – | 200 `CouponDto` | same |
+
+#### refunds and finance (spec 10 §8.4, spec 12 §8.6)
+
+| Method | Path | Role | Body | Query | Idem | Success | Errors |
+|---|---|---|---|---|---|---|---|
+| GET | `/admin/payments/refunds/{refundId}` | admin | – | – | – | 200 refund with decrypted COD payout details (`{ method, walletNumber \| instapayAddress }`) | REFUND_NOT_FOUND |
+| POST | `/admin/payments/refunds/{refundId}/retry` | admin | – | – | – | 200 | REFUND_NOT_RETRYABLE |
+| GET | `/seller/finance/holds` | seller | – | cursor, limit | – | 200 `{ sellerOrderId, orderNumber, heldAmount, releaseAfter, blockedByReturn }[]` | – |
+
+### 11.3 Changed operations (existing screens are affected)
+
+| Operation / DTO | Change | Source | Affects |
+|---|---|---|---|
+| `GET /products`, `ProductListItemDto` | + `primaryImage`, `rating { avg, count }`; filter `rating[gte]`, sort `rating` | VERIFIED (DTO), SPEC 06 §9.3 (filter) | SF-01…SF-04 |
+| `GET /products/{idOrSlug}`, `ProductDetailDto` | + `images: ProductImageDto[]`, `rating`, `seller.ratingAvg/ratingCount`, `variants[].imageId` | VERIFIED | SF-05 |
+| `GET /categories`, `CategoryNodeDto`, `AdminCategoryNodeDto` | + `image` (with `altText`) | VERIFIED | SF-01/02, AD-07 |
+| `GET /cart`, `CartItemDto` | + `image` | VERIFIED | SF-06, SF-07 |
+| `OrderItemDto` | + `image`; `discountAmount`, `paidTotal`, `returnedQuantity` | VERIFIED (`image`), SPEC 09 §8.7/§8.8 | SF-08, SF-18, SE-15, AD-15 |
+| `CustomerSellerOrderDto` | + `cancelReason` (includes `admin_cancelled`); + `discountAmount`, `discountFunding`, `returnedPaid` | VERIFIED (`cancelReason`), SPEC | SF-18 |
+| `OrderDetailDto` | + `coupon { code, discountTotal } \| null`; refunds list (`{ amount, status, reason, at }[]`) | SPEC 09 §8.8, 10 §8.5 | SF-08, SF-18 |
+| `POST /checkout` | + `couponCode?` (4..32); `expectedTotal` = items total − coupon discount + delivery fee; coupon `422` codes | SPEC 09 §8.8 | SF-07 (OQ-15 formula changes) |
+| `SellerOrderDto` (seller, admin) | + `discountAmount`, `discountFunding`, `returnedSubtotal`, `returnedCommission`, `returnedSellerNet` | SPEC 09 §8.7/§8.8 | SE-14/15, AD-14/15 |
+| `SellerProductDto`, `SellerProductDetailDto` | + `primaryImage`, `images`, `adminBlocked`, `adminBlockReason`; status change on a blocked product → `409 PRODUCT_BLOCKED` | VERIFIED | SE-08…SE-10 |
+| `SellerProfileDto`, `AdminSeller*Dto` | + `ratingAvg`, `ratingCount` | VERIFIED | SE-07, AD-04/05 |
+| `GET /seller/finance/balance` | `{ balance, updatedAt }` → `{ available, pending, updatedAt }`, `available` may be negative | SPEC 12 §8.6 | SE-06, SE-16 (**breaking**, plan B-2) |
+| `PaymentStatus` | `partially_refunded_manually`, `refunded_manually` → `partially_refunded`, `refunded` | SPEC 10 PA-23 | SF-18, AD-15/17 (**breaking**, B-1) |
+| `GET /admin/payments/refunds` | every status listed; new `RefundStatus` values; reason `return`; method | SPEC 10 §8.4 | AD-16 queue (B-3) |
+| `AgentShipmentDto`, `AdminShipmentDto` | + `kind`, `returnId`; filter `kind[eq]`; status `pickup_failed`; returns collect `"0.00"` | SPEC 11 §8.3, DE-26 | AG-04/05, AD-12/13 (B-4) |
+| `POST /agent/shipments/{id}/picked-up`, `/failed-attempt`, `/delivered` | also valid for return shipments (pickup at the customer, hand-over to the seller, no amount) | SPEC 11 UC-DE-9 | AG-04/05 |
+| `DashboardDto` | + `finance.sellerPending`, `finance.customerRefundPayable`, `delivery.returnsInProgress`, `returns.byStatus` | SPEC 20 v1.5 (the R2-P5 container lacks them) | AD-02 |
+| Finance enums | account types `seller_pending`, `customer_refund_payable`, `platform_promotions`; entry and reference types (§11.5) | SPEC 12 §8.1 | SE-16, AD-18…AD-22 (B-6) |
+| Token endpoints | header `X-Nile-Client: web` switches the refresh token to a cookie | SPEC 03 §8 | none: the BFF strips the header (plan B-9) |
+
+### 11.4 New error codes (to add to §7 and `error-codes.ts` in T-J1)
+
+| Area | Code | HTTP |
+|---|---|---|
+| media | `MEDIA_NOT_FOUND` 404 · `MEDIA_PURPOSE_NOT_ALLOWED` 403 · `MEDIA_OPEN_UPLOAD_LIMIT_REACHED` 422 · `MEDIA_UPLOAD_MISSING` 409 · `MEDIA_UPLOAD_INVALID` 422 · `MEDIA_INVALID_STATUS` 409 · `MEDIA_NOT_ATTACHABLE` 422 (details per id: `not_found`, `not_ready`, `wrong_purpose`, `already_claimed`, `duplicate`) | |
+| catalog | `PRODUCT_IMAGE_NOT_FOUND` 404 · `PRODUCT_IMAGE_LIMIT_REACHED` 422 · `PRODUCT_IMAGE_ORDER_INVALID` 422 · `PRODUCT_BLOCKED` 409 · `PRODUCT_BLOCK_INVALID_STATUS` 409 | |
+| notifications | `NOTIFICATION_NOT_FOUND` 404 · `PUSH_ENDPOINT_NOT_ALLOWED` 422 | |
+| support | `SUPPORT_TICKET_NOT_FOUND` 404 · `SUPPORT_CATEGORY_NOT_ALLOWED` 422 · `SUPPORT_OPEN_TICKET_LIMIT_REACHED` 422 · `SUPPORT_TICKET_CLOSED` 409 · `SUPPORT_ASSIGNEE_INVALID` 422 · `SUPPORT_TICKET_INVALID_STATUS_TRANSITION` 409 | |
+| reviews | `REVIEW_NOT_ALLOWED` 422 · `REVIEW_WINDOW_CLOSED` 422 · `REVIEW_ALREADY_EXISTS` 409 · `REVIEW_NOT_FOUND` 404 · `REVIEW_EDIT_WINDOW_CLOSED` 422 · `REVIEW_HIDDEN` 409 · `REVIEW_ALREADY_REPLIED` 409 · `REVIEW_REPLY_NOT_FOUND` 404 · `REVIEW_INVALID_STATUS_TRANSITION` 409 | |
+| customers | `WISHLIST_LIMIT_REACHED` 422 · `CUSTOMER_NOT_FOUND` 404 | |
+| sellers | `SELLER_NOT_FOUND` 404 (public seller page) | |
+| ordering | `ORDER_NOT_CANCELLABLE` 409 (`details`: blocking seller-order ids) · `RETURN_QUANTITY_INVALID` 422 · `KASHIER_TOTAL_ZERO` 422 (a card checkout whose total is 0.00 after a coupon; COD works at zero, backend OR-32, PR-21) [found in T-J1] | |
+| returns | `RETURN_NOT_FOUND` 404 · `RETURN_NOT_ALLOWED` 422 · `RETURN_WINDOW_CLOSED` 422 · `RETURN_PICKUP_UNAVAILABLE` 422 · `RETURN_AMOUNT_TOO_LOW` 422 · `RETURN_ALREADY_OPEN` 409 · `RETURN_INVALID_STATUS_TRANSITION` 409 · `RETURN_ESCALATION_WINDOW_CLOSED` 409 · `RETURN_INSPECTION_WINDOW_CLOSED` 409 · `RETURN_ITEMS_MISMATCH` 422 · `RETURN_PHOTOS_REQUIRED` 422 | |
+| payments | `REFUND_NOT_FOUND` 404 · `REFUND_NOT_RETRYABLE` 409 | |
+| promotions | `COUPON_NOT_FOUND` 422 (checkout / preview) or 404 (management) · `COUPON_INACTIVE` · `COUPON_NOT_ACTIVE_YET` · `COUPON_EXPIRED` · `COUPON_LIMIT_REACHED` · `COUPON_CUSTOMER_LIMIT_REACHED` · `COUPON_NOT_APPLICABLE` · `COUPON_MIN_SUBTOTAL_NOT_MET` (details: missing amount) · `COUPON_INVALID` (all 422) · `COUPON_CODE_TAKEN` · `COUPON_LOCKED` · `COUPON_BLOCKED` · `COUPON_BLOCK_INVALID_STATUS` · `COUPON_SELLER_FUNDED` (all 409) | |
+| audit | `AUDIT_ENTRY_NOT_FOUND` 404 | |
+
+T-J1 (2026-10-23): `packages/api/src/error-codes.ts` holds all 171 backend codes at `ecbcd19`, extracted from `src/lib/error` and `src/app/*/errors.ts` (62 new).
+| realtime (socket) | `ORIGIN_NOT_ALLOWED` is also in the backend error catalogue (T-J1); connect: `UNAUTHENTICATED`, `FORBIDDEN`, `RATE_LIMITED`, `ORIGIN_NOT_ALLOWED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`; ack: `SUPPORT_TICKET_NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `INTERNAL_ERROR`; disconnect reasons `token_expired`, `server_shutting_down`, `account_suspended` (`session.ended`) | |
+
+### 11.5 New enumerations
+
+| Enum | Values | Source |
+|---|---|---|
+| `MediaPurpose` | `product_image, category_image, support_attachment, review_image, return_photo` | VERIFIED |
+| `MediaStatus` | `pending, processing, ready, failed` | VERIFIED |
+| `MediaFailureReason` | `decode_failed, unsupported_type, dimensions_out_of_range` | VERIFIED |
+| `NotificationCategory` | `orders, shipments, support, promotions` | VERIFIED |
+| `NotificationType` | one per row of spec 13 §8.2, §8.8, §8.9, NO-35 (`order_placed` … `coupon_blocked`) | VERIFIED (T-J1 lists them) |
+| `TicketCategory` | `order, payment, delivery, return, account, seller_onboarding, other` (`seller_onboarding` sellers only) | VERIFIED |
+| `TicketStatus` | `open, awaiting_admin, awaiting_user, resolved, closed` | VERIFIED |
+| `TicketOpenerRole` / `MessageKind` | `customer, seller` / `message, internal_note, system` | VERIFIED |
+| `ReviewStatus` | `published, hidden` | VERIFIED |
+| `ReturnReason` | `damaged, wrong_item, not_as_described, changed_mind` (first three seller-fault) | SPEC 18 |
+| `ReturnStatus` | open `requested, rejected, escalated, approved, picked_up, received, disputed`; terminal `completed, refused, cancelled, pickup_failed` | SPEC 18 |
+| `ReturnRefusalReason` / `ReturnFeePayer` / `RefundPayoutMethod` | `seller_rejected, admin_rejected, dispute_upheld` / `seller, customer` / `mobile_wallet, instapay` | SPEC 18 |
+| `ReturnDto.refund.status` | `pending, processing, succeeded, manual` | SPEC 18 §4 |
+| `RefundStatus` | `pending_auto, processing, succeeded, pending_manual, recorded`; `RefundReason` + `return`; method `kashier_auto, manual` | SPEC 10 §8.1 |
+| `PaymentStatus` | `partially_refunded`, `refunded` replace the `_manually` values | SPEC 10 PA-23 |
+| `ShipmentKind` / `ShipmentStatus` | `delivery, return` / + `pickup_failed` | SPEC 11 §8.1 |
+| `SellerOrderCancelReason` | + `admin_cancelled` | VERIFIED |
+| `StockMovementType` | + `return_restock` (a return the seller put back in stock) | VERIFIED (T-J1), SPEC 07 §8 |
+| `CouponFunding` / `DiscountType` / `CouponScope` / `CouponStatus` / display status | `platform, seller` / `percent, fixed` / `all, seller, category` / `active, inactive` / `scheduled, active, expired, inactive` | SPEC 19 |
+| `AuditActorType` / `AuditTargetType` / `AuditAction` | `admin, cli` / 18 target types / one per audited action (spec 20 §2.3) | VERIFIED |
+| Finance | accounts + `seller_pending, customer_refund_payable, platform_promotions`; entries + `seller_net_held, seller_net_released, seller_net_reversed, commission_reversed, promotion_funded, promotion_reversed, return_fee_charged, return_fee_earned, customer_refund_owed, customer_refund_paid`; references + `return, refund, seller_order_hold` | SPEC 12 §8.1 |
+
+### 11.6 Realtime contract (no REST; `docs/realtime.md` in the backend) [SPEC 15]
+
+- URL: the api host with Socket.IO `path: '/realtime'` (locally `ws://localhost:3001`), WebSocket transport only, `auth: { token: <access JWT> }` read at every (re)connect, `Origin` in `CORS_ALLOWED_ORIGINS`.
+- Messages (event name = `type`, argument = `{ type, eventId, occurredAt, data }`, ids and statuses only): `order.updated`, `seller_order.placed`, `seller_order.updated`, `shipment.updated` (`kind`), `shipment.assigned`, `shipment.unassigned`, `payment.updated`, `return.updated`, `media.updated`, `support.message_created`, `support.ticket_updated`, `support.typing`, `notification.created`, `session.ended { reason }`. Duplicates dropped by `eventId` + `type`.
+- Client signals: `ticket.subscribe` / `ticket.unsubscribe { ticketId }` (ack `{ ok }` or a code), `support.typing { ticketId }`; 5 signals/s per socket.
+- The server disconnects at the token's `exp` (`token_expired`); Socket.IO does not reconnect after a server disconnect, the client must.
+
+### 11.7 OpenAPI findings for Release 2 (to confirm on the pulled snapshot in T-J1)
+
+| # | Finding | Consequence |
+|---|---|---|
+| OA-R2-1 | `__atLeastOneField` phantom property on the new PATCH DTOs (`EditReviewDto`, `UpdateProductImageDto`, coupon updates) [VERIFIED] | Removed by the OA-5 rule (15 schemas at `ecbcd19`) |
+| OA-R2-2 | Resolved: the pinned snapshot documents both `200` and `202` for `POST /media/uploads/{mediaId}/complete` [VERIFIED T-J1] | None |
+| OA-R2-3 | `POST /support/tickets` documents `CustomerOpenTicketDto` only; sellers send `SellerOpenTicketDto` [VERIFIED] | No correction needed (T-J1): a seller body (no `orderId`) fits the documented type; the seller app never sends `orderId` (spec 02 SE-25) |
+| OA-R2-4 | Errors of several new operations are missing from their summaries (customer reviews, seller images, seller reviews) [VERIFIED] | Error unions from §11.4 (spec), as for OA-3 |
+| OA-R2-5 | `RegisterPushSubscriptionDto` has `expirationTime` (accepted and ignored, NO-23) [VERIFIED] | Send `PushSubscription.toJSON()` as it is |
+| OA-R2-6 | Nullable image fields (`primaryImage`, `image`, `reply`, …) likely documented as optional like OA-1 [ASSUMPTION] | T-B7 contract suite checks the runtime `null`s |
+| OA-R2-7 | 22 R2 request fields are `@Nullable()` in the backend DTOs but documented as optional only (images `variantId` / `altText`, review `title` / `body`, coupon `maxDiscount` / `globalLimit` / `scopeCategoryId` / `scopeSellerId`, push `expirationTime`, `AssignTicketDto.adminUserId`) [VERIFIED T-J1 against backend source] | Added to `NULLABLE_REQUEST_FIELDS` in `openapi-fix.ts` |
+| OA-R2-8 | `AssignTicketDto.adminUserId` is required (an admin or `null` to unassign) but documented optional [VERIFIED T-J1] | OA-6 rule generalised to `REQUIRED_REQUEST_FIELDS` |
+| OA-R2-9 | `AuthTokensDto.refreshToken` is now `string | null` (null only with the web cookie transport) [VERIFIED T-J1] | `@nile/auth` `bodyTokens()` fails closed on null; the BFF never selects the cookie transport |
+| OA-R2-10 | `UploadFormDto.fields` is documented `{ type: object }` without keys, so it generates `Record<string, never>` (and a closed contract validator); the backend sends the presigned form fields as strings [SPEC 14 §4, VERIFIED T-J4] | `openapi-fix.ts` `STRING_MAP_FIELDS`: `additionalProperties: { type: string }` |
+
+### 11.8 Gaps and questions (Release 2)
+
+| Id | Gap / question | Recommendation |
+|---|---|---|
+| OQ-17 | Socket handshake and storage bucket CORS accept only `CORS_ALLOWED_ORIGINS` | Backend env lists the four web origins (`http://localhost:4100…4103` locally) |
+| OQ-18 | Notification `link` values assume one prefixed web app (NO-12, NO-31…NO-35) | Frontend link map per app (FR2-Q4); ask the backend to treat the link list as a contract |
+| OQ-19 | The local container predates R2-P6/P7 | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
+| OQ-20 | Release 2 admin and realtime traffic also reaches the backend from the BFF's IP (OQ-1); sockets connect from browsers, so they are keyed per user IP | No change; OQ-1 still blocks production |
+| OQ-21 | No endpoint lists a customer's refunds outside the order and return views | Not needed for R2 screens (order detail and return detail carry them) |
+| OQ-22 | No "reviewed" marker on order items: the order page can't tell which items were reviewed | Use `GET /me/reviewable-items` as the source of "can review" (it leaves out reviewed products) |
+| OQ-23 | The admin can't read a return's COD payout details from the return, only from the refund (`GET /admin/payments/refunds/{id}`) | As designed (spec 18 §4); AD return detail links to the refund |

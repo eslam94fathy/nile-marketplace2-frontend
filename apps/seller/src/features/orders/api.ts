@@ -12,7 +12,9 @@ export type SellerOrder = Schema<'SellerOrderDto'>;
 export type SellerOrderItem = Schema<'OrderItemDto'>;
 export type OverviewQueue = 'toConfirm' | 'returns';
 
+/** Fallback polling, only while no socket is connected (`live` false, design 01 §15.3). */
 export const ORDERS_POLL_MS = 60_000;
+const fallbackPoll = (live: boolean): number | false => (live ? false : ORDERS_POLL_MS);
 const ORDERS_PAGE_SIZE = 20;
 const OVERVIEW_SIZE = 5;
 
@@ -25,7 +27,7 @@ export const orderKeys = {
 };
 
 /** SE-14: one tab, 20 per page, polled. */
-export function ordersListOptions(tab: OrderTab) {
+export function ordersListOptions(tab: OrderTab, live: boolean) {
   return {
     ...infiniteListOptions({
       queryKey: orderKeys.list(tab.key),
@@ -44,14 +46,14 @@ export function ordersListOptions(tab: OrderTab) {
           }),
         ),
     }),
-    refetchInterval: ORDERS_POLL_MS,
+    refetchInterval: fallbackPoll(live),
   };
 }
 
 /** SE-06 queues: the 5 oldest orders to confirm, and returns to confirm (design 02 §2.3). */
 const OVERVIEW_STATUS = { toConfirm: 'placed', returns: 'returning_to_seller' } as const;
 
-export function overviewQueueQuery(queue: OverviewQueue) {
+export function overviewQueueQuery(queue: OverviewQueue, live: boolean) {
   return queryOptions({
     queryKey: orderKeys.overviewQueue(queue),
     queryFn: async ({ signal }) =>
@@ -65,12 +67,12 @@ export function overviewQueueQuery(queue: OverviewQueue) {
           }),
         )
       ).data,
-    refetchInterval: ORDERS_POLL_MS,
+    refetchInterval: fallbackPoll(live),
   });
 }
 
 /** SE-15: stale 0, refetch on focus, every 60 s while visible until the order can't change any more. */
-export function orderQuery(sellerOrderId: string) {
+export function orderQuery(sellerOrderId: string, live: boolean) {
   return queryOptions({
     queryKey: orderKeys.detail(sellerOrderId),
     queryFn: async ({ signal }) =>
@@ -85,7 +87,7 @@ export function orderQuery(sellerOrderId: string) {
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchInterval: (query) =>
-      query.state.data !== undefined && isTerminal(query.state.data.status) ? false : ORDERS_POLL_MS,
+      query.state.data !== undefined && isTerminal(query.state.data.status) ? false : fallbackPoll(live),
   });
 }
 

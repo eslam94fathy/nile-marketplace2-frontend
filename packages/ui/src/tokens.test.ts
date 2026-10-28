@@ -7,6 +7,7 @@ import {
   MIN_TEXT_CONTRAST,
   MIN_UI_CONTRAST,
   NILE,
+  NILE_GOLD,
   RADII,
   SEMANTIC_COLORS,
   SHADOWS,
@@ -33,6 +34,10 @@ const valueOf = (name: string): string | undefined => variables.get(name)?.toLow
 describe('theme.css matches tokens.ts', () => {
   it.each(Object.entries(NILE))('nile %s', (step, hex) => {
     expect(valueOf(`--color-nile-${step}`)).toBe(hex.toLowerCase());
+  });
+
+  it('nile gold (decorative only)', () => {
+    expect(valueOf('--color-nile-gold')).toBe(NILE_GOLD.toLowerCase());
   });
 
   it.each(Object.entries(SLATE))('slate %s', (step, hex) => {

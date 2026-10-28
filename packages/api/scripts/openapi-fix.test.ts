@@ -4,6 +4,8 @@ import {
   applyFixes,
   NULLABLE_REQUEST_FIELDS,
   OPTIONAL_RESPONSE_FIELDS,
+  REQUIRED_REQUEST_FIELDS,
+  STRING_MAP_FIELDS,
   OpenApiFixError,
   type OpenApiDocument,
   type SchemaNode,
@@ -95,6 +97,11 @@ function fixture(): OpenApiDocument {
           type: 'object',
           required: ['__atLeastOneField'],
           properties: { name: { type: 'string' }, __atLeastOneField: {} },
+        },
+        UploadFormDto: {
+          type: 'object',
+          required: ['fields'],
+          properties: { fields: { type: 'object' } },
         },
         ...nullableRequests,
       },
@@ -190,10 +197,19 @@ describe('applyFixes', () => {
     expect(report.removedPhantomProperties).toBe(1);
   });
 
-  it('OA-6 makes UpdateGovernorateDto.deliveryFee required and nullable', () => {
-    const governorate = schemaOf(applyFixes(fixture()).document, 'UpdateGovernorateDto');
-    expect(governorate.required).toEqual(['deliveryFee']);
-    expect(governorate.properties?.deliveryFee).toEqual({ anyOf: [{ type: 'string' }, { type: 'null' }] });
+  it.each(Object.entries(REQUIRED_REQUEST_FIELDS).flatMap(([name, fields]) => fields.map((f) => [name, f])))(
+    'OA-6 makes %s.%s required and nullable',
+    (name, field) => {
+      const schema = schemaOf(applyFixes(fixture()).document, name);
+      expect(schema.required).toContain(field);
+      expect(schema.properties?.[field]).toEqual({ anyOf: [{ type: 'string' }, { type: 'null' }] });
+    },
+  );
+
+  it('OA-6 throws when a required field disappears', () => {
+    const doc = fixture();
+    delete schemaOf(doc, 'AssignTicketDto').properties?.adminUserId;
+    expect(() => applyFixes(doc)).toThrow(new OpenApiFixError('AssignTicketDto.adminUserId is missing'));
   });
 
   it('OA-4 drops the uuid format of idOrSlug', () => {
@@ -220,6 +236,12 @@ describe('applyFixes', () => {
     ['the attr parameter', (doc: OpenApiDocument) => doc.paths?.['/api/v1/products']?.get?.parameters?.pop()],
     ['the product list path', (doc: OpenApiDocument) => delete doc.paths?.['/api/v1/products']],
     ['UpdateGovernorateDto', (doc: OpenApiDocument) => delete doc.components?.schemas?.UpdateGovernorateDto],
+    [
+      'the free-form upload fields',
+      (doc: OpenApiDocument) => {
+        schemaOf(doc, 'UploadFormDto').properties = { fields: { type: 'object', properties: {} } };
+      },
+    ],
   ])('throws when %s is gone', (_label, breakIt) => {
     const doc = fixture();
     breakIt(doc);
@@ -227,23 +249,35 @@ describe('applyFixes', () => {
   });
 });
 
+describe('OA-R2-10 string maps', () => {
+  it('types the presigned form fields as strings', () => {
+    const { document, report } = applyFixes(fixture());
+    expect(schemaOf(document, 'UploadFormDto').properties?.fields).toEqual({
+      type: 'object',
+      additionalProperties: { type: 'string' },
+    });
+    expect(report.stringMapProperties).toBe(Object.values(STRING_MAP_FIELDS).flat().length);
+  });
+});
+
 describe('the pinned snapshot', () => {
   const snapshot = JSON.parse(readFileSync(SNAPSHOT_FILE, 'utf8')) as OpenApiDocument;
   const { document, report } = applyFixes(snapshot);
 
-  it('has all 123 operations', () => {
+  it('has all 217 operations', () => {
     const count = Object.values(document.paths ?? {}).reduce((n, item) => n + Object.keys(item).length, 0);
-    expect(count).toBe(123);
+    expect(count).toBe(217);
   });
 
   it('applies every rule with the expected reach', () => {
     expect(report).toEqual({
-      nullableResponseProperties: 83,
-      nullableRequestProperties: 11,
-      removedPhantomProperties: 10,
+      nullableResponseProperties: 216,
+      nullableRequestProperties: 33,
+      removedPhantomProperties: 15,
       fixedIdOrSlug: true,
-      fixedGovernorateFee: true,
+      requiredRequestProperties: 2,
       removedAttrParameter: true,
+      stringMapProperties: 1,
     });
   });
 
@@ -255,6 +289,10 @@ describe('the pinned snapshot', () => {
     ['OrderDetailDto', 'paymentExpiresAt'],
     ['CheckoutResultDto', 'kashier'],
     ['SellerVariantDto', 'compareAtPrice'],
+    ['ProductListItemDto', 'primaryImage'],
+    ['MediaDto', 'image'],
+    ['ReviewDto', 'reply'],
+    ['CouponDto', 'maxDiscount'],
   ])('%s.%s is required and nullable', (name, field) => {
     const schema = schemaOf(document, name);
     expect(schema.required).toContain(field);

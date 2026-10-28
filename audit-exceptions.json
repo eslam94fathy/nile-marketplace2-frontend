@@ -1,10 +1,1 @@
-[
-  {
-    "advisory": "GHSA-vfj7-8cjw-p6xm",
-    "package": "braces",
-    "path": "eslint-config-next > @next/eslint-plugin-next > fast-glob > micromatch > braces",
-    "reason": "Dev-only lint tooling, never shipped or run on user input; no patched braces release exists (3.0.3 is the latest). Remove when eslint-config-next drops the vulnerable chain.",
-    "addedOn": "2026-10-14",
-    "reviewBy": "2026-11-14"
-  }
-]
+[]

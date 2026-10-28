@@ -29,9 +29,10 @@ import { createAllowListMatcher } from './proxy-allowlist';
 import {
   accessTokenRemainingMs,
   sealSession,
+  bodyTokens,
   sessionFromTokens,
   unsealSession,
-  type AuthTokens,
+  type BodyAuthTokens,
   type SessionV1,
 } from './session';
 
@@ -84,7 +85,7 @@ async function readSession(request: NextRequest, ctx: RequestContext): Promise<S
 
 async function sessionResponse(
   response: NextResponse,
-  tokens: AuthTokens,
+  tokens: BodyAuthTokens,
   ctx: RequestContext,
 ): Promise<NextResponse> {
   const session = sessionFromTokens(tokens, ctx.now);
@@ -148,7 +149,7 @@ const loginBodySchema = z.strictObject({ email: z.string(), password: z.string()
  */
 async function startSession(
   request: NextRequest,
-  tokens: AuthTokens,
+  tokens: BodyAuthTokens,
   event: string,
   ctx: RequestContext,
 ): Promise<NextResponse> {
@@ -181,7 +182,7 @@ async function startSession(
 async function login(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
   const body = await parseBody(request, loginBodySchema, ctx);
   if (!body.ok) return body.response;
-  const { data: tokens } = await unwrap(
+  const { data } = await unwrap(
     backendClient(ctx).POST('/api/v1/auth/login', {
       body: {
         email: body.value.email,
@@ -190,7 +191,7 @@ async function login(request: NextRequest, ctx: RequestContext): Promise<NextRes
       },
     }),
   );
-  return startSession(request, tokens, 'LOGIN_SUCCEEDED', ctx);
+  return startSession(request, bodyTokens(data), 'LOGIN_SUCCEEDED', ctx);
 }
 
 const verifyEmailBodySchema = z.strictObject({ email: z.string(), otp: z.string() });
@@ -203,12 +204,12 @@ async function verifyEmail(request: NextRequest, ctx: RequestContext): Promise<N
   if (!VERIFY_EMAIL_APPS.includes(ctx.config.app)) return notFound(ctx);
   const body = await parseBody(request, verifyEmailBodySchema, ctx);
   if (!body.ok) return body.response;
-  const { data: tokens } = await unwrap(
+  const { data } = await unwrap(
     backendClient(ctx).POST('/api/v1/auth/email/verify', {
       body: { email: body.value.email, otp: body.value.otp },
     }),
   );
-  return startSession(request, tokens, 'EMAIL_VERIFIED', ctx);
+  return startSession(request, bodyTokens(data), 'EMAIL_VERIFIED', ctx);
 }
 
 async function refresh(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
@@ -220,11 +221,12 @@ async function refresh(request: NextRequest, ctx: RequestContext): Promise<NextR
     return okResponse({ accessTokenExpiresAt: session.accessTokenExpiresAt }, ctx.correlationId);
   }
 
-  let tokens: AuthTokens;
+  let tokens: BodyAuthTokens;
   try {
-    ({ data: tokens } = await unwrap(
+    const { data } = await unwrap(
       backendClient(ctx).POST('/api/v1/auth/refresh', { body: { refreshToken: session.refreshToken } }),
-    ));
+    );
+    tokens = bodyTokens(data);
   } catch (error) {
     if (!isApiError(error, 'INVALID_REFRESH_TOKEN')) throw error;
     ctx.log.info('REFRESH_FAILED', { userId: session.user.id });
@@ -270,11 +272,12 @@ async function acceptInvite(request: NextRequest, ctx: RequestContext): Promise<
   if (ctx.config.app !== 'storefront') return notFound(ctx);
   const body = await parseBody(request, inviteBodySchema, ctx);
   if (!body.ok) return body.response;
-  const { data: tokens } = await unwrap(
+  const { data } = await unwrap(
     backendClient(ctx).POST('/api/v1/auth/invite/accept', {
       body: { token: body.value.token, password: body.value.password },
     }),
   );
+  const tokens = bodyTokens(data);
   await revoke(tokens.refreshToken, ctx);
   if (!INVITED_ROLES.includes(tokens.user.role)) {
     // Not expected (only admins and agents are invited); the session is already gone.
@@ -319,8 +322,27 @@ async function changePassword(request: NextRequest, ctx: RequestContext): Promis
   return noContentResponse(ctx.correlationId);
 }
 
+/**
+ * The one way an access token reaches browser JavaScript (CLAUDE.md §4 exception, design 01 §15.2): the socket
+ * handshake needs it. Never refreshes (only `refresh` does): a token close to expiry is answered 401 so the
+ * browser refreshes through the coordinator first. The log line never carries the token.
+ */
+async function realtimeToken(request: NextRequest, ctx: RequestContext): Promise<NextResponse> {
+  const { session, invalidCookie } = await readSession(request, ctx);
+  if (session === null) return unauthenticated(ctx, invalidCookie);
+  if (accessTokenRemainingMs(session, ctx.now) <= ctx.config.refreshSkewSeconds * 1000) {
+    return unauthenticated(ctx, false);
+  }
+  ctx.log.debug('REALTIME_TOKEN_ISSUED', { userId: session.user.id });
+  return okResponse(
+    { token: session.accessToken, expiresAt: session.accessTokenExpiresAt },
+    ctx.correlationId,
+  );
+}
+
 const AUTH_ACTIONS = {
   login,
+  'realtime-token': realtimeToken,
   'verify-email': verifyEmail,
   invite: acceptInvite,
   'password-change': changePassword,

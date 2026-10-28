@@ -1,5 +1,6 @@
 'use client';
 
+import { NotificationBell } from '@nile/notifications';
 import {
   Button,
   Dialog,
@@ -7,6 +8,7 @@ import {
   isActivePath,
   MAIN_CONTENT_ID,
   navLinkClasses,
+  PortalBrand,
   UI_COPY,
 } from '@nile/ui';
 import { LogOut, Menu, Monitor, ShieldCheck } from 'lucide-react';
@@ -18,8 +20,8 @@ import { ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 
 // Admin shell (spec 03 §2.1, AD-Q-8): desktop-first sidebar in groups; below 1024 px the sidebar moves into
-// a menu sheet; phones get a "best on a larger screen" note but keep working. The account menu shows the
-// signed-in admin's email (from the session, read by the portal layout on the server) and Sign out.
+// a menu sheet; phones get a "best on a larger screen" note but keep working. The header has the notification
+// bell (T-J6); the account menu shows the signed-in admin's email (from the session, read by the portal layout on the server) and Sign out.
 
 const NAV_GROUPS = [
   { label: null, items: [{ href: ROUTES.dashboard, label: 'Dashboard' }] },
@@ -111,6 +113,7 @@ function AccountMenu({ email }: { readonly email: string | null }) {
   const active = isActivePath(pathname, ROUTES.security);
   return (
     <div className="flex items-center gap-2 text-sm">
+      <NotificationBell />
       {email === null ? null : <span className="hidden text-muted-foreground sm:inline">{email}</span>}
       <Link
         href={ROUTES.security}
@@ -136,8 +139,8 @@ function AccountMenu({ email }: { readonly email: string | null }) {
 
 function Brand() {
   return (
-    <Link href={ROUTES.dashboard} className="text-lg font-semibold text-primary">
-      {APP.title}
+    <Link href={ROUTES.dashboard} className="w-fit rounded-md">
+      <PortalBrand roleLabel={APP.roleLabel} />
     </Link>
   );
 }

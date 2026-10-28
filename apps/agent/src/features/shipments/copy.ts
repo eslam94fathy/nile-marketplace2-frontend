@@ -3,6 +3,8 @@
 export const SHIPMENTS_COPY = {
   // AG-04
   title: 'Shipments',
+  /** The push card on this screen (spec 04 AG-09, AG-Q-8). */
+  pushCard: 'Get notified when a new shipment is assigned to you.',
   tabsLabel: 'Shipment lists',
   tabs: { pickup: 'To pick up', deliver: 'To deliver', returns: 'Returns' },
   empty: { pickup: 'Nothing to pick up.', deliver: 'Nothing to deliver.', returns: 'No returns.' },

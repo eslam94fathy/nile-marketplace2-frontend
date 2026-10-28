@@ -20,4 +20,5 @@ export const STOCK_MOVEMENT_TYPE_LABELS = {
   reserve: 'Reserved for an order',
   release: 'Released (order cancelled or returned)',
   commit: 'Delivered to the customer',
+  return_restock: 'Restocked from a customer return',
 } as const satisfies Labels<StockMovementType>;

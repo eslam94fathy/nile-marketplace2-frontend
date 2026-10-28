@@ -6,6 +6,7 @@ import {
   countdown,
   formatDate,
   formatDateTime,
+  formatRelativeTime,
   isCalendarDay,
 } from './dates';
 
@@ -128,5 +129,30 @@ describe('Cairo local date-time (AD-Q-7)', () => {
     const now = Date.parse('2026-10-16T09:05:42.000Z');
     expect(cairoLocalFromMs(now)).toMatch(/^2026-10-16T1[12]:05$/);
     expect(cairoLocalToIso(cairoLocalFromMs(now))).toBe('2026-10-16T09:05:00.000Z');
+  });
+});
+
+describe('formatRelativeTime (spec 00 §12.4)', () => {
+  const now = Date.parse('2026-10-28T12:00:00.000Z');
+  const ago = (seconds: number) => new Date(now - seconds * 1000).toISOString();
+
+  it.each([
+    [0, 'now'],
+    [59, 'now'],
+    [60, '1 minute ago'],
+    [5 * 60, '5 minutes ago'],
+    [2 * 3600, '2 hours ago'],
+    [26 * 3600, 'yesterday'],
+    [3 * 86_400, '3 days ago'],
+  ])('%i seconds ago reads %s', (seconds, expected) => {
+    expect(formatRelativeTime(ago(seconds), now)).toBe(expected);
+  });
+
+  it('a week or older shows the date', () => {
+    expect(formatRelativeTime('2026-10-14T10:00:00.000Z', now)).toBe('14 Oct 2026');
+  });
+
+  it('a time ahead of the client clock reads now', () => {
+    expect(formatRelativeTime(ago(-120), now)).toBe('now');
   });
 });

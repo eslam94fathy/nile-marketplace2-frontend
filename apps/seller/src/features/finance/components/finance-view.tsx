@@ -70,6 +70,13 @@ function SignedAmount({ entry }: { readonly entry: LedgerEntry }) {
   );
 }
 
+/** Release 2 entries (spec 02 §8.6); their returns get links with the returns screens (T-L3). */
+const PLAIN_DESCRIPTIONS: Partial<Record<LedgerEntry['entryType'], string>> = {
+  seller_net_released: COPY.earningsReleased,
+  seller_net_reversed: COPY.returnedItems,
+  return_fee_charged: COPY.returnFee,
+};
+
 const isSellerEntry = (entry: LedgerEntry) =>
   (SELLER_ENTRY_TYPES as readonly string[]).includes(entry.entryType);
 
@@ -88,6 +95,8 @@ function Description({ entry }: { readonly entry: LedgerEntry }) {
       </Link>
     );
   }
+  const text = PLAIN_DESCRIPTIONS[entry.entryType];
+  if (text !== undefined) return <span>{text}</span>;
   // Never on a seller account [SPEC 12 §1.2]: shown as sent, and reported (below).
   return <span>{entry.entryType}</span>;
 }

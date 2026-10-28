@@ -34,6 +34,7 @@ const validPublic = {
   NEXT_PUBLIC_ADMIN_URL: 'http://localhost:4102',
   NEXT_PUBLIC_AGENT_URL: 'http://localhost:4103',
   NEXT_PUBLIC_REFRESH_SKEW_SECONDS: '60',
+  NEXT_PUBLIC_REALTIME_URL: 'http://localhost:3001',
 } satisfies Record<keyof PublicEnv, string>;
 
 function parseServer(overrides: Record<string, string | undefined> = {}): ServerEnv {

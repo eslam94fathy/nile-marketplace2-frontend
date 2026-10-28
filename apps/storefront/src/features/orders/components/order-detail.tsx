@@ -10,6 +10,7 @@ import {
   PAYMENT_STATUS_LABELS,
   SELLER_ORDER_STATUS_LABELS,
 } from '@nile/domain';
+import { useRealtimeConnected } from '@nile/realtime';
 import {
   buttonVariants,
   Countdown,
@@ -36,7 +37,10 @@ import { CancelSellerOrder } from './cancel-seller-order';
 
 const COPY = ORDERS_COPY;
 
-/** SF-18: refetch every 30 s while visible, only while the order awaits payment [PROPOSED in spec 01]. */
+/**
+ * SF-18: refetch every 30 s while visible, only while the order awaits payment and no socket is connected
+ * (spec 01 v1.2 §10: the order's messages refresh it otherwise).
+ */
 export const AWAITING_PAYMENT_POLL_MS = 30_000;
 
 type SellerOrder = Order['sellerOrders'][number];
@@ -44,8 +48,8 @@ type SellerOrder = Order['sellerOrders'][number];
 /** Seller orders that don't count towards the total (spec 01 SF-18 §5, [SPEC 09 OR-13]). */
 const EXCLUDED: ReadonlySet<SellerOrder['status']> = new Set(['cancelled', 'returned_to_seller']);
 
-/** Card payments that may need a refund when something was cancelled (spec 01 SF-18 §5). */
-const REFUNDABLE: ReadonlySet<Order['paymentStatus']> = new Set(['paid', 'partially_refunded_manually']);
+/** Card payments that may need a refund when something was cancelled (spec 01 SF-18 §5, §10.3). */
+const REFUNDABLE: ReadonlySet<Order['paymentStatus']> = new Set(['paid', 'partially_refunded']);
 
 /** The notes under the totals (spec 01 SF-18 §5). */
 function totalNotes(order: Order): string[] {
@@ -80,10 +84,11 @@ function usePassed(atMs: number): boolean {
 
 /** SF-18 Order detail: only data from `GET /orders/{orderId}`; someone else's order is "not found". */
 export function OrderDetail({ orderId }: { readonly orderId: string }) {
+  const live = useRealtimeConnected();
   const order = useQuery({
     ...orderQuery(orderId),
     refetchInterval: (query) =>
-      query.state.data?.status === 'pending_payment' ? AWAITING_PAYMENT_POLL_MS : false,
+      !live && query.state.data?.status === 'pending_payment' ? AWAITING_PAYMENT_POLL_MS : false,
     refetchOnWindowFocus: true,
   });
 

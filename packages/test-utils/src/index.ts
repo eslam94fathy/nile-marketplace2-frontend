@@ -31,6 +31,8 @@ export {
   remittanceFactory,
 } from './factories/finance';
 export { governorateFactory } from './factories/governorate';
+export { imageFactory, mediaFactory } from './factories/media';
+export { notificationFactory } from './factories/notification';
 export { orderDetailFactory } from './factories/order';
 export { sellerProfileFactory } from './factories/seller';
 export {

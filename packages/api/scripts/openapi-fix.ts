@@ -42,10 +42,12 @@ export interface FixReport {
   removedPhantomProperties: number;
   /** OA-4: `idOrSlug` path parameter no longer typed as uuid. */
   fixedIdOrSlug: boolean;
-  /** OA-6: `UpdateGovernorateDto.deliveryFee` required. */
-  fixedGovernorateFee: boolean;
+  /** OA-6: request fields required although documented optional (`UpdateGovernorateDto.deliveryFee`, …). */
+  requiredRequestProperties: number;
   /** OA-7: literal `attr.{code}[in]` query parameter removed. */
   removedAttrParameter: boolean;
+  /** OA-R2-10: free-form objects typed as string maps. */
+  stringMapProperties: number;
 }
 
 /** Request fields the backend spec documents as `opt nullable` (or `nullable`), keyed by schema name. */
@@ -57,6 +59,24 @@ export const NULLABLE_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>
   UpdateVariantDto: ['compareAtPrice'], // spec 06 §4.3
   CreateCategoryDto: ['parentId'], // spec 06 §4.2
   UpdateGovernorateDto: ['deliveryFee'], // spec 11 §4.3 (also required, OA-6)
+  // Release 2 (backend DTOs with `@Nullable()` at ecbcd19)
+  AddProductImageDto: ['variantId', 'altText'], // spec 06 §8.4
+  UpdateProductImageDto: ['variantId', 'altText'], // spec 06 §8.4
+  SetCategoryImageDto: ['altText'], // spec 06 §8.4
+  CreateReviewDto: ['title', 'body'], // spec 17 §4.2
+  EditReviewDto: ['title', 'body'], // spec 17 §4.2
+  AssignTicketDto: ['adminUserId'], // spec 16 §4.2 (also required, OA-6)
+  RegisterPushSubscriptionDto: ['expirationTime'], // spec 13 NO-23
+  SellerCreateCouponDto: ['maxDiscount', 'globalLimit'], // spec 19 §4
+  AdminCreateCouponDto: ['maxDiscount', 'globalLimit'], // spec 19 §4
+  SellerUpdateCouponDto: ['maxDiscount', 'scopeCategoryId', 'globalLimit'], // spec 19 §4
+  AdminUpdateCouponDto: ['maxDiscount', 'scopeCategoryId', 'globalLimit', 'scopeSellerId'], // spec 19 §4
+};
+
+/** Request fields the backend requires (a value or `null`) but documents as optional, keyed by schema name. */
+export const REQUIRED_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  UpdateGovernorateDto: ['deliveryFee'], // spec 11 §4.3
+  AssignTicketDto: ['adminUserId'], // spec 16 §4.2: an admin, or null to unassign
 };
 
 /**
@@ -65,6 +85,14 @@ export const NULLABLE_REQUEST_FIELDS: Readonly<Record<string, readonly string[]>
  */
 export const OPTIONAL_RESPONSE_FIELDS: Readonly<Record<string, readonly string[]>> = {
   AdminShipmentDto: ['history'], // `toAdminShipmentDto(view, false)`: lists leave it out, detail includes it
+};
+
+/**
+ * OA-R2-10: object fields documented as `{ type: object }` with no keys, which generates `Record<string, never>`
+ * (and a closed contract validator). The backend fills them with string values.
+ */
+export const STRING_MAP_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  UploadFormDto: ['fields'], // spec 14 §4: the presigned POST form fields, `Record<string, string>`
 };
 
 const PHANTOM_PROPERTY = '__atLeastOneField';
@@ -148,8 +176,9 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     nullableRequestProperties: 0,
     removedPhantomProperties: 0,
     fixedIdOrSlug: false,
-    fixedGovernorateFee: false,
+    requiredRequestProperties: 0,
     removedAttrParameter: false,
+    stringMapProperties: 0,
   };
 
   // Which schemas are reachable from request bodies and from success responses.
@@ -219,10 +248,28 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     }
   }
 
-  // OA-6: deliveryFee is required (a fee or null), not optional.
-  const governorate = objectSchema(schemas, 'UpdateGovernorateDto');
-  governorate.required = [...new Set([...(governorate.required ?? []), 'deliveryFee'])];
-  report.fixedGovernorateFee = true;
+  // OA-6: fields the backend requires (a value or null) although the document marks them optional.
+  for (const [name, fields] of Object.entries(REQUIRED_REQUEST_FIELDS)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      if (!(field in schema.properties)) throw new OpenApiFixError(`${name}.${field} is missing`);
+      schema.required = [...new Set([...(schema.required ?? []), field])];
+      report.requiredRequestProperties += 1;
+    }
+  }
+
+  // OA-R2-10: free-form string maps (required fields, so OA-1 above left them unwrapped).
+  for (const [name, fields] of Object.entries(STRING_MAP_FIELDS)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      const property = schema.properties[field];
+      if (property?.type !== 'object' || property.properties !== undefined) {
+        throw new OpenApiFixError(`${name}.${field} is no longer a free-form object`);
+      }
+      property.additionalProperties = { type: 'string' };
+      report.stringMapProperties += 1;
+    }
+  }
 
   // OA-4: the product path accepts a slug as well as a uuid.
   const idOrSlug = findGetOperation(document, PRODUCT_DETAIL_PATH).parameters?.find(

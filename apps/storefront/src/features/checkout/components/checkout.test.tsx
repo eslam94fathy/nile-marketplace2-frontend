@@ -60,6 +60,7 @@ function cart(overrides: Partial<Schema<'CartDto'>> = {}): Schema<'CartDto'> {
             quantity: 2,
             lineTotal: '500.00',
             issue: null,
+            image: null,
             availableQuantity: 10,
           },
         ],

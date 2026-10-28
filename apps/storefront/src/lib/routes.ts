@@ -17,10 +17,24 @@ export const ROUTES = {
   addresses: '/account/addresses',
   orders: '/account/orders',
   security: '/account/security',
+  /** SF-32 / SF-33 (spec 01 §10.2, SF-Q-20). */
+  notifications: '/account/notifications',
+  notificationSettings: '/account/notifications/settings',
+  /** SF-24 My reviews (T-K5); `?review=` highlights one. */
+  reviews: '/account/reviews',
 } as const;
 
 /** SF-18 Order detail. */
 export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
+
+/** SF-28 Return (T-K6). */
+export const returnPath = (returnId: string) => `/account/returns/${returnId}` as const;
+
+/** SF-24 scrolled to one review (spec 01 §10, `?review=<id>` from a notification). */
+export const reviewPath = (reviewId: string) => `${ROUTES.reviews}?review=${reviewId}` as const;
+
+/** SF-31 Support ticket (T-K7). */
+export const supportTicketPath = (ticketId: string) => `/account/support/${ticketId}` as const;
 
 /** Query parameter that carries the page to return to after sign-in (conventions §2). */
 export const RETURN_TO_PARAM = 'returnTo';

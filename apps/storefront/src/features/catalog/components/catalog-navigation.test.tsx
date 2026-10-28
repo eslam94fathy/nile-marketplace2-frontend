@@ -20,6 +20,7 @@ const node = (name: string, slug: string, children: CategoryNode[] = []): Catego
     name,
     slug,
     sortOrder: sequence,
+    image: null,
     children,
   };
 };

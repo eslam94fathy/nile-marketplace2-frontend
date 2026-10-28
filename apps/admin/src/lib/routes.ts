@@ -15,10 +15,16 @@ export const ROUTES = {
   commission: '/settings/commission',
   admins: '/admins',
   security: '/security',
+  /** AD-40 / AD-41 (spec 03 §7.2). */
+  notifications: '/notifications',
+  notificationSettings: '/notifications/settings',
   login: '/login',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
 } as const;
+
+/** AD-29 Support ticket (T-M5). */
+export const supportTicketPath = (ticketId: string) => `/support/${ticketId}` as const;
 
 /** Sign-in screens: never a `returnTo` destination. */
 export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPassword] as const;

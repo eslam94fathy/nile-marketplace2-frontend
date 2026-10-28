@@ -27,6 +27,7 @@ export const orderDetailFactory = defineFactory<'OrderDetailDto'>((sequence) => 
     landmark: null,
   },
   sellerOrders: [],
+  coupon: null,
   paymentExpiresAt: null,
   placedAt: '2026-10-15T10:00:00.000Z',
   completedAt: null,
