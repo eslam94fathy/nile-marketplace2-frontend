@@ -168,6 +168,67 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     expect(within(screen.getByRole('region', { name: 'Timeline' })).getAllByRole('listitem')).toHaveLength(2);
   });
 
+  it('cancelled by Nile: the reason', async () => {
+    serveOrder({
+      ...ORDER,
+      status: 'cancelled',
+      cancelReason: 'admin_cancelled',
+      cancelledAt: '2026-10-16T10:00:00.000Z',
+      acceptDeadlineAt: null,
+    });
+    renderPage();
+    await heading();
+    expect(screen.getByText('Cancelled by Nile')).toBeDefined();
+  });
+
+  it.each([
+    ['seller', 'Funded by you', 'Commission is calculated after your coupon discount.'],
+    ['platform', 'Funded by Nile', "Nile covers this discount; your earnings aren't reduced."],
+  ] as const)(
+    'a %s-funded coupon: the discount row and what it means for the net',
+    async (funding, label, note) => {
+      serveOrder({ ...ORDER, discountAmount: '20.00', discountFunding: funding });
+      renderPage();
+      await heading();
+      const amounts = screen.getByRole('region', { name: 'Amounts' });
+      expect(within(amounts).getByText(`Coupon discount · ${label}`)).toBeDefined();
+      expect(within(amounts).getByText(/20\.00/)).toBeDefined();
+      expect(within(amounts).getByText(note)).toBeDefined();
+    },
+  );
+
+  it('no coupon, nothing returned: no discount or returned lines', async () => {
+    serveOrder(ORDER);
+    renderPage();
+    await heading();
+    const amounts = screen.getByRole('region', { name: 'Amounts' });
+    expect(within(amounts).queryByText(/Coupon discount/)).toBeNull();
+    expect(within(amounts).queryByText(/Returned by the customer/)).toBeNull();
+    expect(screen.queryByText(/returned$/)).toBeNull();
+  });
+
+  it('returned items: the earnings taken back and "{n} returned" on the item', async () => {
+    const [item] = ORDER.items;
+    if (item === undefined) throw new Error('item expected');
+    serveOrder({
+      ...ORDER,
+      status: 'delivered',
+      acceptDeadlineAt: null,
+      deliveredAt: '2026-10-17T10:00:00.000Z',
+      returnedSubtotal: '150.00',
+      returnedCommission: '15.00',
+      returnedSellerNet: '135.00',
+      items: [{ ...item, returnedQuantity: 1 }],
+    });
+    renderPage();
+    await heading();
+    const amounts = screen.getByRole('region', { name: 'Amounts' });
+    expect(
+      within(amounts).getByText(/^Returned by the customer: −.*135\.00 from your earnings$/),
+    ).toBeDefined();
+    expect(screen.getByText('1 returned')).toBeDefined();
+  });
+
   it('Confirm order: the answer replaces the order', async () => {
     serveOrder(ORDER);
     const sent = serveAction('/seller/orders/{sellerOrderId}/accept', {

@@ -1,7 +1,7 @@
-// SE-16 tabs in the URL (`/finance?tab=statement|payouts`); no or unknown tab is the statement.
+// SE-16 tabs in the URL (`/finance?tab=statement|on-hold|payouts`); no or unknown tab is the statement.
 
 export const FINANCE_TAB_PARAM = 'tab';
-export const FINANCE_TABS = ['statement', 'payouts'] as const;
+export const FINANCE_TABS = ['statement', 'on-hold', 'payouts'] as const;
 export type FinanceTab = (typeof FINANCE_TABS)[number];
 
 export function financeTab(param: string | null | undefined): FinanceTab {

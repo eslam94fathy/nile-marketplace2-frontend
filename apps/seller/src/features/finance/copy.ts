@@ -18,7 +18,7 @@ export const FINANCE_COPY = {
   balanceFailed: "Your balance couldn't be loaded.",
   viewFinance: 'View finance',
   tabsLabel: 'Finance',
-  tabs: { statement: 'Statement', payouts: 'Payouts' },
+  tabs: { statement: 'Statement', 'on-hold': 'On hold', payouts: 'Payouts' },
 
   statementCaption: 'Your statement',
   statementColumns: {
@@ -34,6 +34,14 @@ export const FINANCE_COPY = {
   returnFee: 'Return delivery fee',
   statementEmpty: 'No transactions yet.',
   statementFailed: "Your statement couldn't be loaded.",
+
+  // On hold (spec 02 §8.3 SE-16 item 2)
+  holdsCaption: 'Earnings on hold',
+  holdColumns: { order: 'Order', amount: 'Amount', release: 'Release' },
+  releasedOn: (date: string) => `Released on ${date}`,
+  waitingForReturn: 'Waiting for an open return',
+  holdsEmpty: 'Nothing on hold.',
+  holdsFailed: "Your earnings on hold couldn't be loaded.",
 
   payoutsCaption: 'Your payouts',
   payoutColumns: { paidAt: 'Paid', amount: 'Amount', reference: 'Reference', recordedAt: 'Recorded' },

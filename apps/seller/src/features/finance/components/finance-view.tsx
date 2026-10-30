@@ -1,7 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { formatDateTime } from '@nile/domain';
+import { formatDate, formatDateTime } from '@nile/domain';
 import {
   buttonVariants,
   cn,
@@ -17,7 +17,14 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { orderPath, ROUTES } from '@/lib/routes';
-import { entriesListOptions, payoutsListOptions, type LedgerEntry, type Payout } from '../api';
+import {
+  entriesListOptions,
+  holdsListOptions,
+  payoutsListOptions,
+  type LedgerEntry,
+  type Payout,
+  type SellerHold,
+} from '../api';
 import { FINANCE_COPY as COPY } from '../copy';
 import {
   FINANCE_TAB_PARAM,
@@ -33,7 +40,7 @@ const tabHref = (tab: FinanceTab): Route =>
 
 const LINK = 'text-primary underline-offset-4 hover:underline';
 
-/** SE-16 Finance: balance, then the statement or the payouts (`?tab=`). */
+/** SE-16 Finance: balance, then the statement, the earnings on hold or the payouts (`?tab=`). */
 export function FinanceView({ tab: tabParam }: { readonly tab: string | null }) {
   const tab = financeTab(tabParam);
   return (
@@ -55,7 +62,7 @@ export function FinanceView({ tab: tabParam }: { readonly tab: string | null }) 
           ))}
         </ul>
       </nav>
-      {tab === 'statement' ? <Statement /> : <Payouts />}
+      {tab === 'statement' ? <Statement /> : tab === 'on-hold' ? <Holds /> : <Payouts />}
     </div>
   );
 }
@@ -157,6 +164,63 @@ function Statement() {
       hasMore={entries.hasNextPage}
       loadingMore={entries.isFetchingNextPage}
       onLoadMore={() => void entries.fetchNextPage()}
+    />
+  );
+}
+
+const HOLD_COLUMNS: readonly DataTableColumn<SellerHold>[] = [
+  {
+    id: 'order',
+    header: COPY.holdColumns.order,
+    cell: (hold) => (
+      <Link href={orderPath(hold.sellerOrderId)} className={LINK}>
+        {hold.orderNumber}
+      </Link>
+    ),
+  },
+  {
+    id: 'amount',
+    header: COPY.holdColumns.amount,
+    align: 'end',
+    cell: (hold) => <Money value={hold.heldAmount} />,
+  },
+  {
+    id: 'release',
+    header: COPY.holdColumns.release,
+    cell: (hold) => (
+      <span className="space-y-1">
+        <span className="block">{COPY.releasedOn(formatDate(hold.releaseAfter))}</span>
+        {hold.blockedByReturn ? (
+          <span className="block text-muted-foreground">{COPY.waitingForReturn}</span>
+        ) : null}
+      </span>
+    ),
+  },
+];
+
+/** SE-16 On hold: earnings within the return period, or kept by an open return past it. */
+function Holds() {
+  const holds = useInfiniteQuery(holdsListOptions());
+  if (holds.isError) {
+    return (
+      <ErrorState
+        message={COPY.holdsFailed}
+        onRetry={() => void holds.refetch()}
+        correlationId={isApiError(holds.error) ? (holds.error.correlationId ?? undefined) : undefined}
+      />
+    );
+  }
+  return (
+    <DataTable
+      caption={COPY.holdsCaption}
+      columns={HOLD_COLUMNS}
+      rows={holds.data?.pages.flatMap((page) => page.data) ?? []}
+      getRowId={(hold) => hold.sellerOrderId}
+      loading={holds.isPending}
+      empty={<EmptyState title={COPY.holdsEmpty} />}
+      hasMore={holds.hasNextPage}
+      loadingMore={holds.isFetchingNextPage}
+      onLoadMore={() => void holds.fetchNextPage()}
     />
   );
 }

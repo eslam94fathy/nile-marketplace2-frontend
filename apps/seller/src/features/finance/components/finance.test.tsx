@@ -52,6 +52,22 @@ function servePayouts(rows: Schema<'PayoutDto'>[]) {
   );
 }
 
+function serveHolds(rows: Schema<'SellerHoldDto'>[] | 'error') {
+  const queries: URLSearchParams[] = [];
+  server.use(
+    mockApi(
+      'get',
+      '/seller/finance/holds',
+      ({ request, reply }) => {
+        queries.push(new URL(request.url).searchParams);
+        return rows === 'error' ? reply.error(500, 'INTERNAL_ERROR') : reply.ok(rows, PAGE);
+      },
+      { base: BFF_BASE },
+    ),
+  );
+  return queries;
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -201,6 +217,51 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
     expect(await within(table).findByText('BANK-2026-001')).toBeDefined();
     expect(within(table).getByText(/100\.00/)).toBeDefined();
     expect(screen.getByRole('link', { name: 'Payouts' }).getAttribute('aria-current')).toBe('page');
+  });
+
+  it('on hold tab: order link, amount, release date, waiting for a return; next release first', async () => {
+    serveBalance({ pending: '270.00', available: '0.00', updatedAt: '2026-10-16T09:00:00.000Z' });
+    const queries = serveHolds([
+      {
+        sellerOrderId: fixtureId(7001),
+        orderNumber: 'NM-41',
+        heldAmount: '270.00',
+        releaseAfter: '2026-10-30T10:00:00.000Z',
+        blockedByReturn: false,
+      },
+      {
+        sellerOrderId: fixtureId(7002),
+        orderNumber: 'NM-42',
+        heldAmount: '90.00',
+        releaseAfter: '2026-10-20T10:00:00.000Z',
+        blockedByReturn: true,
+      },
+    ]);
+    renderWithProviders(<FinanceView tab="on-hold" />);
+    const table = await screen.findByRole('table', { name: 'Earnings on hold' });
+    const first = (await within(table).findByRole('link', { name: 'NM-41' })).closest('tr') as HTMLElement;
+    expect(within(table).getByRole('link', { name: 'NM-41' }).getAttribute('href')).toBe(
+      `/orders/${fixtureId(7001)}`,
+    );
+    expect(within(first).getByText(/270\.00/)).toBeDefined();
+    expect(within(first).getByText(/^Released on /)).toBeDefined();
+    expect(within(first).queryByText('Waiting for an open return')).toBeNull();
+    const second = within(table).getByRole('link', { name: 'NM-42' }).closest('tr') as HTMLElement;
+    expect(within(second).getByText('Waiting for an open return')).toBeDefined();
+    expect(screen.getByRole('link', { name: 'On hold' }).getAttribute('aria-current')).toBe('page');
+    expect(queries[0]?.get('sort')).toBe('releaseAfter');
+    expect(queries[0]?.get('limit')).toBe('20');
+  });
+
+  it('on hold: empty, and a failure with its own message', async () => {
+    serveBalance({ pending: '0.00', available: '0.00', updatedAt: null });
+    serveHolds([]);
+    const view = renderWithProviders(<FinanceView tab="on-hold" />);
+    expect(await screen.findByText('Nothing on hold.')).toBeDefined();
+    view.unmount();
+    serveHolds('error');
+    renderWithProviders(<FinanceView tab="on-hold" />);
+    expect(await screen.findByText("Your earnings on hold couldn't be loaded.")).toBeDefined();
   });
 
   it('empty payouts; failures show their own error', async () => {

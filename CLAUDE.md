@@ -367,6 +367,9 @@ SF-22 seller page `/s/[sellerId]` (seller cached 5 min, a `seller=` parameter ne
 ### 14.1bh Decided (2026-10-30, T-L1)
 Phase l on `phase/l-seller-r2`, stacked on `phase/k-storefront-r2` (not merged yet) · TL1-Q1: blocked product "Contact support" → `/support/new?category=account&product=<id>` (placeholder until T-L6, which prefills the subject "Blocked product: {name}") · TL1-Q2: an attach failure other than `MEDIA_NOT_ATTACHABLE` drops the tile with the error toast · TL1-Q3: a block locks only Publish / Unpublish; details, variants, images and Delete stay, `PRODUCT_BLOCKED` from any write refetches + toasts · TL1-COPY approved: "Images", "No images yet.", list "Product images", "Actions for image {n} of {total}", "Image added.", "Image moved to position {n} of {total}.", "Edit image", "Image description" (hint "Describes the image for people who can't see it."), "Image saved.", "Image removed.", "This image no longer exists.", "Remove image", "The status can't be changed while Nile blocks this product."; "Shown for:" with option values ("Red / M"), the SKU for a default variant · seller depends on `@nile/media` (design 01 R-71).
 
+### 14.1bi Decided (2026-10-30, T-L2)
+SE-16 "On hold" tab (`?tab=on-hold`, `GET /seller/finance/holds` sorted by `releaseAfter`, load more) and SE-15 coupon and return amounts, every amount from the API (seller-order `subtotal` is before the coupon, commission and net after it [SPEC 09 §8.7]) · TL2-Q1: coupon lines on the order detail only; the list keeps its `sellerNet` column · TL2-Q2: returned sums as the spec's one sentence with `returnedSellerNet` only · TL2-COPY approved: caption "Earnings on hold", columns "Order" / "Amount" / "Release", "Your earnings on hold couldn't be loaded.", discount row "Coupon discount · Funded by you" / "· Funded by Nile" with "−{amount}" (design 01 R-72).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
