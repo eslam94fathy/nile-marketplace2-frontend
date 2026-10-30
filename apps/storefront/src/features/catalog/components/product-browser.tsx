@@ -33,8 +33,8 @@ export interface ProductBrowserProps {
   readonly listing: ResolvedListing;
   /** Its `GET /products` query (first page prefetched under the same key). */
   readonly query: ProductQueryInput;
-  /** The page the listing lives on (`/search` or `/c/<slug>`). */
-  readonly basePath: '/search' | `/c/${string}`;
+  /** The page the listing lives on (`/search`, `/c/<slug>` or the seller page `/s/<id>`). */
+  readonly basePath: '/search' | `/c/${string}` | `/s/${string}`;
   readonly attributes: readonly EffectiveAttribute[] | null;
   /** Search page only: the category refinement (spec 01 SF-03). */
   readonly categoryOptions?: readonly CategoryOption[];
@@ -94,7 +94,8 @@ export function ProductBrowser({
   const categoryId = useId();
 
   const go = (next: Omit<ResolvedListing, 'categoryId'>) => {
-    const search = listingQueryString(next);
+    // The seller page is the seller: like a route category, it is not repeated in the URL.
+    const search = listingQueryString(basePath.startsWith('/s/') ? { ...next, seller: null } : next);
     startTransition(() => {
       router.push(search === '' ? basePath : `${basePath}?${search}`, { scroll: false });
     });

@@ -19,6 +19,10 @@ export const CATALOG_COPY = {
   /** [PROPOSED, SF-Q-2] title from the first result; without results the seller's name is unknown. */
   productsFrom: (businessName: string) => `Products from ${businessName}`,
   sellerProducts: "This seller's products",
+  // SF-22 Seller page (T-K8)
+  sellingSince: (monthYear: string) => `Selling on Nile since ${monthYear}`,
+  noReviewsYet: 'No reviews yet',
+  sellerUnavailable: "This seller isn't available.",
   categoryRefinement: 'Category',
   allCategories: 'All categories',
   // SF-04

@@ -2,9 +2,8 @@ import type { Schema } from '@nile/api';
 import { Badge, Money, NileImage, RatingStars } from '@nile/ui';
 import Link from 'next/link';
 import { WishlistHeart } from '@/features/wishlist';
-import { ROUTES } from '@/lib/routes';
+import { sellerPath } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
-import { LISTING_PARAMS } from '../lib/listing-params';
 import { productHref } from '../lib/product-href';
 
 export type ProductListItem = Schema<'ProductListItemDto'>;
@@ -54,7 +53,7 @@ export function ProductCard({
       <p className="mt-auto text-sm">
         {CATALOG_COPY.soldBy}{' '}
         <Link
-          href={{ pathname: ROUTES.search, query: { [LISTING_PARAMS.seller]: product.seller.id } }}
+          href={sellerPath(product.seller.id)}
           className="relative z-10 text-primary underline-offset-4 hover:underline"
         >
           {product.seller.businessName}

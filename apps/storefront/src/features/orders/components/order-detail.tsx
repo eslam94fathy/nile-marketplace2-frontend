@@ -8,6 +8,7 @@ import {
   parseMoney,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
+  SELLER_ORDER_CANCEL_REASON_LABELS,
   SELLER_ORDER_STATUS_LABELS,
 } from '@nile/domain';
 import { useRealtimeConnected } from '@nile/realtime';
@@ -240,6 +241,12 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
           ) : null}
         </span>
       </div>
+      {/* Spec 01 §10.3: why a parcel was cancelled, "Cancelled by Nile" included (§10.6 labels). */}
+      {sellerOrder.status === 'cancelled' && sellerOrder.cancelReason !== null ? (
+        <p className="border-b border-border px-4 py-2 text-sm text-muted-foreground">
+          {SELLER_ORDER_CANCEL_REASON_LABELS.customer[sellerOrder.cancelReason]}
+        </p>
+      ) : null}
       <ul className="divide-y divide-border">
         {sellerOrder.items.map((item) => (
           <li key={item.id} className="flex flex-wrap gap-3 px-4 py-3 text-sm">
@@ -268,6 +275,9 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
                   {COPY.cancelledBySeller(item.cancelledQuantity)} ·{' '}
                   {COPY.openQuantity(item.quantity - item.cancelledQuantity)}
                 </span>
+              ) : null}
+              {item.returnedQuantity > 0 ? (
+                <span className="block text-muted-foreground">{COPY.returned(item.returnedQuantity)}</span>
               ) : null}
             </span>
             <span className="flex flex-col items-end gap-2">

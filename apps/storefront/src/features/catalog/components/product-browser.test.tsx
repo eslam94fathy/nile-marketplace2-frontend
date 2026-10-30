@@ -121,7 +121,7 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
     expect(card.textContent).toMatch(/250\.00.*300\.00/);
     expect(within(card).getByText('Tees')).toBeDefined();
     expect(within(card).getByRole('link', { name: 'Nile Crafts' }).getAttribute('href')).toBe(
-      `/search?seller=${SELLER.id}`,
+      `/s/${SELLER.id}`,
     );
     expect(within(card).getByText('Out of stock')).toBeDefined();
     // SF-23-A1: every card has the heart.
@@ -262,6 +262,14 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
     await view.user.click(await screen.findByRole('combobox', { name: 'Category' }));
     await view.user.click(screen.getByRole('option', { name: /Polos/ }));
     expect(lastPush()).toBe('/search?q=shirt&category=polos');
+  });
+
+  it('seller page (SF-22): the seller is fixed in the API query and never repeated in the URL', async () => {
+    const queries = servePages({ data: [], nextCursor: null });
+    const view = renderBrowser({ seller: SELLER.id, inStock: '1' }, { basePath: `/s/${SELLER.id}` }, false);
+    await view.user.click(await screen.findByRole('button', { name: 'Clear filters' }));
+    expect(lastPush()).toBe(`/s/${SELLER.id}`);
+    expect(queries[0]).toContain(`sellerId[eq]=${SELLER.id}`);
   });
 
   it('empty: says so and offers to clear the filters', async () => {

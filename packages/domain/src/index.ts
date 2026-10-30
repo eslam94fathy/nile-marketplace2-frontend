@@ -19,6 +19,7 @@ export {
   DISPLAY_TIME_ZONE,
   formatDate,
   formatDateTime,
+  formatMonthYear,
   formatRelativeTime,
   isCalendarDay,
   type Countdown,

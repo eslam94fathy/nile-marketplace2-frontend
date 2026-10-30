@@ -122,7 +122,7 @@ Inputs:
 | T-K6 Returns (**done 2026-10-30**, design 01 R-67; TK6-COPY, TK6-Q1…Q3 approved; E2E written, not yet run) | "Return items" on a delivered seller order inside the window: items and quantities, one reason, description, photos (≥ 1 for seller-fault), fee and estimated refund, COD payout details (wallet / InstaPay); returns list and detail with timeline, refund status, cancel, escalate | `/returnable-items`, `/returns*` |
 | T-K6b Account navigation (**done 2026-10-30**, design 01 R-68; TK6B-Q1, TK6B-Q2, TK6B-COPY approved; added by TK6-Q3) | SF-Q-13: side navigation on desktop and an "Account" menu page on phones with the nine entries of spec 01 §10.2; the header account menu uses the same list | none |
 | T-K7 Support (**done 2026-10-30**, design 01 R-69; TK7-Q1…Q4, TK7-COPY approved; E2E written, not yet run) | My tickets, open a ticket (category, subject, message, optional order, attachments), thread with "Nile Support" messages, reply, read state, realtime updates and typing indicator | `/support/tickets*` |
-| T-K8 Seller page and order updates | Public seller page (name, rating, member since, products via `sellerId`), link from the product; order detail shows refunds, returned quantities and admin cancellation; realtime refresh | `/sellers/{id}`, `/orders/{id}` |
+| T-K8 Seller page and order updates (**done 2026-10-30**, design 01 R-70; TK8-Q1…Q3 approved; the SF-18 refunds block waits for the backend, OQ-20; E2E written, not yet run) | Public seller page (name, rating, member since, products via `sellerId`), link from the product; order detail shows refunds, returned quantities and admin cancellation; realtime refresh | `/sellers/{id}`, `/orders/{id}` |
 
 ### Phase l — Seller portal (`phase/l-seller-r2`)
 

@@ -203,10 +203,10 @@ describe('product page (spec 01 SF-05)', { timeout: 15_000 }, () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it('links the seller to their products', () => {
+  it('links the seller to their page (SF-22)', () => {
     renderView();
     expect(screen.getByRole('link', { name: 'Nile Crafts' }).getAttribute('href')).toBe(
-      '/search?seller=01900000-0000-7000-8000-0000000000aa',
+      '/s/01900000-0000-7000-8000-0000000000aa',
     );
   });
 });

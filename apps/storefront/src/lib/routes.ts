@@ -34,6 +34,11 @@ export const ROUTES = {
   supportNew: '/account/support/new',
 } as const;
 
+/** SF-22 Seller page (T-K8). */
+export function sellerPath(sellerId: string): `/s/${string}` {
+  return `/s/${sellerId}`;
+}
+
 /** SF-05 Product page (the route accepts an id or a slug; lists link by slug). */
 export function productPath(slug: string): `/p/${string}` {
   return `/p/${slug}`;

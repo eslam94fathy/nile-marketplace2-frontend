@@ -9,9 +9,8 @@ import { AddToCart } from '@/features/cart';
 import { REVIEWS_SECTION_ID } from '@/features/reviews';
 import { WishlistHeart } from '@/features/wishlist';
 import { useHasSession } from '@/lib/use-has-session';
-import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
+import { RETURN_TO_PARAM, ROUTES, sellerPath } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
-import { LISTING_PARAMS } from '../lib/listing-params';
 import { PRODUCT_PARAMS } from '../lib/product-params';
 import { productHref } from '../lib/product-href';
 import {
@@ -175,7 +174,7 @@ export function ProductView({ product, variantId, quantity: quantityParam, headi
           <p className="text-sm">
             {CATALOG_COPY.soldByLine}{' '}
             <Link
-              href={{ pathname: ROUTES.search, query: { [LISTING_PARAMS.seller]: product.seller.id } }}
+              href={sellerPath(product.seller.id)}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {product.seller.businessName}

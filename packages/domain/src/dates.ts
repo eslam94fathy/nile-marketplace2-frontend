@@ -19,6 +19,12 @@ const DATE_FORMAT = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
   year: 'numeric',
 });
 
+const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+  timeZone: DISPLAY_TIME_ZONE,
+  month: 'long',
+  year: 'numeric',
+});
+
 const SECOND_MS = 1000;
 const MINUTE_S = 60;
 const HOUR_S = 60 * MINUTE_S;
@@ -48,6 +54,15 @@ export function formatDate(iso: string): string {
   ) as Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
   const { day = '', month = '', year = '' } = parts;
   return `${day} ${month} ${year}`;
+}
+
+/** `October 2026` in Cairo time (spec 01 SF-22 "Selling on Nile since {Month YYYY}"). */
+export function formatMonthYear(iso: string): string {
+  const parts = Object.fromEntries(
+    MONTH_YEAR_FORMAT.formatToParts(parseTimestamp(iso)).map((part) => [part.type, part.value]),
+  ) as Partial<Record<Intl.DateTimeFormatPartTypes, string>>;
+  const { month = '', year = '' } = parts;
+  return `${month} ${year}`;
 }
 
 const RELATIVE_FORMAT = new Intl.RelativeTimeFormat(DISPLAY_LOCALE, { numeric: 'auto' });

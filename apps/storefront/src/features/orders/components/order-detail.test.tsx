@@ -166,6 +166,28 @@ describe('order detail (spec 01 SF-18)', { timeout: 15_000 }, () => {
     expect(await screen.findByText('1 cancelled by the seller · 2 still ordered')).toBeDefined();
   });
 
+  it('returned items: "{n} returned" (spec 01 §10.3, T-K8)', async () => {
+    serveOrder(
+      order({
+        sellerOrders: [
+          sellerOrder({ status: 'delivered', items: [item({ quantity: 3, returnedQuantity: 2 })] }),
+        ],
+      }),
+    );
+    renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
+    expect(await screen.findByText('2 returned')).toBeDefined();
+  });
+
+  it.each([
+    ['admin_cancelled', 'Cancelled by Nile'],
+    ['seller_acceptance_timeout', 'Cancelled: the seller didn’t confirm in time'],
+  ] as const)('a parcel cancelled with %s says "%s" (spec 01 §10.3)', async (cancelReason, text) => {
+    serveOrder(order({ sellerOrders: [sellerOrder({ status: 'cancelled', cancelReason })] }));
+    renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
+    const block = await screen.findByRole('region', { name: 'Sold by Nile Crafts' });
+    expect(within(block).getByText(text)).toBeDefined();
+  });
+
   it('awaiting card payment: countdown and Pay now before the deadline', async () => {
     serveOrder(
       order({
