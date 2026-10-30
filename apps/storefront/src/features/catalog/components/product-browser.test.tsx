@@ -124,6 +124,8 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
       `/search?seller=${SELLER.id}`,
     );
     expect(within(card).getByText('Out of stock')).toBeDefined();
+    // SF-23-A1: every card has the heart.
+    expect(within(card).getByRole('button', { name: 'Save to wishlist' })).toBeDefined();
   });
 
   it('"Load more" asks for the next cursor and appends without duplicates', async () => {

@@ -22,7 +22,14 @@ export const ROUTES = {
   notificationSettings: '/account/notifications/settings',
   /** SF-24 My reviews (T-K5); `?review=` highlights one. */
   reviews: '/account/reviews',
+  /** SF-23 Wishlist (T-K3). */
+  wishlist: '/account/wishlist',
 } as const;
+
+/** SF-05 Product page (the route accepts an id or a slug; lists link by slug). */
+export function productPath(slug: string): `/p/${string}` {
+  return `/p/${slug}`;
+}
 
 /** SF-18 Order detail. */
 export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;

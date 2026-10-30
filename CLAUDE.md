@@ -343,6 +343,9 @@ Phase k on `phase/k-storefront-r2` from `main` · TK1-COPY approved: thumbnail l
 ### 14.1az Decided (2026-10-30, T-K2)
 TK2-COPY approved: section heading "Reviews", "Reviews couldn't be loaded.", "No reviews match these filters." + "Show all reviews", "Rating summary", "out of 5", "Filter by rating", chips "5 stars" … "1 star", one review read "Rated {n} out of 5", review photos "Photos from {reviewer}" · review filters live in component state, not the URL · 5 reviews first, then 10 per "Show more reviews" · the rating under the product name links to `#reviews` only with reviews (design 01 R-63).
 
+### 14.1ba Decided (2026-10-30, T-K3)
+TK3-Q1: the signed-out heart carries the product inside `returnTo` (`/login?returnTo=<page>?wishlist=<id>`), saved once by the shell after sign-in and dropped from the URL without a navigation (spec 01 SF-23-A1 updated) · TK3-COPY approved: "Wishlist" (title, header link, menu entry), "Remove {product} from your wishlist", "Your wishlist couldn't be loaded.", other failures the default error message · hearts optimistic on the shared ids, `PUT` / `DELETE` sent once more only on `NETWORK_ERROR` · `productPath` in `lib/routes` (design 01 R-64).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

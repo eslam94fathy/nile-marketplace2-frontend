@@ -11,9 +11,10 @@ import {
   UI_COPY,
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, ShoppingCart, User } from 'lucide-react';
+import { ChevronDown, Heart, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { CartLink } from '@/features/cart';
+import { WISHLIST_COPY } from '@/features/wishlist';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 import { profileQuery } from '../api';
@@ -25,6 +26,7 @@ const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md ho
 
 const MENU_LINKS = [
   { href: ROUTES.orders, label: ACCOUNT_COPY.orders },
+  { href: ROUTES.wishlist, label: WISHLIST_COPY.title },
   { href: ROUTES.notifications, label: NOTIFICATIONS_COPY.title },
   { href: ROUTES.addresses, label: ACCOUNT_COPY.addresses },
   { href: ROUTES.account, label: ACCOUNT_COPY.account },
@@ -66,7 +68,7 @@ function SignedInMenu() {
 
 /**
  * Header account area and cart link (spec 01 §2.2): sign-in links for visitors (with `returnTo`), the
- * notification bell (T-J6) and the "Hi, {firstName}" menu with sign-out for customers, and the cart button
+ * notification bell (T-J6), the wishlist link (T-K3) and the "Hi, {firstName}" menu with sign-out for customers, and the cart button
  * with its count (T-F1).
  */
 export function AccountArea({ pathname }: { readonly pathname: string }) {
@@ -90,6 +92,11 @@ export function AccountArea({ pathname }: { readonly pathname: string }) {
           </Link>
         </>
       )}
+      {signedIn ? (
+        <Link href={ROUTES.wishlist} aria-label={WISHLIST_COPY.title} className={ICON_LINK}>
+          <Heart aria-hidden="true" className="size-5" />
+        </Link>
+      ) : null}
       {signedIn ? (
         <CartLink className={ICON_LINK} />
       ) : (

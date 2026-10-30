@@ -62,6 +62,7 @@ describe('header account area (spec 01 §2.2)', () => {
       .map((item) => [item.textContent, item.getAttribute('href')]);
     expect(items).toEqual([
       ['Orders', '/account/orders'],
+      ['Wishlist', '/account/wishlist'],
       ['Notifications', '/account/notifications'],
       ['Addresses', '/account/addresses'],
       ['Account', '/account'],
@@ -69,6 +70,8 @@ describe('header account area (spec 01 §2.2)', () => {
       ['Sign out', null],
     ]);
     await view.user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    // The header's heart link (spec 01 §10.3).
+    expect(screen.getByRole('link', { name: 'Wishlist' }).getAttribute('href')).toBe('/account/wishlist');
     expect(session.signOut).toHaveBeenCalledTimes(1);
   });
 

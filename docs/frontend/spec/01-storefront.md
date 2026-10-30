@@ -679,7 +679,7 @@ Route: `/account/wishlist` · Data: `GET /me/wishlist` (`limit=20`, load more), 
 Content: product cards (SF-04 card) with "Remove"; `available = false` → card greyed with "No longer available" and no product link except "Remove" [SPEC 04 WL-2]; `inStock = false` → "Out of stock".
 Empty: "Your wishlist is empty. Tap the heart on a product to save it here."
 **SF-23-A1 Heart** (cards, product page): accessible toggle button "Save to wishlist" / "Remove from wishlist" (`aria-pressed`).
-- Signed out → `/login?returnTo=<page>&wishlist=<productId>`; after sign-in the product is added once and a toast says "Saved to your wishlist." (SF-Q-17).
+- Signed out → `/login?returnTo=<page>?wishlist=<productId>` (the product travels inside `returnTo`, so register and verify-email keep it; TK3-Q1, 2026-10-30); after sign-in the product is added once and a toast says "Saved to your wishlist." (SF-Q-17).
 - Signed in: optimistic toggle → `PUT` / `DELETE /me/wishlist/{productId}` (both idempotent, retried once on network failure); failure → revert + toast.
 - `WISHLIST_LIMIT_REACHED` → revert + "Your wishlist is full (200 items). Remove something to save this."; `PRODUCT_NOT_FOUND` → revert + "This product isn't available any more."
 Acceptance: hearts reflect `product-ids` on every listing; a toggle never leaves the heart in a state different from the server after the response.

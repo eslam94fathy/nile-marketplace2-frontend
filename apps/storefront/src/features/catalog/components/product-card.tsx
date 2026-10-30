@@ -1,6 +1,7 @@
 import type { Schema } from '@nile/api';
 import { Badge, Money, NileImage, RatingStars } from '@nile/ui';
 import Link from 'next/link';
+import { WishlistHeart } from '@/features/wishlist';
 import { ROUTES } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
 import { LISTING_PARAMS } from '../lib/listing-params';
@@ -14,7 +15,7 @@ const CARD_IMAGE_SIZES = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100
 export const FIRST_ROW_CARDS = 3;
 
 /**
- * Product card (spec 01 SF-04, §10.3): primary image (square crop), name, price, category, rating (hidden
+ * Product card (spec 01 SF-04, §10.3): primary image (square crop) with the wishlist heart, name, price, category, rating (hidden
  * without reviews), seller. The whole card is one link target for the product (the name's link is stretched
  * over it); the seller link is a separate focusable link above it.
  */
@@ -36,6 +37,7 @@ export function ProductCard({
         priority={priority}
         className="aspect-square w-full rounded-md bg-muted"
       />
+      <WishlistHeart productId={product.id} className="absolute end-6 top-6 z-10" />
       <h3 className="font-medium">
         <Link
           href={productHref(product.slug)}

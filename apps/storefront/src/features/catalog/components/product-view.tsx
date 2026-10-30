@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useId, useState, type ReactNode } from 'react';
 import { AddToCart } from '@/features/cart';
 import { REVIEWS_SECTION_ID } from '@/features/reviews';
+import { WishlistHeart } from '@/features/wishlist';
 import { useHasSession } from '@/lib/use-has-session';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
@@ -215,17 +216,23 @@ export function ProductView({ product, variantId, quantity: quantityParam, headi
           <QuantityStepper value={shownQuantity} max={max} onChange={setQuantity} />
         ) : null}
 
-        {signedIn ? (
-          <AddToCart
-            variantId={variant?.inStock === true ? variant.id : null}
-            quantity={shownQuantity}
-            label={CATALOG_COPY.addToCart}
-          />
-        ) : (
-          <Button size="lg" disabled={!canAdd} onClick={addToCart} className="w-full sm:w-auto">
-            {CATALOG_COPY.addToCart}
-          </Button>
-        )}
+        <div className="flex items-start gap-3">
+          <div className="flex-1 sm:flex-none">
+            {signedIn ? (
+              <AddToCart
+                variantId={variant?.inStock === true ? variant.id : null}
+                quantity={shownQuantity}
+                label={CATALOG_COPY.addToCart}
+              />
+            ) : (
+              <Button size="lg" disabled={!canAdd} onClick={addToCart} className="w-full sm:w-auto">
+                {CATALOG_COPY.addToCart}
+              </Button>
+            )}
+          </div>
+          {/* SF-05 item 4: next to "Add to cart". */}
+          <WishlistHeart productId={product.id} className="size-11 shrink-0" />
+        </div>
 
         {variant === null ? null : (
           <section aria-labelledby="product-details" className="space-y-2">
