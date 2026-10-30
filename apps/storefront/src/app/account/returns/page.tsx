@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: RETURNS_COPY.title };
 export default async function ReturnsPage({ searchParams }: PageProps<'/account/returns'>) {
   await requireSession();
   const status = (await searchParams).status;
-  return <ReturnsList tab={parseReturnsTab((Array.isArray(status) ? status[0] : status) ?? null)} />;
+  return <ReturnsList tab={parseReturnsTab(Array.isArray(status) ? status[0] : status)} />;
 }

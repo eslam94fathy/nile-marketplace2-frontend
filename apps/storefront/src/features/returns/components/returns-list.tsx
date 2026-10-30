@@ -17,15 +17,11 @@ import {
 import { useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { returnPath, ROUTES } from '@/lib/routes';
-import { RETURN_TAB_STATUSES, returnsListOptions, type Return, type ReturnsTab } from '../api';
+import { returnsListOptions, type Return, type ReturnsTab } from '../api';
 import { RETURNS_COPY as COPY } from '../copy';
+import { RETURNS_TABS as TABS } from '../lib/returns-tabs';
 
-const TABS = Object.keys(RETURN_TAB_STATUSES) as ReturnsTab[];
 const SKELETON_ROWS = 3;
-
-export function parseReturnsTab(value: string | null): ReturnsTab {
-  return TABS.find((tab) => tab === value) ?? 'open';
-}
 
 function Row({ data }: { readonly data: Return }) {
   const count = data.items.reduce((sum, item) => sum + item.quantity, 0);
