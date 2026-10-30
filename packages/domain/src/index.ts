@@ -33,6 +33,7 @@ export {
   type NotificationLinkParams,
 } from './notification-links';
 export { imageAlt, primaryImage, variantImage, type PositionedImage, type ProductImages } from './images';
+export { formatRating, MAX_RATING, starFills, type StarFill } from './ratings';
 export { sellerOrderActions, type SellerOrderAction } from './status/seller-order';
 export {
   agentShipmentActions,

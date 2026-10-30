@@ -337,6 +337,9 @@ Link targets of later phases get placeholder pages naming their task (storefront
 ### 14.1ax Decided (2026-10-28, phase i catch-up, TB-4)
 `main` (phase j) merged into `phase/i-hardening-release` (merge, no rebase), with `84ebaee` (TJ6-COPY) carried to `main` through it · the enforced CSP gains the R2 hosts from the env: media public (all apps), private images and uploads plus `blob:` (storefront, seller, admin), the realtime origin as `ws(s):`, `worker-src` / `manifest-src 'self'` · new public keys `NEXT_PUBLIC_MEDIA_PUBLIC_ORIGIN`, `NEXT_PUBLIC_MEDIA_PRIVATE_ORIGIN`, `NEXT_PUBLIC_MEDIA_UPLOAD_ORIGIN` (local `http://localhost:9100`) · one `headers()` per app: static security headers everywhere, `no-cache` on `/sw.js` · T-I4…T-I6 stay blocked on FQ-3 / FQ-8; the R2 re-runs (report-only CSP, a11y, Lighthouse with real images) are phase o (design 01 R-61).
 
+### 14.1ay Decided (2026-10-30, T-K1)
+Phase k on `phase/k-storefront-r2` from `main` · TK1-COPY approved: thumbnail list "Photos", "Show photo {n} of {total}", "View larger", lightbox counter "Photo {n} of {total}", "Previous photo", "Next photo", rating filter "{n} stars & up" ("1 star & up") · SF-02 subcategories stay text chips; category images only on the home tiles · item thumbnails in cart, checkout, confirmation and order detail (spec 01 §10.3) built in T-K1 · URL `rating=1..5` ↔ `rating[gte]`, "Top rated" `sort=rating` ↔ `-rating` · "Sold by" → `/s/<id>` in T-K8, rating → reviews link in T-K2 (design 01 R-62).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

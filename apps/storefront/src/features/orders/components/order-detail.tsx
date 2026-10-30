@@ -16,6 +16,7 @@ import {
   Countdown,
   ErrorState,
   Money,
+  NileImage,
   NotFoundScreen,
   ORDER_STATUS_TONES,
   PageHeader,
@@ -257,8 +258,15 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
       </div>
       <ul className="divide-y divide-border">
         {sellerOrder.items.map((item) => (
-          <li key={item.id} className="flex flex-wrap justify-between gap-4 px-4 py-3 text-sm">
-            <span className="space-y-0.5">
+          <li key={item.id} className="flex flex-wrap gap-3 px-4 py-3 text-sm">
+            <NileImage
+              image={item.image}
+              alt=""
+              sizes="64px"
+              placeholder="product"
+              className="size-16 shrink-0 rounded-md bg-muted"
+            />
+            <span className="flex-1 space-y-0.5">
               <Link href={productHref(item.productId)} className="block font-medium hover:underline">
                 {item.productName}
               </Link>

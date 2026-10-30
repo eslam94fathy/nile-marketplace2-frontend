@@ -14,6 +14,7 @@ export const LISTING_PARAMS = {
   maxPrice: 'maxPrice',
   inStock: 'inStock',
   seller: 'seller',
+  rating: 'rating',
   sort: 'sort',
 } as const;
 /** `attr.<code>=opt1,opt2` (spec 01 SF-04). */
@@ -26,6 +27,7 @@ export const SORTS = {
   'price-asc': 'minPrice',
   'price-desc': '-minPrice',
   'best-match': '-relevance',
+  rating: '-rating',
 } as const;
 export type SortKey = keyof typeof SORTS;
 
@@ -34,6 +36,10 @@ export const Q_MIN_LENGTH = 2;
 export const Q_MAX_LENGTH = 100;
 export const MAX_ATTRIBUTE_FILTERS = 5;
 export const MAX_ATTRIBUTE_VALUES = 20;
+
+/** `rating=<n>` ↔ `rating[gte]=<n>`: whole stars 1..5 (spec 01 §10.3; the UI offers 4 and 3). */
+const RATING_PARAM = /^[1-5]$/;
+export const RATING_FILTERS = [4, 3] as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CODE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -49,6 +55,8 @@ export interface ListingState {
   readonly maxPrice: string | null;
   readonly inStock: boolean;
   readonly seller: string | null;
+  /** Minimum average rating (whole stars); unrated products never match [SPEC 06 §9.3]. */
+  readonly rating: number | null;
   /** Attribute code → option codes, in the order given; checked against the category's attributes later. */
   readonly attributes: Readonly<Record<string, readonly string[]>>;
   /** Explicit sort; null means the default (best match with `q`, newest without). */
@@ -96,6 +104,7 @@ export function parseListingParams(params: SearchParams): ListingState {
   const sort = first(params, LISTING_PARAMS.sort);
   const validSort = sort !== null && Object.hasOwn(SORTS, sort) ? (sort as SortKey) : null;
   const categorySlug = first(params, LISTING_PARAMS.category);
+  const rating = first(params, LISTING_PARAMS.rating);
   return {
     q,
     categorySlug: categorySlug !== null && CODE.test(categorySlug) ? categorySlug : null,
@@ -103,6 +112,7 @@ export function parseListingParams(params: SearchParams): ListingState {
     maxPrice,
     inStock: first(params, LISTING_PARAMS.inStock) === IN_STOCK_VALUE,
     seller: seller !== null && UUID.test(seller) ? seller : null,
+    rating: rating !== null && RATING_PARAM.test(rating) ? Number(rating) : null,
     attributes: attributesFrom(params),
     sort: validSort === 'best-match' && q === null ? null : validSort,
   };
@@ -174,6 +184,7 @@ export function toProductQuery(listing: ResolvedListing, limit: number = PAGE_SI
     ...(listing.maxPrice === null ? {} : { 'price[lte]': listing.maxPrice }),
     ...(listing.inStock ? { 'inStock[eq]': true } : {}),
     ...(listing.seller === null ? {} : { 'sellerId[eq]': listing.seller }),
+    ...(listing.rating === null ? {} : { 'rating[gte]': listing.rating }),
     ...(Object.keys(listing.attributes).length === 0 ? {} : { attributes: listing.attributes }),
   };
   // Throws on a combination the backend would refuse; resolveListing makes that impossible.
@@ -190,6 +201,7 @@ export function listingQueryString(listing: Omit<ResolvedListing, 'categoryId'>)
   if (listing.maxPrice !== null) params.set(LISTING_PARAMS.maxPrice, listing.maxPrice);
   if (listing.inStock) params.set(LISTING_PARAMS.inStock, IN_STOCK_VALUE);
   if (listing.seller !== null) params.set(LISTING_PARAMS.seller, listing.seller);
+  if (listing.rating !== null) params.set(LISTING_PARAMS.rating, String(listing.rating));
   for (const [code, values] of Object.entries(listing.attributes)) {
     params.set(`${ATTRIBUTE_PARAM_PREFIX}${code}`, values.join(','));
   }
@@ -199,12 +211,13 @@ export function listingQueryString(listing: Omit<ResolvedListing, 'categoryId'>)
 
 /** True when any filter is set (search text, category and seller don't count: "Clear all" keeps them). */
 export function hasFilters(
-  listing: Pick<ResolvedListing, 'minPrice' | 'maxPrice' | 'inStock' | 'attributes'>,
+  listing: Pick<ResolvedListing, 'minPrice' | 'maxPrice' | 'inStock' | 'rating' | 'attributes'>,
 ): boolean {
   return (
     listing.minPrice !== null ||
     listing.maxPrice !== null ||
     listing.inStock ||
+    listing.rating !== null ||
     Object.keys(listing.attributes).length > 0
   );
 }

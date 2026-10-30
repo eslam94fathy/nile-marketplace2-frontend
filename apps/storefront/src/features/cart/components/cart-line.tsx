@@ -1,7 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { Button, Money, QuantityStepper, toast } from '@nile/ui';
+import { Button, Money, NileImage, QuantityStepper, toast } from '@nile/ui';
 import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -59,7 +59,15 @@ export function CartLine({ line }: { readonly line: CartLineData }) {
   }, [draft]);
 
   return (
-    <li className="grid gap-3 border-b border-border py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-start">
+    <li className="grid gap-3 border-b border-border py-4 last:border-b-0 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:items-start">
+      {/* The name next to it names the item (conventions §12.1). */}
+      <NileImage
+        image={line.image}
+        alt=""
+        sizes="64px"
+        placeholder="product"
+        className="size-16 shrink-0 rounded-md bg-muted"
+      />
       <div className="space-y-1">
         <Link
           href={productHref(line.productSlug)}

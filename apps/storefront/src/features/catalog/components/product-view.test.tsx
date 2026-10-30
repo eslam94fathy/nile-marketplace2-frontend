@@ -88,8 +88,28 @@ function product(overrides: Partial<ProductDetail> = {}): ProductDetail {
 }
 
 function renderView(props: Partial<ProductViewProps> = {}) {
-  return renderWithProviders(<ProductView product={product()} variantId={null} quantity={null} {...props} />);
+  return renderWithProviders(
+    <ProductView product={product()} variantId={null} quantity={null} heading={<h1>Tee</h1>} {...props} />,
+  );
 }
+
+function image(id: string, position: number, altText: string | null = null): ProductDetail['images'][number] {
+  return {
+    id,
+    position,
+    variantId: null,
+    altText,
+    urls: {
+      thumb: `https://media.test/${id}-t.webp`,
+      medium: `https://media.test/${id}-m.webp`,
+      large: `https://media.test/${id}-l.webp`,
+    },
+    width: 1200,
+    height: 1200,
+  };
+}
+
+const mainPhoto = () => screen.getByRole('button', { name: /View larger/ }).querySelector('img');
 
 const addButton = () => screen.getByRole('button', { name: 'Add to cart' });
 
@@ -188,5 +208,52 @@ describe('product page (spec 01 SF-05)', { timeout: 15_000 }, () => {
     expect(screen.getByRole('link', { name: 'Nile Crafts' }).getAttribute('href')).toBe(
       '/search?seller=01900000-0000-7000-8000-0000000000aa',
     );
+  });
+});
+
+describe('product page images and ratings (spec 01 §10.3, T-K1)', { timeout: 15_000 }, () => {
+  const FRONT = image('01900000-0000-7000-8000-0000000000c1', 0, 'Tee, front');
+  const BLUE = image('01900000-0000-7000-8000-0000000000c2', 1);
+
+  it('shows the primary photo, then the image of a chosen variant that has one', async () => {
+    const blue = { ...M_BLUE, imageId: BLUE.id };
+    const view = renderView({ product: product({ images: [FRONT, BLUE], variants: [M_RED, blue, L_RED] }) });
+    expect(mainPhoto()?.getAttribute('alt')).toBe('Tee, front');
+    expect(mainPhoto()?.getAttribute('fetchpriority')).toBe('high');
+    await view.user.click(screen.getByRole('radio', { name: 'M' }));
+    await view.user.click(screen.getByRole('radio', { name: /BLUE/ }));
+    // No alt text of its own: the product name (conventions §12.1).
+    expect(mainPhoto()?.getAttribute('alt')).toBe('Tee');
+    // A variant without an image keeps the photo on screen.
+    await view.user.click(screen.getByRole('radio', { name: 'RED' }));
+    expect(mainPhoto()?.getAttribute('alt')).toBe('Tee');
+  });
+
+  it("opens on the URL variant's image", () => {
+    const red = { ...M_RED, imageId: BLUE.id };
+    renderView({
+      product: product({ images: [FRONT, BLUE], variants: [red, M_BLUE, L_RED] }),
+      variantId: red.id,
+    });
+    expect(mainPhoto()?.getAttribute('alt')).toBe('Tee');
+  });
+
+  it('shows the placeholder without photos', () => {
+    renderView();
+    expect(screen.getByRole('img', { name: 'Tee' }).tagName.toLowerCase()).toBe('svg');
+  });
+
+  it('shows the product rating and the seller rating only when the seller has reviews', () => {
+    const { unmount } = renderView({
+      product: product({
+        rating: { avg: '4.30', count: 12 },
+        seller: { id: 's', businessName: 'Nile Crafts', ratingAvg: '4.80', ratingCount: 30 },
+      }),
+    });
+    expect(screen.getByText('Rated 4.3 out of 5 from 12 reviews')).toBeDefined();
+    expect(screen.getByText('Rated 4.8 out of 5 from 30 reviews')).toBeDefined();
+    unmount();
+    renderView();
+    expect(screen.getAllByText('No reviews yet')).toHaveLength(1);
   });
 });

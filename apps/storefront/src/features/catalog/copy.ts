@@ -31,6 +31,7 @@ export const CATALOG_COPY = {
     'price-asc': 'Price: low to high',
     'price-desc': 'Price: high to low',
     'best-match': 'Best match',
+    rating: 'Top rated',
   },
   filters: 'Filters',
   showFilters: 'Filters',
@@ -42,6 +43,10 @@ export const CATALOG_COPY = {
   priceInvalid: 'Enter an amount with up to 2 decimals.',
   apply: 'Apply',
   inStockOnly: 'In stock only',
+  // Spec 01 §10.3 (rating filter)
+  rating: 'Rating',
+  starsAndUp: (stars: number) => `${String(stars)} ${stars === 1 ? 'star' : 'stars'} & up`,
+  anyRating: 'Any',
   clearAll: 'Clear all',
   clearFilters: 'Clear filters',
   remove: (label: string) => `Remove filter: ${label}`,

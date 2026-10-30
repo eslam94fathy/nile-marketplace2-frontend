@@ -1,4 +1,4 @@
-import { Money } from '@nile/ui';
+import { Money, NileImage } from '@nile/ui';
 import type { Cart } from '@/features/cart';
 import { CHECKOUT_COPY } from '../copy';
 
@@ -20,8 +20,15 @@ export function OrderReview({ cart }: { readonly cart: Cart }) {
           </h3>
           <ul className="divide-y divide-border">
             {seller.items.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
-                <span>
+              <li key={item.id} className="flex gap-3 px-4 py-3 text-sm">
+                <NileImage
+                  image={item.image}
+                  alt=""
+                  sizes="64px"
+                  placeholder="product"
+                  className="size-16 shrink-0 rounded-md bg-muted"
+                />
+                <span className="flex-1">
                   <span className="block font-medium">{item.productName}</span>
                   {item.attributes.length === 0 ? null : (
                     <span className="block text-muted-foreground">

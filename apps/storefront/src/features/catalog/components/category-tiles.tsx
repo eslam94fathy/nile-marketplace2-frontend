@@ -1,9 +1,15 @@
+import { NileImage } from '@nile/ui';
 import Link from 'next/link';
 import { CATALOG_COPY } from '../copy';
 import { categoryHref } from '../lib/category-href';
 import type { CategoryNode } from '../lib/category-tree';
 
-/** Home "Shop by category" (spec 01 SF-01): one tile per top-level category; hidden when there are none. */
+const TILE_IMAGE_SIZES = '(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw';
+
+/**
+ * Home "Shop by category" (spec 01 SF-01, §10.3): one tile per top-level category with its image (placeholder
+ * when `null`); hidden when there are none. The image is `alt=""`: the tile's text already names the link.
+ */
 export function CategoryTiles({ tree }: { readonly tree: readonly CategoryNode[] }) {
   if (tree.length === 0) return null;
   return (
@@ -16,9 +22,16 @@ export function CategoryTiles({ tree }: { readonly tree: readonly CategoryNode[]
           <li key={node.id}>
             <Link
               href={categoryHref(node.slug)}
-              className="flex h-full min-h-20 items-center rounded-lg border border-border p-4 font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex h-full flex-col gap-2 rounded-lg border border-border p-2 font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
             >
-              {node.name}
+              <NileImage
+                image={node.image}
+                alt=""
+                sizes={TILE_IMAGE_SIZES}
+                placeholder="category"
+                className="aspect-[4/3] w-full rounded-md bg-muted"
+              />
+              <span className="px-2 pb-2">{node.name}</span>
             </Link>
           </li>
         ))}
