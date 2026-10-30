@@ -30,6 +30,8 @@ export const ROUTES = {
   returns: '/account/returns',
   /** SF-29 Support tickets (T-K7). */
   support: '/account/support',
+  /** SF-30 New ticket (T-K7), `?category=&order=&sellerOrder=`. */
+  supportNew: '/account/support/new',
 } as const;
 
 /** SF-05 Product page (the route accepts an id or a slug; lists link by slug). */
@@ -49,6 +51,9 @@ export const requestReturnPath = (orderId: string, sellerOrderId: string) =>
 
 /** SF-24 scrolled to one review (spec 01 §10, `?review=<id>` from a notification). */
 export const reviewPath = (reviewId: string) => `${ROUTES.reviews}?review=${reviewId}` as const;
+
+/** SF-29 Support tickets with a tab (`?status=open|closed`). */
+export const supportListPath = (tab: 'open' | 'closed') => `${ROUTES.support}?status=${tab}` as const;
 
 /** SF-31 Support ticket (T-K7). */
 export const supportTicketPath = (ticketId: string) => `${ROUTES.support}/${ticketId}` as const;

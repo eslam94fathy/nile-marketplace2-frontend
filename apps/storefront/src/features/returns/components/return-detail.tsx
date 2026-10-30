@@ -234,6 +234,8 @@ function ReturnBody({ data, onChanged }: { readonly data: Return; readonly onCha
   const escalationOpen =
     data.status === 'rejected' && data.escalationDeadlineAt !== null && !escalationClosed;
   const refundAmount = data.refund?.amount ?? data.refundAmount;
+  // Spec 01 SF-28 (rejected) and TK7-Q4 (pickup failed): support about this parcel (SF-30, category return).
+  const offerSupport = data.status === 'rejected' || data.status === 'pickup_failed';
 
   return (
     <div className="space-y-6">
@@ -248,10 +250,21 @@ function ReturnBody({ data, onChanged }: { readonly data: Return; readonly onCha
 
       <NextStep data={data} onDeadline={onChanged} />
 
-      {canCancel || escalationOpen ? (
+      {canCancel || escalationOpen || offerSupport ? (
         <div className="flex flex-wrap items-start gap-3">
           {canCancel ? <CancelAction data={data} onChanged={onChanged} /> : null}
           {escalationOpen ? <EscalateAction data={data} onChanged={onChanged} /> : null}
+          {offerSupport ? (
+            <Link
+              href={{
+                pathname: ROUTES.supportNew,
+                query: { category: 'return', order: data.orderId, sellerOrder: data.sellerOrderId },
+              }}
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              {COPY.contactSupport}
+            </Link>
+          ) : null}
         </div>
       ) : null}
 

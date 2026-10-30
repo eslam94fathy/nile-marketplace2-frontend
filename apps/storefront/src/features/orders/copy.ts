@@ -50,6 +50,8 @@ export const ORDERS_COPY = {
   subtotal: 'Subtotal',
   /** Spec 01 §10.3 SF-18 actions (SF-26 entry). */
   returnItems: 'Return items',
+  /** Spec 01 §10.3 SF-18: opens SF-30 with the order preselected (T-K7). */
+  getHelp: 'Get help with this order',
   timelineHeading: 'History',
   itemsTotal: 'Items total',
   deliveryFee: 'Delivery fee',

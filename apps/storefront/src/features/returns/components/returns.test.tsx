@@ -356,6 +356,10 @@ describe('return detail (spec 01 SF-28)', { timeout: 20_000 }, () => {
     );
     expect(await screen.findByText('Item was used.')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Cancel return' })).toBeNull();
+    // SF-28: support about this parcel, category Return (T-K7).
+    expect(screen.getByRole('link', { name: 'Contact support' }).getAttribute('href')).toBe(
+      `/account/support/new?category=return&order=${ORDER_ID}&sellerOrder=${SELLER_ORDER_ID}`,
+    );
     await view.user.click(screen.getByRole('button', { name: 'Ask Nile to review' }));
     const dialog = screen.getByRole('dialog', { name: "Ask Nile to review the seller's decision" });
     await view.user.type(within(dialog).getByRole('textbox', { name: 'Why should Nile review it?' }), 'ok');
@@ -394,6 +398,15 @@ describe('return detail (spec 01 SF-28)', { timeout: 20_000 }, () => {
     expect(
       await screen.findByText('Nile reviewed the seller’s report and the return wasn’t refunded.'),
     ).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Contact support' })).toBeNull();
+  });
+
+  it('pickup failed: "Contact support" about this parcel (TK7-Q4)', async () => {
+    serveReturn(aReturn({ status: 'pickup_failed', sellerDecisionDeadlineAt: null }));
+    renderWithProviders(<ReturnDetail returnId={RETURN_ID} />);
+    expect((await screen.findByRole('link', { name: 'Contact support' })).getAttribute('href')).toBe(
+      `/account/support/new?category=return&order=${ORDER_ID}&sellerOrder=${SELLER_ORDER_ID}`,
+    );
   });
 
   it('someone else’s or an unknown return: not found', async () => {
@@ -451,6 +464,10 @@ describe('SF-18 "Return items" (SF-Q-18)', { timeout: 15_000 }, () => {
     const { unmount } = renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
     expect((await screen.findByRole('link', { name: 'Return items' })).getAttribute('href')).toBe(
       `/account/orders/${ORDER_ID}/return?sellerOrder=${SELLER_ORDER_ID}`,
+    );
+    // Spec 01 §10.3 SF-18: SF-30 with the order preselected (T-K7).
+    expect(screen.getByRole('link', { name: 'Get help with this order' }).getAttribute('href')).toBe(
+      `/account/support/new?order=${ORDER_ID}`,
     );
     unmount();
     serveOrder(order({}, hoursAgo(24 * 15)));

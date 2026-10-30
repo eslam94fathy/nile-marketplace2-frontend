@@ -41,3 +41,4 @@ export {
   sellerVariantFactory,
 } from './factories/seller-catalog';
 export { sellerOrderFactory } from './factories/seller-order';
+export { ticketFactory, ticketMessageFactory } from './factories/support';

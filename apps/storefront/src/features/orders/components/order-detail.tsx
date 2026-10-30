@@ -171,6 +171,13 @@ export function OrderDetail({ orderId }: { readonly orderId: string }) {
       </section>
 
       {data.status === 'cancelled' ? <BuyAgain order={data} /> : null}
+
+      <Link
+        href={{ pathname: ROUTES.supportNew, query: { order: data.id } }}
+        className={buttonVariants({ variant: 'outline' })}
+      >
+        {COPY.getHelp}
+      </Link>
     </div>
   );
 }

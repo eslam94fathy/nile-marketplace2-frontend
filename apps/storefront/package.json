@@ -22,6 +22,7 @@
     "@nile/notifications": "*",
     "@nile/query": "*",
     "@nile/realtime": "*",
+    "@nile/support-screens": "*",
     "@nile/ui": "*",
     "@tanstack/react-query": "5.104.2",
     "lucide-react": "1.49.0",

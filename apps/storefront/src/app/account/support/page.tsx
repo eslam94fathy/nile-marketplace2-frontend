@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { parseSupportTab, TICKET_LIST_COPY, TicketList } from '@nile/support-screens';
 import { requireSession } from '@/lib/dal';
 
-export const metadata: Metadata = { title: 'Help & support' };
+export const metadata: Metadata = { title: TICKET_LIST_COPY.title };
 
-/** SF-29 Support tickets: an account navigation entry since T-K6b (SF-Q-13), built in T-K7. */
-export default async function SupportPage() {
+/** SF-29 Support tickets, `?status=open|closed`. */
+export default async function SupportPage({ searchParams }: PageProps<'/account/support'>) {
   await requireSession();
-  return <PlaceholderScreen title="Help & support" task="T-K7" />;
+  const status = (await searchParams).status;
+  return <TicketList tab={parseSupportTab(Array.isArray(status) ? status[0] : status)} />;
 }

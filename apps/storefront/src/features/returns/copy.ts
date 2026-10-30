@@ -31,6 +31,8 @@ export const RETURN_NEXT_STEP = {
 // TK6-COPY (the fallbacks without a deadline above are TK6-COPY too: a deadline can be missing in the DTO).
 
 export const RETURNS_COPY = {
+  /** Spec 01 SF-28: a rejected return offers support (SF-30, T-K7). */
+  contactSupport: 'Contact support',
   // SF-27
   title: 'Your returns',
   /** TK6-COPY */
