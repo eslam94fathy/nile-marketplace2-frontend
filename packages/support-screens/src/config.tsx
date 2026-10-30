@@ -40,14 +40,21 @@ export interface SupportScreensConfig {
   /** The app's `Link`, so in-app links stay client-side navigations. */
   readonly Link: (props: SupportLinkProps) => ReactNode;
   /**
-   * The orders the new-ticket form offers, with the one from the URL even when it is older (storefront).
-   * Absent: an order is linked only through the URL (seller, spec 02 SE-25).
+   * The orders the new-ticket form offers, with the one from the URL even when it is older. Absent: an order is
+   * linked only through the URL.
    */
   readonly orderChoices?: (
     selectedOrderId: string | null,
     signal: AbortSignal,
   ) => Promise<readonly OrderChoice[]>;
+  readonly linkKind?: SupportLinkKind;
 }
+
+/**
+ * What the order select holds: an order (customers, `orderId` + the URL's parcel) or a seller order (sellers,
+ * sent as `sellerOrderId` only, spec 02 SE-25, backend spec 16 §4.1). Default `order`.
+ */
+export type SupportLinkKind = 'order' | 'sellerOrder';
 
 const SupportContext = createContext<SupportScreensConfig | null>(null);
 

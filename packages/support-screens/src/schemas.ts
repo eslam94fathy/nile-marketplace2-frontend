@@ -30,22 +30,27 @@ export interface TicketLink {
 }
 
 /**
- * `POST /support/tickets`. With an order select (customers) the chosen order is sent, and the URL's parcel only
- * while that order is still chosen; without one (sellers) only the URL's parcel (backend spec 16 §4.1).
+ * `POST /support/tickets`. An order select (customers) sends the chosen order, and the URL's parcel only while
+ * that order is still chosen; a seller-order select sends the chosen parcel as `sellerOrderId` only; without a
+ * select only the URL's parcel (backend spec 16 §4.1).
  */
 export function openTicketBody(
   values: NewTicketOutput,
   link: TicketLink,
   attachmentMediaIds: readonly string[],
-  hasOrderSelect: boolean,
+  select: 'order' | 'sellerOrder' | null,
 ): OpenTicketBody {
   if (values.category === null) throw new Error('newTicketSchema lets no ticket through without a category');
-  const orderId = hasOrderSelect && values.orderId !== NO_ORDER ? values.orderId : null;
-  const sellerOrderId = hasOrderSelect
-    ? orderId !== null && orderId === link.orderId
-      ? link.sellerOrderId
-      : null
-    : link.sellerOrderId;
+  const chosen = values.orderId === NO_ORDER ? null : values.orderId;
+  const orderId = select === 'order' ? chosen : null;
+  const sellerOrderId =
+    select === 'sellerOrder'
+      ? chosen
+      : select === 'order'
+        ? orderId !== null && orderId === link.orderId
+          ? link.sellerOrderId
+          : null
+        : link.sellerOrderId;
   return {
     category: values.category,
     subject: values.subject,

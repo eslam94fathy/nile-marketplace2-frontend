@@ -39,15 +39,18 @@ export interface NewTicketFormProps {
     readonly category: string | null;
     readonly orderId: string | null;
     readonly sellerOrderId: string | null;
+    /** A starting subject the app built (e.g. the seller's blocked product, spec 02 SE-Q-14). */
+    readonly subject?: string | null;
   };
 }
 
 /** SF-30 / SE-25 New ticket. With an order select the choices load first, so the URL's order can be shown. */
 export function NewTicketForm({ initial }: NewTicketFormProps) {
-  const { orderChoices, scope } = useSupportConfig();
+  const { orderChoices, scope, linkKind = 'order' } = useSupportConfig();
+  const selectedId = linkKind === 'sellerOrder' ? initial.sellerOrderId : initial.orderId;
   const choices = useQuery({
-    queryKey: supportKeys(scope).orderChoices(initial.orderId),
-    queryFn: ({ signal }) => orderChoices?.(initial.orderId, signal) ?? Promise.resolve([]),
+    queryKey: supportKeys(scope).orderChoices(selectedId),
+    queryFn: ({ signal }) => orderChoices?.(selectedId, signal) ?? Promise.resolve([]),
     enabled: orderChoices !== undefined,
     staleTime: 0,
   });
@@ -79,28 +82,34 @@ interface TicketFormProps extends NewTicketFormProps {
 }
 
 function TicketForm({ initial, choices, choicesFailed }: TicketFormProps) {
-  const { api, scope, categories, routes, navigate, Link } = useSupportConfig();
+  const { api, scope, categories, routes, navigate, Link, linkKind = 'order' } = useSupportConfig();
   const queryClient = useQueryClient();
   const { uploads, cooldownSeconds } = useSupportUploads();
   const [alert, setAlert] = useState<{ message: string; correlationId?: string } | null>(null);
 
   const initialCategory = categories.find((category) => category === initial.category) ?? null;
-  const initialOrder = choices?.find((choice) => choice.id === initial.orderId) ?? null;
-  // A parcel from the URL stays linked only with its own order (backend spec 16 §4.1).
+  const initialOrder =
+    choices?.find(
+      (choice) => choice.id === (linkKind === 'sellerOrder' ? initial.sellerOrderId : initial.orderId),
+    ) ?? null;
+  // A parcel from the URL stays linked only with its own order (backend spec 16 §4.1); a seller-order select
+  // carries the parcel itself.
   const link: TicketLink =
     choices === null
       ? { orderId: null, sellerOrderId: initial.sellerOrderId }
-      : {
-          orderId: initialOrder?.id ?? null,
-          sellerOrderId: initialOrder === null ? null : initial.sellerOrderId,
-        };
+      : linkKind === 'sellerOrder'
+        ? { orderId: null, sellerOrderId: null }
+        : {
+            orderId: initialOrder?.id ?? null,
+            sellerOrderId: initialOrder === null ? null : initial.sellerOrderId,
+          };
 
   const form = useForm<NewTicketValues, unknown, NewTicketOutput>({
     resolver: zodResolver(newTicketSchema),
     defaultValues: {
       category: initialCategory,
       orderId: initialOrder?.id ?? NO_ORDER,
-      subject: '',
+      subject: initial.subject ?? '',
       body: '',
     },
   });
@@ -147,7 +156,9 @@ function TicketForm({ initial, choices, choicesFailed }: TicketFormProps) {
 
   const submit = form.handleSubmit((values) => {
     setAlert(null);
-    open.mutate(openTicketBody(values, link, uploads.readyMediaIds, choices !== null), { onError: fail });
+    open.mutate(openTicketBody(values, link, uploads.readyMediaIds, choices === null ? null : linkKind), {
+      onError: fail,
+    });
   });
 
   const busy = uploads.busy || open.isPending;

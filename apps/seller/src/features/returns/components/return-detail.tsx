@@ -1,7 +1,13 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { formatDateTime, formatMoney, RETURN_REASON_LABELS, RETURN_STATUS_LABELS } from '@nile/domain';
+import {
+  formatDateTime,
+  formatMoney,
+  RETURN_REASON_LABELS,
+  RETURN_STATUS_LABELS,
+  type TicketCategory,
+} from '@nile/domain';
 import {
   buttonVariants,
   ErrorState,
@@ -17,10 +23,14 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { SUPPORT_COPY } from '@/features/support';
 import { orderPath, ROUTES } from '@/lib/routes';
 import { isReturnMissing, returnQuery, type SellerReturn } from '../api';
 import { RETURNS_COPY as COPY } from '../copy';
 import { ReturnActions } from './return-actions';
+
+/** Support category of the SE-19 "Contact support" link (spec 02 SE-25). */
+const RETURN_SUPPORT_CATEGORY = 'return' satisfies TicketCategory;
 
 /** SE-19 Return: `GET /seller/returns/{id}`, live on `return.updated`. No customer contact data [SPEC 18 S-11]. */
 export function ReturnDetail({ returnId }: { readonly returnId: string }) {
@@ -83,6 +93,16 @@ function ReturnContent({ item, onChanged }: { readonly item: SellerReturn; reado
         }
       />
       <ReturnActions item={item} />
+      {/* SE-25 prefilled from SE-19 (spec 02 §8.3): category Return and the return's seller order. */}
+      <Link
+        href={{
+          pathname: ROUTES.supportNew,
+          query: { category: RETURN_SUPPORT_CATEGORY, sellerOrder: item.sellerOrderId },
+        }}
+        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+      >
+        {SUPPORT_COPY.contactSupport}
+      </Link>
 
       <Section id="reason" title={COPY.reasonHeading}>
         <p className="text-sm">{RETURN_REASON_LABELS.staff[item.reason]}</p>

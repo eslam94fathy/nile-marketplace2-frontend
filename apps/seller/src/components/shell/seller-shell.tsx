@@ -14,6 +14,7 @@ import {
 import {
   Banknote,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   Package,
@@ -43,6 +44,7 @@ const NAV = [
   { href: ROUTES.reviews, label: 'Reviews', icon: Star },
   { href: ROUTES.coupons, label: 'Coupons', icon: TicketPercent },
   { href: ROUTES.finance, label: 'Finance', icon: Banknote },
+  { href: ROUTES.support, label: 'Support', icon: LifeBuoy },
   { href: ROUTES.profile, label: 'Profile', icon: Store },
   { href: ROUTES.security, label: 'Security', icon: ShieldCheck },
 ] as const;

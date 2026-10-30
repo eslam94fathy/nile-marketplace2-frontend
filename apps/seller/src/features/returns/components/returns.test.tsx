@@ -164,6 +164,10 @@ describe('return detail (spec 02 SE-19)', { timeout: 15_000 }, () => {
       `/orders/${REQUESTED.sellerOrderId}`,
     );
     expect(screen.queryByText(/phone|address/i)).toBeNull();
+    // SE-25 prefilled from SE-19: category Return and the return's seller order.
+    expect(screen.getByRole('link', { name: 'Contact support' }).getAttribute('href')).toBe(
+      `/support/new?category=return&sellerOrder=${REQUESTED.sellerOrderId}`,
+    );
   });
 
   it('a return of another seller: not found, with a way back', async () => {

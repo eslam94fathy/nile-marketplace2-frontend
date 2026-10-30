@@ -1,11 +1,21 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { NEW_TICKET_COPY } from '@nile/support-screens';
+import { NewSellerTicket } from '@/features/support';
 import { requireSession } from '@/lib/dal';
 
-export const metadata: Metadata = { title: 'New ticket' };
+export const metadata: Metadata = { title: NEW_TICKET_COPY.title };
 
-/** SE-25 New ticket: linked from a blocked product since T-L1 (spec 02 §8.3), built in T-L6. */
-export default async function NewSupportTicketPage() {
+const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? null;
+
+/** SE-25 New ticket, `?category=&sellerOrder=&product=` preselect (the form drops values it can't use). */
+export default async function NewTicketPage({ searchParams }: PageProps<'/support/new'>) {
   await requireSession();
-  return <PlaceholderScreen title="New ticket" task="T-L6" />;
+  const params = await searchParams;
+  return (
+    <NewSellerTicket
+      category={first(params.category)}
+      sellerOrderId={first(params.sellerOrder)}
+      productId={first(params.product)}
+    />
+  );
 }

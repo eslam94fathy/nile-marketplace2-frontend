@@ -129,6 +129,10 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     expect(within(items).getByRole('button', { name: 'Cancel items of Ordered product 1' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Mark ready for pickup' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Confirm return received' })).toBeNull();
+    // SE-15 "Get help" (spec 02 §8.3): SE-25 with this seller order preselected.
+    expect(screen.getByRole('link', { name: 'Get help with this order' }).getAttribute('href')).toBe(
+      `/support/new?sellerOrder=${ORDER.id}`,
+    );
   });
 
   it.each([

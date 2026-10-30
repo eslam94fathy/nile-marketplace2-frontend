@@ -16,6 +16,7 @@ export {
   SupportScreensProvider,
   useSupportConfig,
   type OrderChoice,
+  type SupportLinkKind,
   type SupportLinkProps,
   type SupportScreensConfig,
 } from './config';

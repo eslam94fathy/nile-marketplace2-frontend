@@ -30,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useSellerAccess } from '@/features/profile';
+import { SUPPORT_COPY } from '@/features/support';
 import { productPath, ROUTES } from '@/lib/routes';
 import { isSellerOrderMissing, orderQuery, type SellerOrder, type SellerOrderItem } from '../api';
 import { ORDERS_COPY as COPY } from '../copy';
@@ -163,6 +164,13 @@ function OrderContent({
           <p className="text-sm text-muted-foreground">{COPY.customerNote}</p>
         </Section>
       </div>
+      {/* SE-15 "Get help" (spec 02 §8.3): the ticket form preselects this seller order. */}
+      <Link
+        href={{ pathname: ROUTES.supportNew, query: { sellerOrder: order.id } }}
+        className={buttonVariants({ variant: 'outline' })}
+      >
+        {SUPPORT_COPY.getHelpWithOrder}
+      </Link>
       <Section id="timeline" title={COPY.timelineHeading}>
         <ol className="space-y-1 text-sm">
           {TIMELINE.map((field) => {

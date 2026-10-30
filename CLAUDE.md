@@ -379,6 +379,9 @@ SE-20 `/reviews` (sidebar entry) with URL filters, inline reply once for approve
 ### 14.1bl Decided (2026-10-30, T-L5)
 SE-21 `/coupons?status=`, SE-22 `/coupons/new` (approved sellers; others back to the list), SE-23 `/coupons/[id]` with the edit form sending only changed fields; percent typed 1–90 and sent as a rate (SE-Q-10), Cairo `datetime-local` sent as UTC ISO, category picker with path labels (SE-Q-13) · TL5-Q1: no Active switch on create (the backend creates coupons `active` [VERIFIED backend]); the switch is on SE-23 · TL5-Q2: tabs All / Active / Inactive on `status[eq]`, badges from `displayStatus` · TL5-Q3: new coupon defaults percent, starts now, ends empty, minimum "0.00", all my products, unlimited, once per customer · TL5-Q4: after the first use one sentence "Locked after the first use." above the form, locked fields disabled · TL5-COPY approved as in `features/coupons/copy.ts` (design 01 R-75).
 
+### 14.1bm Decided (2026-10-30, T-L6)
+Seller support SE-24…SE-26 on the shared `@nile/support-screens` (sidebar "Support", `/support`, `/support/new`, `/support/[ticketId]`, categories with `seller_onboarding`, live via `supportInvalidation`) · TL6-Q1: the package gains `linkKind: 'sellerOrder'` (the select's value sent as `sellerOrderId` only, preselected from `?sellerOrder=`) and an optional starting subject; the seller offers its 20 newest seller orders plus the URL's when older; storefront unchanged · TL6-Q2: SE-15 "Get help with this order" (seller order only), SE-19 "Contact support" (category Return + the seller order), blocked product → category Account + subject "Blocked product: {name}" (empty when the product can't be read) · TL6-COPY approved: "Support", "Get help with this order", "Contact support"; the screens keep TK7-COPY (design 01 R-76).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

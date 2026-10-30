@@ -12,7 +12,7 @@ const VALUES = {
 describe('POST /support/tickets body (backend spec 16 §4.1)', () => {
   it('customer: the chosen order, the URL parcel with its own order, trimmed text, photos', () => {
     const parsed = newTicketSchema.parse(VALUES);
-    expect(openTicketBody(parsed, { orderId: 'o-1', sellerOrderId: 'so-1' }, ['m1'], true)).toEqual({
+    expect(openTicketBody(parsed, { orderId: 'o-1', sellerOrderId: 'so-1' }, ['m1'], 'order')).toEqual({
       category: 'order',
       subject: 'Late parcel',
       body: 'Where is it?',
@@ -24,21 +24,35 @@ describe('POST /support/tickets body (backend spec 16 §4.1)', () => {
 
   it('customer: another order drops the URL parcel; "No order" sends neither', () => {
     const other = newTicketSchema.parse({ ...VALUES, orderId: 'o-2' });
-    expect(openTicketBody(other, { orderId: 'o-1', sellerOrderId: 'so-1' }, [], true)).toEqual({
+    expect(openTicketBody(other, { orderId: 'o-1', sellerOrderId: 'so-1' }, [], 'order')).toEqual({
       category: 'order',
       subject: 'Late parcel',
       body: 'Where is it?',
       orderId: 'o-2',
     });
     const none = newTicketSchema.parse({ ...VALUES, orderId: NO_ORDER });
-    const body = openTicketBody(none, { orderId: 'o-1', sellerOrderId: 'so-1' }, [], true);
+    const body = openTicketBody(none, { orderId: 'o-1', sellerOrderId: 'so-1' }, [], 'order');
     expect(body).not.toHaveProperty('orderId');
     expect(body).not.toHaveProperty('sellerOrderId');
   });
 
-  it('seller (no order select): only the URL parcel, never an order id', () => {
+  it('seller-order select: the chosen parcel as sellerOrderId only; none chosen → no link', () => {
+    const parsed = newTicketSchema.parse({ ...VALUES, orderId: 'so-3' });
+    expect(openTicketBody(parsed, { orderId: null, sellerOrderId: null }, [], 'sellerOrder')).toEqual({
+      category: 'order',
+      subject: 'Late parcel',
+      body: 'Where is it?',
+      sellerOrderId: 'so-3',
+    });
+    const none = newTicketSchema.parse({ ...VALUES, orderId: NO_ORDER });
+    const body = openTicketBody(none, { orderId: null, sellerOrderId: null }, [], 'sellerOrder');
+    expect(body).not.toHaveProperty('sellerOrderId');
+    expect(body).not.toHaveProperty('orderId');
+  });
+
+  it('URL parcel only (no order select): never an order id', () => {
     const parsed = newTicketSchema.parse({ ...VALUES, orderId: NO_ORDER });
-    expect(openTicketBody(parsed, { orderId: null, sellerOrderId: 'so-9' }, [], false)).toEqual({
+    expect(openTicketBody(parsed, { orderId: null, sellerOrderId: 'so-9' }, [], null)).toEqual({
       category: 'order',
       subject: 'Late parcel',
       body: 'Where is it?',

@@ -3,6 +3,7 @@
 import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
+import { supportInvalidation } from '@nile/support-screens';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { ORDERS_INVALIDATION } from '@/features/orders';
@@ -19,6 +20,7 @@ const INVALIDATION_MAP: InvalidationMap = {
   ...ORDERS_INVALIDATION,
   ...RETURNS_INVALIDATION,
   ...NOTIFICATIONS_INVALIDATION,
+  ...supportInvalidation(APP.name),
   // One handler per message: a new review's notification also refreshes the review lists (SE-20).
   'notification.created': (payload) => [
     ...NOTIFICATIONS_INVALIDATION['notification.created'](),
