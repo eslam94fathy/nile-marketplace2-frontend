@@ -34,6 +34,7 @@ import { isOrderMissing, orderQuery, type Order } from '../api';
 import { ORDERS_COPY } from '../copy';
 import { PayNow } from '../payment/pay-now';
 import { BuyAgain } from './buy-again';
+import { WriteReviewLink } from '@/features/reviews';
 import { CancelSellerOrder } from './cancel-seller-order';
 import { ItemAmount, OrderTotals } from './order-amounts';
 
@@ -268,7 +269,14 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
                 </span>
               ) : null}
             </span>
-            <ItemAmount item={item} />
+            <span className="flex flex-col items-end gap-2">
+              <ItemAmount item={item} />
+              <WriteReviewLink
+                orderItemId={item.id}
+                productName={item.productName}
+                enabled={sellerOrder.status === 'delivered'}
+              />
+            </span>
           </li>
         ))}
       </ul>

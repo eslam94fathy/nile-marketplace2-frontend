@@ -1,11 +1,21 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { MY_REVIEWS_COPY, MyReviews, parseReviewsTab, REVIEWS_PARAMS } from '@/features/reviews';
 import { requireSession } from '@/lib/dal';
 
-export const metadata: Metadata = { title: 'Your reviews' };
+export const metadata: Metadata = { title: MY_REVIEWS_COPY.title };
 
-/** SF-24 My reviews: a notification link target since T-J6 (spec 00 §12.5), built in T-K5. */
-export default async function YourReviewsPage() {
+function first(value: string | string[] | undefined): string | null {
+  return (Array.isArray(value) ? value[0] : value) ?? null;
+}
+
+/** SF-24 My reviews: tabs in the URL (`?tab=`), `?review=<id>` highlights one (spec 01 §10). */
+export default async function YourReviewsPage({ searchParams }: PageProps<'/account/reviews'>) {
   await requireSession();
-  return <PlaceholderScreen title="Your reviews" task="T-K5" />;
+  const params = await searchParams;
+  return (
+    <MyReviews
+      tab={parseReviewsTab(first(params[REVIEWS_PARAMS.tab]))}
+      highlight={first(params[REVIEWS_PARAMS.review])}
+    />
+  );
 }

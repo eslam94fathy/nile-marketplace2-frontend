@@ -113,3 +113,62 @@ export async function shipmentOfOrder(
   if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
   return shipment;
 }
+
+/**
+ * A COD order taken all the way to `delivered` through the API (seller accepts and readies, the admin assigns
+ * the agent, the agent picks up, starts and delivers with the amount it is shown), for screens that need a
+ * delivered parcel (reviews T-K5, returns T-K6).
+ */
+export async function deliveredCodOrder(
+  backend: Accounts['backend'],
+  tokens: {
+    readonly customer: string;
+    readonly seller: string;
+    readonly admin: string;
+    readonly agent: string;
+  },
+  agentId: string,
+  variantId: string,
+): Promise<Schema<'OrderDetailDto'>> {
+  const order = await placeCodOrder(backend, tokens.customer, variantId);
+  const sellerOrderId = order.sellerOrders[0]?.id ?? '';
+  for (const step of ['accept', 'ready'] as const) {
+    expectData(
+      await backend.request('POST', `/api/v1/seller/orders/${sellerOrderId}/${step}`, {
+        token: tokens.seller,
+      }),
+      200,
+    );
+  }
+  const shipment = await shipmentOfOrder(backend, tokens.admin, order.id);
+  if (shipment.agentId !== agentId) {
+    expectData(
+      await backend.request('POST', `/api/v1/admin/shipments/${shipment.id}/assign`, {
+        token: tokens.admin,
+        body: { agentId },
+      }),
+      200,
+    );
+  }
+  for (const step of ['picked-up', 'out-for-delivery'] as const) {
+    expectData(
+      await backend.request('POST', `/api/v1/agent/shipments/${shipment.id}/${step}`, {
+        token: tokens.agent,
+      }),
+      200,
+    );
+  }
+  const { amountToCollect } = expectData(
+    await backend.request('GET', `/api/v1/agent/shipments/${shipment.id}`, { token: tokens.agent }),
+    200,
+  ) as Schema<'AgentShipmentDto'>;
+  expectData(
+    await backend.request('POST', `/api/v1/agent/shipments/${shipment.id}/delivered`, {
+      token: tokens.agent,
+      idempotencyKey: randomUUID(),
+      body: { codCollectedAmount: amountToCollect },
+    }),
+    200,
+  );
+  return order;
+}

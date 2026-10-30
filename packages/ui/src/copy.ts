@@ -58,6 +58,8 @@ export const UI_COPY = {
   ratedOutOf: (avg: string, count: number) => `Rated ${avg} out of 5 from ${reviewCount(count)}`,
   /** One review's rating (approved 2026-10-30, TK2-COPY). */
   ratedValue: (rating: number) => `Rated ${String(rating)} out of 5`,
+  /** Rating input options (conventions §12.8). */
+  stars: (rating: number) => (rating === 1 ? '1 star' : `${String(rating)} stars`),
   /** Product photos and their lightbox (conventions §12.1; approved 2026-10-30, TK1-COPY). */
   photos: 'Photos',
   showPhoto: (index: number, total: number) => `Show photo ${String(index)} of ${String(total)}`,

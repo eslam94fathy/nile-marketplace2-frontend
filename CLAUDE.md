@@ -349,6 +349,9 @@ TK3-Q1: the signed-out heart carries the product inside `returnTo` (`/login?retu
 ### 14.1bb Decided (2026-10-30, T-K4)
 Order totals with a coupon: the items row shows `itemsTotal + coupon.discountTotal` for display only (the API's `itemsTotal` is after the coupon [VERIFIED]); a written exception in conventions §12.9 · TK4-COPY approved: "Coupon code", "Checking your coupon…", row "Coupon {code}" with "−EGP …", share "Coupon discount", "Your coupon was removed. Check your new total and place your order again.", other failures the default message · the confirmation page (SF-08) shows the order totals · preview keyed by code + cart version, a coupon refused at Place order is removed and placed again with a new key, `KASHIER_TOTAL_ZERO` keeps the coupon and selects cash on delivery (design 01 R-65).
 
+### 14.1bc Decided (2026-10-30, T-K5)
+TK5-COPY approved: "Your reviews", tabs list "Reviews", "You haven't written any reviews yet.", "Order {number}", buttons read "Edit your review of {product}" / "Delete your review of {product}" / "Write a review of {product}", "Delete review", "Review deleted.", "Seller's reply", "Your reviews couldn't be loaded.", "Write a review" / "Edit your review", "Choose a rating.", "{n} / 2000", "Publish review" / "Save changes", "Your reviews" / "See your reviews", "This review couldn't be loaded.", "1 star" … "5 stars"; after an edit SF-24 opens with the review highlighted (no toast) · reviewable items read whole (`limit=100`, ≤ 10 pages) for SF-18 and SF-25, only with a delivered parcel · storefront depends on `@nile/media` · first upload E2E `e2e/storefront/reviews.spec.ts` with the API-only `deliveredCodOrder` fixture (design 01 R-66).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

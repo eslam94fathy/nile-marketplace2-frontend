@@ -131,6 +131,7 @@ export {
   type StarRatingProps,
 } from './components/rating-stars';
 export { Lightbox, type LightboxImage, type LightboxProps } from './components/lightbox';
+export { RatingInput, type RatingInputProps } from './components/rating-input';
 export { ImageGallery, type ImageGalleryProps } from './components/image-gallery';
 export {
   UploadTiles,

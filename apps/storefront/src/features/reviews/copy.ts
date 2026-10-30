@@ -33,3 +33,76 @@ export const REVIEWS_COPY = {
 function starsLabel(stars: number): string {
   return `${String(stars)} ${stars === 1 ? 'star' : 'stars'}`;
 }
+
+// SF-24 My reviews (spec 01 §10). Entries marked TK5-COPY approved 2026-10-30 (CLAUDE.md §14.1bc).
+export const MY_REVIEWS_COPY = {
+  /** TK5-COPY (the page's placeholder title since T-J6). */
+  title: 'Your reviews',
+  /** TK5-COPY */
+  tabsLabel: 'Reviews',
+  tabs: { 'to-review': 'To review', written: 'Written' },
+  toReviewEmpty: 'Nothing to review right now. Products you receive can be reviewed for 60 days.',
+  /** TK5-COPY */
+  writtenEmpty: "You haven't written any reviews yet.",
+  /** TK5-COPY */
+  order: (orderNumber: string) => `Order ${orderNumber}`,
+  delivered: (date: string) => `Delivered ${date}`,
+  reviewBy: (date: string) => `Review by ${date}`,
+  writeReview: 'Write a review',
+  /** TK5-COPY: the SF-18 button's accessible name. */
+  writeReviewFor: (product: string) => `Write a review of ${product}`,
+  hidden: 'Hidden by Nile',
+  hiddenNote: "This review isn't shown on the product page.",
+  /** TK5-COPY: `MyReviewDto` doesn't name the seller. */
+  sellerReply: "Seller's reply",
+  edit: 'Edit',
+  delete: 'Delete',
+  /** TK5-COPY: the action buttons' accessible names. */
+  editNamed: (product: string) => `Edit your review of ${product}`,
+  deleteNamed: (product: string) => `Delete your review of ${product}`,
+  /** TK5-COPY */
+  deleteTitle: 'Delete review',
+  deleteConfirm: (product: string) =>
+    `Delete your review of ${product}? You can write a new one while the review period is open.`,
+  /** TK5-COPY */
+  deleted: 'Review deleted.',
+  /** Spec 01 §10.6 for REVIEW_NOT_FOUND. */
+  gone: 'This item no longer exists.',
+  /** TK5-COPY */
+  loadFailed: "Your reviews couldn't be loaded.",
+} as const;
+
+// SF-25 Write / edit a review (spec 01 §10). Entries marked TK5-COPY approved 2026-10-30 (CLAUDE.md §14.1bc).
+export const REVIEW_FORM_COPY = {
+  /** TK5-COPY */
+  writeTitle: 'Write a review',
+  /** TK5-COPY */
+  editTitle: 'Edit your review',
+  rating: 'Rating',
+  /** TK5-COPY */
+  ratingRequired: 'Choose a rating.',
+  title: 'Title',
+  body: 'Review',
+  photos: 'Photos',
+  /** TK5-COPY: the review text counter. */
+  counter: (used: number, max: number) => `${String(used)} / ${String(max)}`,
+  /** TK5-COPY */
+  publish: 'Publish review',
+  /** TK5-COPY */
+  save: 'Save changes',
+  published: 'Thanks, your review is published.',
+  cannotReview: "This item can't be reviewed.",
+  editClosed: 'Reviews can be edited for 30 days after posting.',
+  /** TK5-COPY: the link back to SF-24. */
+  backToReviews: 'Your reviews',
+  /** TK5-COPY: the link from REVIEW_ALREADY_EXISTS. */
+  seeWritten: 'See your reviews',
+  errors: {
+    REVIEW_ALREADY_EXISTS: "You've already reviewed this product.",
+    REVIEW_NOT_ALLOWED: "This item can't be reviewed.",
+    REVIEW_WINDOW_CLOSED: 'The review period for this item has ended.',
+    REVIEW_EDIT_WINDOW_CLOSED: 'This review can no longer be edited.',
+  },
+  /** TK5-COPY */
+  loadFailed: "This review couldn't be loaded.",
+} as const;
