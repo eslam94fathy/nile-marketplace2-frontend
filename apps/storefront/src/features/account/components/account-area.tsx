@@ -1,6 +1,6 @@
 'use client';
 
-import { NOTIFICATIONS_COPY, NotificationBell } from '@nile/notifications';
+import { NotificationBell } from '@nile/notifications';
 import {
   Button,
   DropdownMenu,
@@ -19,21 +19,11 @@ import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 import { profileQuery } from '../api';
 import { ACCOUNT_COPY } from '../copy';
+import { ACCOUNT_NAV } from '../nav';
 import { useHasSession } from '@/lib/use-has-session';
 
 const LINK = 'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted';
 const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md hover:bg-muted';
-
-const MENU_LINKS = [
-  { href: ROUTES.orders, label: ACCOUNT_COPY.orders },
-  { href: ROUTES.returns, label: ACCOUNT_COPY.returns },
-  { href: ROUTES.reviews, label: ACCOUNT_COPY.reviews },
-  { href: ROUTES.wishlist, label: WISHLIST_COPY.title },
-  { href: ROUTES.notifications, label: NOTIFICATIONS_COPY.title },
-  { href: ROUTES.addresses, label: ACCOUNT_COPY.addresses },
-  { href: ROUTES.account, label: ACCOUNT_COPY.account },
-  { href: ROUTES.security, label: ACCOUNT_COPY.security },
-] as const;
 
 function SignedInMenu() {
   // While loading or after a failure the menu still works; only the greeting needs the profile.
@@ -50,7 +40,7 @@ function SignedInMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        {MENU_LINKS.map((item) => (
+        {ACCOUNT_NAV.map((item) => (
           <DropdownMenuItem key={item.href} asChild>
             <Link href={item.href}>{item.label}</Link>
           </DropdownMenuItem>

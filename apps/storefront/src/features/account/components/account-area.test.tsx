@@ -61,13 +61,14 @@ describe('header account area (spec 01 §2.2)', () => {
       .getAllByRole('menuitem')
       .map((item) => [item.textContent, item.getAttribute('href')]);
     expect(items).toEqual([
+      ['Profile', '/account'],
       ['Orders', '/account/orders'],
       ['Returns', '/account/returns'],
       ['Reviews', '/account/reviews'],
       ['Wishlist', '/account/wishlist'],
-      ['Notifications', '/account/notifications'],
       ['Addresses', '/account/addresses'],
-      ['Account', '/account'],
+      ['Notifications', '/account/notifications'],
+      ['Help & support', '/account/support'],
       ['Security', '/account/security'],
       ['Sign out', null],
     ]);

@@ -7,12 +7,21 @@ export const ACCOUNT_COPY = {
   menu: 'Account',
   greeting: (firstName: string) => `Hi, ${firstName}`,
   orders: 'Orders',
-  /** SF-Q-13 account navigation labels. */
+  /** SF-Q-13 account navigation labels (spec 01 §10.2). */
+  profile: 'Profile',
   returns: 'Returns',
   reviews: 'Reviews',
   addresses: 'Addresses',
-  account: 'Account',
+  support: 'Help & support',
   security: 'Security',
+} as const;
+
+// SF-Q-13 account navigation (T-K6b). Entries marked TK6B-COPY approved 2026-10-30 (CLAUDE.md §14.1be).
+export const ACCOUNT_NAV_COPY = {
+  /** TK6B-COPY: the side navigation's landmark name (the header's is "Account"). */
+  navLabel: 'Your account',
+  /** TK6B-COPY: the phone menu page's title and the link back to it above every account page. */
+  menuTitle: 'Account',
 } as const;
 
 // SF-15 Profile.

@@ -14,6 +14,8 @@ export const ROUTES = {
   /** Invite landing for admins and agents (spec 01 SF-20); the backend's `INVITE_URL_BASE`. */
   invite: '/invite',
   account: '/account',
+  /** Account menu page for phones (SF-Q-13, T-K6b). */
+  accountMenu: '/account/menu',
   addresses: '/account/addresses',
   orders: '/account/orders',
   security: '/account/security',
@@ -26,6 +28,8 @@ export const ROUTES = {
   wishlist: '/account/wishlist',
   /** SF-27 Returns (T-K6), `?status=open|closed`. */
   returns: '/account/returns',
+  /** SF-29 Support tickets (T-K7). */
+  support: '/account/support',
 } as const;
 
 /** SF-05 Product page (the route accepts an id or a slug; lists link by slug). */
@@ -47,7 +51,7 @@ export const requestReturnPath = (orderId: string, sellerOrderId: string) =>
 export const reviewPath = (reviewId: string) => `${ROUTES.reviews}?review=${reviewId}` as const;
 
 /** SF-31 Support ticket (T-K7). */
-export const supportTicketPath = (ticketId: string) => `/account/support/${ticketId}` as const;
+export const supportTicketPath = (ticketId: string) => `${ROUTES.support}/${ticketId}` as const;
 
 /** Query parameter that carries the page to return to after sign-in (conventions §2). */
 export const RETURN_TO_PARAM = 'returnTo';
