@@ -40,6 +40,7 @@ export {
   sellerProductListItemFactory,
   sellerVariantFactory,
 } from './factories/seller-catalog';
+export { couponFactory } from './factories/coupons';
 export { sellerOrderFactory } from './factories/seller-order';
 export { sellerReturnFactory } from './factories/returns';
 export { sellerReviewFactory } from './factories/reviews';

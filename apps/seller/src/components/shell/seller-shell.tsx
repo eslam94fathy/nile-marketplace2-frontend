@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  TicketPercent,
   Star,
   Undo2,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ const NAV = [
   { href: ROUTES.returns, label: 'Returns', icon: Undo2 },
   { href: ROUTES.products, label: 'Products', icon: Package },
   { href: ROUTES.reviews, label: 'Reviews', icon: Star },
+  { href: ROUTES.coupons, label: 'Coupons', icon: TicketPercent },
   { href: ROUTES.finance, label: 'Finance', icon: Banknote },
   { href: ROUTES.profile, label: 'Profile', icon: Store },
   { href: ROUTES.security, label: 'Security', icon: ShieldCheck },

@@ -132,7 +132,7 @@ Inputs:
 | T-L2 Finance and order amounts (**done 2026-10-30**, design 01 R-72; TL2-Q1, TL2-Q2, TL2-COPY approved; balance card and entry labels came with T-J1) | Available (may be negative, explained) and pending balance, holds list (`blockedByReturn`), new ledger entry labels; seller order shows discount, funding and returned sums | `/seller/finance/balance`, `/holds`, `/entries`, `/seller/orders/{id}` |
 | T-L3 Returns (**done 2026-10-30**, design 01 R-73; TL3-Q1…Q4, TL3-COPY approved; E2E at the end of phase l) | Returns queue (deadline sort), detail without customer data, approve, reject with reason, confirm receipt with restock choice per item (idempotent), dispute with reason and photos; overview card | `/seller/returns*` |
 | T-L4 Reviews (**done 2026-10-30**, design 01 R-74; TL4-Q1…Q4, TL4-COPY approved; "To" date waits for OQ-21) | Reviews of my products (filters: product, rating, replied, dates), reply once (approved sellers only) | `/seller/reviews*` |
-| T-L5 Coupons | Coupon list, create (seller / category scope), edit with locked fields after the first redemption (PR-8), blocked state | `/seller/coupons*` |
+| T-L5 Coupons (**done 2026-10-30**, design 01 R-75; TL5-Q1…Q4, TL5-COPY approved) | Coupon list, create (seller / category scope), edit with locked fields after the first redemption (PR-8), blocked state | `/seller/coupons*` |
 | T-L6 Support | Tickets as in T-K7 with seller categories (`seller_onboarding`) and seller-order links | `/support/tickets*` |
 
 ### Phase m — Admin console (`phase/m-admin-r2`)
