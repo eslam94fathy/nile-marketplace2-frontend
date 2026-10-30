@@ -48,6 +48,8 @@ export const ORDERS_COPY = {
   cancelledBySeller: (quantity: number) => `${quantity} cancelled by the seller`,
   openQuantity: (quantity: number) => `${quantity} still ordered`,
   subtotal: 'Subtotal',
+  /** Spec 01 §10.3 SF-18 actions (SF-26 entry). */
+  returnItems: 'Return items',
   timelineHeading: 'History',
   itemsTotal: 'Items total',
   deliveryFee: 'Delivery fee',

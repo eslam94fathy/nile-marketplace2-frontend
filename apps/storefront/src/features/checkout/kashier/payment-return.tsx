@@ -25,6 +25,7 @@ import {
   PAYMENT_RETURN_POLL_MS,
   PAYMENT_RETURN_SOCKET_WAIT_MS,
 } from '../lib/constants';
+import { usePassed } from '@/lib/use-passed';
 
 const COPY = CHECKOUT_COPY.kashier;
 
@@ -38,24 +39,6 @@ function pollInterval(order: Order | undefined, waiting: boolean): number | fals
   if (order?.status !== 'pending_payment' || waiting) return false;
   const deadline = order.paymentExpiresAt === null ? Number.NaN : Date.parse(order.paymentExpiresAt);
   return Date.now() > deadline + PAYMENT_CONFIRMATION_GRACE_MS ? false : PAYMENT_RETURN_POLL_MS;
-}
-
-/** True from `atMs` on; re-renders the screen when that moment arrives. */
-function usePassed(atMs: number): boolean {
-  const [passed, setPassed] = useState(() => Date.now() >= atMs);
-  useEffect(() => {
-    if (Number.isNaN(atMs)) return undefined;
-    const timer = setTimeout(
-      () => {
-        setPassed(true);
-      },
-      Math.max(0, atMs - Date.now()),
-    );
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [atMs]);
-  return passed;
 }
 
 function Screen({ children, busy = false }: { readonly children: ReactNode; readonly busy?: boolean }) {

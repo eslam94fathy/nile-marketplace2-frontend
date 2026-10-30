@@ -10,8 +10,10 @@ import { Label } from './label';
 
 export interface QuantityStepperProps {
   readonly value: number;
-  /** Upper bound (e.g. min(available, 99)); the lower bound is 1. */
+  /** Upper bound (e.g. min(available, 99)). */
   readonly max: number;
+  /** Lower bound: 1 by default; 0 where "none" is a choice (items to return, T-K6). */
+  readonly min?: number;
   readonly onChange: (value: number) => void;
   /** Visible label; pass `hideLabel` where the row already says what it is (e.g. a cart line). */
   readonly label?: string;
@@ -22,10 +24,11 @@ export interface QuantityStepperProps {
   readonly className?: string;
 }
 
-/** A quantity field with − / + buttons, always within 1..max (spec 01 SF-05, SF-06). */
+/** A quantity field with − / + buttons, always within min..max (spec 01 SF-05, SF-06, SF-26). */
 export function QuantityStepper({
   value,
   max,
+  min = 1,
   onChange,
   label = UI_COPY.quantity,
   hideLabel = false,
@@ -34,7 +37,7 @@ export function QuantityStepper({
   className,
 }: QuantityStepperProps) {
   const id = useId();
-  const clamp = (next: number) => Math.min(Math.max(next, 1), Math.max(max, 1));
+  const clamp = (next: number) => Math.min(Math.max(next, min), Math.max(max, min));
   const suffix = itemName === undefined ? '' : `, ${itemName}`;
   return (
     <div className={cn('space-y-1', className)}>
@@ -46,7 +49,7 @@ export function QuantityStepper({
           variant="outline"
           size="icon"
           aria-label={`${UI_COPY.decreaseQuantity}${suffix}`}
-          disabled={disabled || value <= 1}
+          disabled={disabled || value <= min}
           onClick={() => {
             onChange(clamp(value - 1));
           }}
@@ -57,14 +60,14 @@ export function QuantityStepper({
           id={id}
           type="number"
           inputMode="numeric"
-          min={1}
+          min={min}
           max={max}
           value={value}
           disabled={disabled}
           className="w-20 text-center"
           onChange={(event) => {
             const next = Number.parseInt(event.target.value, 10);
-            onChange(Number.isNaN(next) ? 1 : clamp(next));
+            onChange(Number.isNaN(next) ? min : clamp(next));
           }}
         />
         <Button

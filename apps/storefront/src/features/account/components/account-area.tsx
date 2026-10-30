@@ -26,6 +26,8 @@ const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md ho
 
 const MENU_LINKS = [
   { href: ROUTES.orders, label: ACCOUNT_COPY.orders },
+  { href: ROUTES.returns, label: ACCOUNT_COPY.returns },
+  { href: ROUTES.reviews, label: ACCOUNT_COPY.reviews },
   { href: ROUTES.wishlist, label: WISHLIST_COPY.title },
   { href: ROUTES.notifications, label: NOTIFICATIONS_COPY.title },
   { href: ROUTES.addresses, label: ACCOUNT_COPY.addresses },

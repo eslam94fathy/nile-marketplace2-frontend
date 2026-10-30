@@ -7,6 +7,9 @@ export const ACCOUNT_COPY = {
   menu: 'Account',
   greeting: (firstName: string) => `Hi, ${firstName}`,
   orders: 'Orders',
+  /** SF-Q-13 account navigation labels. */
+  returns: 'Returns',
+  reviews: 'Reviews',
   addresses: 'Addresses',
   account: 'Account',
   security: 'Security',

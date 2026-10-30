@@ -26,10 +26,9 @@ import {
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { addressLines } from '@/features/addresses';
 import { productHref } from '@/features/catalog';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, requestReturnPath } from '@/lib/routes';
 import { isOrderMissing, orderQuery, type Order } from '../api';
 import { ORDERS_COPY } from '../copy';
 import { PayNow } from '../payment/pay-now';
@@ -37,6 +36,8 @@ import { BuyAgain } from './buy-again';
 import { WriteReviewLink } from '@/features/reviews';
 import { CancelSellerOrder } from './cancel-seller-order';
 import { ItemAmount, OrderTotals } from './order-amounts';
+import { returnWindowEnd } from '../lib/return-window';
+import { usePassed } from '@/lib/use-passed';
 
 const COPY = ORDERS_COPY;
 
@@ -65,24 +66,6 @@ function totalNotes(order: Order): string[] {
   if (order.status === 'cancelled' && parseMoney(order.deliveryFee).isZero()) notes.push(COPY.notes.noFee);
   if (REFUNDABLE.has(order.paymentStatus) && (excluded || itemsCancelled)) notes.push(COPY.notes.refunds);
   return notes;
-}
-
-/** True from `atMs` on; re-renders the screen when that moment arrives. */
-function usePassed(atMs: number): boolean {
-  const [passed, setPassed] = useState(() => Date.now() >= atMs);
-  useEffect(() => {
-    if (Number.isNaN(atMs)) return undefined;
-    const timer = setTimeout(
-      () => {
-        setPassed(true);
-      },
-      Math.max(0, atMs - Date.now()),
-    );
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [atMs]);
-  return passed;
 }
 
 /** SF-18 Order detail: only data from `GET /orders/{orderId}`; someone else's order is "not found". */
@@ -221,6 +204,9 @@ interface SellerOrderBlockProps {
 }
 
 function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps) {
+  // SF-Q-18: delivered and inside the return window (no delivery time: SF-26 decides).
+  const windowClosed = usePassed(returnWindowEnd(sellerOrder)?.getTime() ?? Number.POSITIVE_INFINITY);
+  const offerReturn = sellerOrder.status === 'delivered' && !windowClosed;
   // Oldest first (spec 01 SF-18 §4), whatever order the API used.
   const timeline = [...sellerOrder.timeline].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   return (
@@ -236,6 +222,14 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
           {/* Offered exactly when the API says so (SF-18 acceptance 1). */}
           {sellerOrder.canCancel ? (
             <CancelSellerOrder order={order} sellerOrder={sellerOrder} onStale={onStale} />
+          ) : null}
+          {offerReturn ? (
+            <Link
+              href={requestReturnPath(order.id, sellerOrder.id)}
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              {COPY.returnItems}
+            </Link>
           ) : null}
         </span>
       </div>

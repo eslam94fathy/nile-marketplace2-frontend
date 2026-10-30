@@ -24,6 +24,8 @@ export const ROUTES = {
   reviews: '/account/reviews',
   /** SF-23 Wishlist (T-K3). */
   wishlist: '/account/wishlist',
+  /** SF-27 Returns (T-K6), `?status=open|closed`. */
+  returns: '/account/returns',
 } as const;
 
 /** SF-05 Product page (the route accepts an id or a slug; lists link by slug). */
@@ -35,7 +37,11 @@ export function productPath(slug: string): `/p/${string}` {
 export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
 
 /** SF-28 Return (T-K6). */
-export const returnPath = (returnId: string) => `/account/returns/${returnId}` as const;
+export const returnPath = (returnId: string) => `${ROUTES.returns}/${returnId}` as const;
+
+/** SF-26 Request a return for one parcel (spec 01 §10.2). */
+export const requestReturnPath = (orderId: string, sellerOrderId: string) =>
+  `${ROUTES.orders}/${orderId}/return?sellerOrder=${sellerOrderId}` as const;
 
 /** SF-24 scrolled to one review (spec 01 §10, `?review=<id>` from a notification). */
 export const reviewPath = (reviewId: string) => `${ROUTES.reviews}?review=${reviewId}` as const;
