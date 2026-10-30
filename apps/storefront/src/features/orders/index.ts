@@ -9,6 +9,7 @@ export {
   type OrderSummary,
 } from './api';
 export { BuyAgain } from './components/buy-again';
+export { ItemAmount, OrderTotals } from './components/order-amounts';
 export { OrderDetail } from './components/order-detail';
 export { OrdersList } from './components/orders-list';
 export { createKashierSession } from './payment/api';

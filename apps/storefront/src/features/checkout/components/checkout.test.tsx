@@ -682,3 +682,183 @@ describe('checkout: card payment (spec 01 SF-07-A1)', { timeout: 20_000 }, () =>
     );
   });
 });
+
+// ---- T-K4: coupon at checkout (spec 01 SF-07-C) ----
+
+const QUOTE: Schema<'CouponQuoteDto'> = {
+  code: 'SAVE10',
+  discountTotal: '50.00',
+  sellerOrders: [{ sellerId: fixtureId(0x600), discount: '50.00' }],
+  lines: [{ variantId: fixtureId(0x701), discount: '50.00' }],
+  itemsTotalAfterDiscount: '450.00',
+};
+
+/** `POST /cart/coupon-preview` answering in turn; records the codes sent. */
+function servePreview(...answers: Answer[]) {
+  const codes: unknown[] = [];
+  server.use(
+    http.post(`${BFF_BASE}/cart/coupon-preview`, async ({ request }) => {
+      codes.push(((await request.json()) as { code: unknown }).code);
+      const answer = answers[Math.min(codes.length - 1, answers.length - 1)];
+      if (answer === undefined) throw new Error('no answer');
+      return answer();
+    }),
+  );
+  return codes;
+}
+
+const quoted =
+  (quote: Schema<'CouponQuoteDto'> = QUOTE): Answer =>
+  () =>
+    HttpResponse.json({ success: true, data: quote });
+
+async function applyCoupon(user: ReturnType<typeof userEvent.setup>, code: string) {
+  await user.click(await screen.findByRole('button', { name: 'Have a coupon?' }));
+  await user.type(screen.getByRole('textbox', { name: 'Coupon code' }), code);
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+}
+
+const totalRow = () => screen.getByText('Total', { selector: 'dt' }).nextElementSibling?.textContent;
+
+describe('checkout: coupon (spec 01 SF-07-C)', { timeout: 20_000 }, () => {
+  it('a malformed code is refused before any request', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const codes = servePreview(quoted());
+    const user = await chooseCod();
+    await applyCoupon(user, 'ab');
+    expect((await screen.findByRole('alert')).textContent).toBe('Enter a valid coupon code.');
+    expect(codes).toEqual([]);
+  });
+
+  it('applies: trimmed and upper-cased, discount row, seller share, new total sent with couponCode', async () => {
+    const home = addressFactory({ isDefault: true });
+    serve({ addresses: [home] });
+    const codes = servePreview(quoted());
+    const sent = serveCheckout(placed);
+    const user = await chooseCod();
+    await applyCoupon(user, '  save10 ');
+    expect(await screen.findByText('Coupon SAVE10 applied')).toBeDefined();
+    expect(codes).toEqual(['SAVE10']);
+    expect(screen.getByText('Coupon SAVE10').nextElementSibling?.textContent).toMatch(/^−.*50\.00$/);
+    const group = screen.getByRole('region', { name: 'Sold by Nile Crafts' });
+    expect(within(group).getByText('Coupon discount')).toBeDefined();
+    // 450.00 after the coupon + 45.00 delivery.
+    expect(totalRow()).toMatch(/495\.00/);
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]?.body).toEqual({
+      addressId: home.id,
+      paymentMethod: 'cod',
+      expectedTotal: '495.00',
+      couponCode: 'SAVE10',
+    });
+  });
+
+  it('Remove: back to the full total, no couponCode', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    servePreview(quoted());
+    const sent = serveCheckout(placed);
+    const user = await chooseCod();
+    await applyCoupon(user, 'SAVE10');
+    await user.click(await screen.findByRole('button', { name: 'Remove' }));
+    expect(totalRow()).toMatch(/545\.00/);
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]?.body).not.toHaveProperty('couponCode');
+  });
+
+  it.each([
+    ['COUPON_NOT_FOUND', "This coupon code doesn't exist."],
+    ['COUPON_EXPIRED', 'This coupon has expired.'],
+    ['COUPON_CUSTOMER_LIMIT_REACHED', "You've already used this coupon the maximum number of times."],
+    ['COUPON_NOT_APPLICABLE', "This coupon doesn't apply to the items in your cart."],
+  ] as const)('preview %s: "%s" under the field, the coupon is not applied', async (code, message) => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    servePreview(failWith(422, code));
+    const user = await chooseCod();
+    await applyCoupon(user, 'SAVE10');
+    expect((await screen.findByRole('alert')).textContent).toBe(message);
+    expect(screen.queryByText('Coupon SAVE10 applied')).toBeNull();
+    expect(totalRow()).toMatch(/545\.00/);
+  });
+
+  it('COUPON_MIN_SUBTOTAL_NOT_MET: names the missing amount from the details', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    servePreview(() =>
+      HttpResponse.json(
+        errorBody('COUPON_MIN_SUBTOTAL_NOT_MET', {
+          details: [
+            { field: 'code', value: '120.50', constraint: 'min_items_subtotal', message: 'missing 120.50' },
+          ],
+        }),
+        { status: 422 },
+      ),
+    );
+    const user = await chooseCod();
+    await applyCoupon(user, 'SAVE10');
+    expect((await screen.findByRole('alert')).textContent).toMatch(
+      /^Add .*120\.50 more of eligible items to use this coupon\.$/,
+    );
+  });
+
+  it('a coupon refused at Place order is removed; the shopper places again with a new key', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    servePreview(quoted());
+    const sent = serveCheckout(failWith(422, 'COUPON_LIMIT_REACHED'), placed);
+    const user = await chooseCod();
+    await applyCoupon(user, 'SAVE10');
+    await screen.findByText('Coupon SAVE10 applied');
+    await user.click(placeButton());
+    expect(
+      await screen.findByText('Your coupon was removed. Check your new total and place your order again.'),
+    ).toBeDefined();
+    expect(screen.getByText('This coupon has been fully used.')).toBeDefined();
+    expect(totalRow()).toMatch(/545\.00/);
+    expect(push).not.toHaveBeenCalled();
+    await user.click(placeButton());
+    await waitFor(() => {
+      expect(sent).toHaveLength(2);
+    });
+    expect(sent[1]?.body).not.toHaveProperty('couponCode');
+    expect(sent[1]?.key).not.toBe(sent[0]?.key);
+  });
+
+  it('KASHIER_TOTAL_ZERO: explains, keeps the coupon, switches to cash on delivery to confirm', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    servePreview(
+      quoted({ ...QUOTE, code: 'FREE', discountTotal: '500.00', itemsTotalAfterDiscount: '0.00' }),
+    );
+    const sent = serveCheckout(failWith(422, 'KASHIER_TOTAL_ZERO'), placed);
+    const user = await chooseCard();
+    await applyCoupon(user, 'FREE');
+    await screen.findByText('Coupon FREE applied');
+    await user.click(placeButton());
+    expect(
+      await screen.findByText(
+        'Your total is EGP 0.00, so there is nothing to pay by card. Choose cash on delivery.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('radio', { name: /Cash on delivery/ })).toHaveProperty('checked', true);
+    expect(screen.getByText('Coupon FREE applied')).toBeDefined();
+    expect(sent).toHaveLength(1);
+  });
+
+  it('a cart change asks for a new preview', async () => {
+    serve({ addresses: [addressFactory({ isDefault: true })] });
+    const codes = servePreview(quoted());
+    const queryClient = makeTestQueryClient();
+    const user = userEvent.setup();
+    renderWithProviders(<CheckoutView />, { queryClient });
+    await applyCoupon(user, 'SAVE10');
+    await screen.findByText('Coupon SAVE10 applied');
+    serve({ addresses: [addressFactory({ isDefault: true })], basket: cart({ itemsTotal: '750.00' }) });
+    await queryClient.invalidateQueries({ queryKey: ['storefront', 'cart'] });
+    await waitFor(() => {
+      expect(codes).toEqual(['SAVE10', 'SAVE10']);
+    });
+  });
+});

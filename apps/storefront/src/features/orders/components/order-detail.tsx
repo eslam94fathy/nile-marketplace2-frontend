@@ -35,6 +35,7 @@ import { ORDERS_COPY } from '../copy';
 import { PayNow } from '../payment/pay-now';
 import { BuyAgain } from './buy-again';
 import { CancelSellerOrder } from './cancel-seller-order';
+import { ItemAmount, OrderTotals } from './order-amounts';
 
 const COPY = ORDERS_COPY;
 
@@ -177,26 +178,7 @@ export function OrderDetail({ orderId }: { readonly orderId: string }) {
       ))}
 
       <section aria-label={COPY.total} className="max-w-sm space-y-3">
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt>{COPY.itemsTotal}</dt>
-            <dd>
-              <Money value={data.itemsTotal} />
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt>{COPY.deliveryFee}</dt>
-            <dd>
-              <Money value={data.deliveryFee} />
-            </dd>
-          </div>
-          <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-            <dt>{COPY.total}</dt>
-            <dd>
-              <Money value={data.total} />
-            </dd>
-          </div>
-        </dl>
+        <OrderTotals order={data} />
         {notes.map((note) => (
           <p key={note} className="text-sm text-muted-foreground">
             {note}
@@ -286,7 +268,7 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
                 </span>
               ) : null}
             </span>
-            <Money value={item.lineTotal} />
+            <ItemAmount item={item} />
           </li>
         ))}
       </ul>
@@ -294,6 +276,12 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
         <span>{COPY.subtotal}</span>
         <Money value={sellerOrder.subtotal} />
       </div>
+      {parseMoney(sellerOrder.discountAmount).isZero() ? null : (
+        <div className="flex justify-between px-4 pb-3 text-sm">
+          <span>{COPY.sellerShare}</span>
+          <Money value={sellerOrder.discountAmount} negative />
+        </div>
+      )}
       {timeline.length === 0 ? null : (
         <div className="border-t border-border px-4 py-3">
           <h3 className="mb-2 text-sm font-medium">{COPY.timelineHeading}</h3>

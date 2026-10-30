@@ -34,12 +34,14 @@ import { cartKeys, CART_NOTICES, useCart } from '@/features/cart';
 import { orderKeys } from '@/features/orders';
 import { browserApi } from '@/lib/browser-api';
 import { orderPath, ROUTES } from '@/lib/routes';
-import { placeOrder, type CheckoutBody, type PaymentMethod } from '../api';
+import { couponPreviewQuery, placeOrder, type CheckoutBody, type PaymentMethod } from '../api';
 import { CHECKOUT_COPY } from '../copy';
 import { confirmationPath } from '../lib/constants';
+import { cartVersion, couponErrorMessage, isCouponError } from '../lib/coupon';
 import { expectedTotal } from '../lib/expected-total';
 import { leaveForKashier } from '../kashier/leave-for-kashier';
 import { AddressPicker } from './address-picker';
+import { CouponField, type CouponFieldState } from './coupon-field';
 import { OrderReview } from './order-review';
 import { PaymentMethodPicker } from './payment-method';
 
@@ -59,7 +61,8 @@ const BACK_TO_CART = {
 } as const;
 
 /**
- * SF-07 Checkout: entry guard, delivery address, payment method, review and "Place order". Fees feed the
+ * SF-07 Checkout: entry guard, delivery address, payment method, review with the coupon (SF-07-C) and "Place
+ * order". Fees feed the
  * total, so governorates are always fetched fresh here. Placing an order is idempotent: one key per body,
  * reused on every retry of that body, so double clicks and retries never create two orders.
  */
@@ -78,6 +81,26 @@ export function CheckoutView() {
   /** `ORDER_PAYMENT_PENDING`: the order already waiting for card payment (`''` when the id is missing). */
   const [paymentPendingOrderId, setPaymentPendingOrderId] = useState<string | null | undefined>(undefined);
   const failure = useSubmitFailure(CHECKOUT_COPY.errors);
+  /** The code the shopper applied (SF-07-C); priced by the preview against the current cart. */
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  /** A notice from "Place order" that isn't an error of the request itself (coupon removed, total zero). */
+  const [placeNotice, setPlaceNotice] = useState<string | null>(null);
+  const version = cart.data === undefined ? '' : cartVersion(cart.data);
+  const preview = useQuery({
+    ...couponPreviewQuery(couponCode ?? '', version),
+    enabled: couponCode !== null && cart.data !== undefined,
+  });
+  const previewError = couponCode === null ? null : preview.error;
+
+  // A refused (or failed) preview removes the coupon and says why under the field (SF-07-C errors table).
+  // Adjusting state while rendering (React docs, "storing information from previous renders").
+  const [handledPreviewError, setHandledPreviewError] = useState<unknown>(null);
+  if (previewError !== null && previewError !== handledPreviewError) {
+    setHandledPreviewError(previewError);
+    setCouponError(couponErrorMessage(previewError));
+    setCouponCode(null);
+  }
 
   const place = useIdempotentMutation({
     mutationFn: placeOrder,
@@ -149,13 +172,43 @@ export function CheckoutView() {
   const selectedGovernorate = selected === undefined ? null : governorateById(zones, selected.governorateId);
   // A choice that stopped being valid (deleted, governorate no longer deliverable) is dropped.
   const deliveryFee = isDeliverable(selectedGovernorate) ? (selectedGovernorate?.deliveryFee ?? null) : null;
-  const total = expectedTotal(basket.itemsTotal, deliveryFee);
+  const quote = couponCode === null ? null : (preview.data ?? null);
+  const couponState: CouponFieldState =
+    couponCode === null
+      ? { status: 'none' }
+      : quote === null
+        ? { status: 'checking', code: couponCode }
+        : { status: 'applied', code: quote.code };
+  // With a coupon the items cost the preview's `itemsTotalAfterDiscount` (spec 01 SF-07-C, B-7).
+  const total = expectedTotal(quote?.itemsTotalAfterDiscount ?? basket.itemsTotal, deliveryFee);
   const body: CheckoutBody | null =
-    selected === undefined || deliveryFee === null || total === null || method === null
+    selected === undefined ||
+    deliveryFee === null ||
+    total === null ||
+    method === null ||
+    couponState.status === 'checking'
       ? null
-      : { addressId: selected.id, paymentMethod: method, expectedTotal: total };
+      : {
+          addressId: selected.id,
+          paymentMethod: method,
+          expectedTotal: total,
+          ...(quote === null ? {} : { couponCode: quote.code }),
+        };
 
   const onPlaceFailed = async (error: unknown) => {
+    if (isCouponError(error)) {
+      // The order is placed again without it: a new body, so a new key (conventions §6).
+      setCouponError(couponErrorMessage(error));
+      setCouponCode(null);
+      setPlaceNotice(CHECKOUT_COPY.coupon.removedAtCheckout);
+      return;
+    }
+    if (isApiError(error, 'KASHIER_TOTAL_ZERO')) {
+      // The coupon stays; cash on delivery is chosen for the shopper to confirm (backend PR-21).
+      setMethod('cod');
+      setPlaceNotice(CHECKOUT_COPY.coupon.totalZero);
+      return;
+    }
     const backTo = (Object.keys(BACK_TO_CART) as (keyof typeof BACK_TO_CART)[]).find((code) =>
       isApiError(error, code),
     );
@@ -185,6 +238,7 @@ export function CheckoutView() {
 
   const submit = (next: CheckoutBody) => {
     failure.clear();
+    setPlaceNotice(null);
     place.mutate(next, { onError: (error) => void onPlaceFailed(error) });
   };
 
@@ -222,7 +276,21 @@ export function CheckoutView() {
             <h2 id="checkout-review" className="text-lg font-semibold">
               {CHECKOUT_COPY.reviewHeading}
             </h2>
-            <OrderReview cart={basket} />
+            <OrderReview cart={basket} quote={quote} />
+            <CouponField
+              state={couponState}
+              error={couponError}
+              disabled={place.isPending}
+              onApply={(code) => {
+                setCouponError(null);
+                setPlaceNotice(null);
+                setCouponCode(code);
+              }}
+              onRemove={() => {
+                setCouponCode(null);
+                setCouponError(null);
+              }}
+            />
           </section>
         </div>
         <aside
@@ -239,6 +307,14 @@ export function CheckoutView() {
                 <Money value={basket.itemsTotal} />
               </dd>
             </div>
+            {quote === null ? null : (
+              <div className="flex justify-between">
+                <dt>{CHECKOUT_COPY.coupon.line(quote.code)}</dt>
+                <dd>
+                  <Money value={quote.discountTotal} negative />
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt>{CHECKOUT_COPY.deliveryFee}</dt>
               <dd>{deliveryFee === null ? CHECKOUT_COPY.noAddressYet : <Money value={deliveryFee} />}</dd>
@@ -248,6 +324,7 @@ export function CheckoutView() {
               <dd>{total === null ? CHECKOUT_COPY.noAddressYet : <Money value={total} />}</dd>
             </div>
           </dl>
+          {placeNotice === null ? null : <FormAlert>{placeNotice}</FormAlert>}
           {failure.message === null ? null : (
             <FormAlert correlationId={failure.correlationId}>{failure.message}</FormAlert>
           )}

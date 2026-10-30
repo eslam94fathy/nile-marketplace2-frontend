@@ -52,6 +52,12 @@ export const ORDERS_COPY = {
   itemsTotal: 'Items total',
   deliveryFee: 'Delivery fee',
   total: 'Total',
+  /** Spec 01 §10.3: "Coupon {code} −{discountTotal}"; the amount follows as a negative. */
+  couponLine: (code: string) => `Coupon ${code}`,
+  /** TK4-COPY: a parcel's share of the coupon, under its subtotal. */
+  sellerShare: 'Coupon discount',
+  /** Read for the struck-through original line total (as SF-05's compare-at price). */
+  was: (amount: string) => `Was ${amount}`,
   notes: {
     excluded: "Cancelled or returned parcels aren't included in the total.",
     noFee: 'No delivery fee is charged because nothing was delivered.',

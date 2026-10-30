@@ -209,7 +209,7 @@ The API's `link` is a route of one prefixed web app [SPEC 13 NO-12]. Each app ma
 
 ### 12.9 Amounts with discounts, returns and refunds
 - Discounts are shown as negative amounts with their label: "Coupon SAVE10 −EGP 20.00".
-- Every total, discount, refund and fee comes from the API; the only client arithmetic stays the checkout `expectedTotal` (spec 01 SF-07).
+- Every total, discount, refund and fee comes from the API; the only client arithmetic stays the checkout `expectedTotal` (spec 01 SF-07), plus one display-only sum: an order's items row with a coupon shows `itemsTotal + coupon.discountTotal` (the API's `itemsTotal` is after the coupon [VERIFIED]; decided 2026-10-30, T-K4).
 - Estimated amounts are labelled "Estimated" until final (return refund before completion).
 
 ### 12.10 Deadlines

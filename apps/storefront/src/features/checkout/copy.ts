@@ -25,6 +25,36 @@ export const CHECKOUT_COPY = {
   quantity: (quantity: number) => `Qty ${quantity}`,
   parcels: (count: number) =>
     `Your order will be delivered in ${count} separate parcels, one per seller. You pay one delivery fee.`,
+  // SF-07-C coupon. Entries marked TK4-COPY approved 2026-10-30 (CLAUDE.md §14.1bb).
+  coupon: {
+    disclosure: 'Have a coupon?',
+    /** TK4-COPY */
+    label: 'Coupon code',
+    apply: 'Apply',
+    invalid: 'Enter a valid coupon code.',
+    /** TK4-COPY */
+    checking: 'Checking your coupon…',
+    applied: (code: string) => `Coupon ${code} applied`,
+    remove: 'Remove',
+    /** TK4-COPY: the label of the discount row; the amount follows as a negative. */
+    line: (code: string) => `Coupon ${code}`,
+    /** TK4-COPY: a seller group's share of the discount. */
+    sellerShare: 'Coupon discount',
+    /** TK4-COPY: after a coupon was refused at "Place order". */
+    removedAtCheckout: 'Your coupon was removed. Check your new total and place your order again.',
+    errors: {
+      COUPON_NOT_FOUND: "This coupon code doesn't exist.",
+      COUPON_INACTIVE: "This coupon can't be used any more.",
+      COUPON_NOT_ACTIVE_YET: "This coupon isn't active yet.",
+      COUPON_EXPIRED: 'This coupon has expired.',
+      COUPON_LIMIT_REACHED: 'This coupon has been fully used.',
+      COUPON_CUSTOMER_LIMIT_REACHED: "You've already used this coupon the maximum number of times.",
+      COUPON_NOT_APPLICABLE: "This coupon doesn't apply to the items in your cart.",
+      minSubtotal: (missing: string) => `Add ${missing} more of eligible items to use this coupon.`,
+      minSubtotalUnknown: "Your eligible items don't reach this coupon's minimum.",
+    },
+    totalZero: 'Your total is EGP 0.00, so there is nothing to pay by card. Choose cash on delivery.',
+  },
   summaryHeading: 'Order summary',
   itemsTotal: (count: number) => `Items (${count})`,
   deliveryFee: 'Delivery fee',

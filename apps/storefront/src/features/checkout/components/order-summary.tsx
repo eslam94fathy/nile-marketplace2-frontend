@@ -1,8 +1,8 @@
 import { SELLER_ORDER_STATUS_LABELS } from '@nile/domain';
-import { Money, NileImage } from '@nile/ui';
+import { NileImage } from '@nile/ui';
 import { useId } from 'react';
 import { addressLines } from '@/features/addresses';
-import type { Order } from '@/features/orders';
+import { ItemAmount, OrderTotals, type Order } from '@/features/orders';
 import { CHECKOUT_COPY } from '../copy';
 
 /** An order's parcels (seller, status, items) and its delivery address, as `GET /orders/{id}` returns them. */
@@ -43,12 +43,15 @@ export function OrderSummaryBlocks({ order: data }: { readonly order: Order }) {
                   )}
                   <span className="block text-muted-foreground">{CHECKOUT_COPY.quantity(item.quantity)}</span>
                 </span>
-                <Money value={item.lineTotal} />
+                <ItemAmount item={item} />
               </li>
             ))}
           </ul>
         </section>
       ))}
+      <section aria-label={CHECKOUT_COPY.total} className="max-w-sm">
+        <OrderTotals order={data} />
+      </section>
       <section aria-labelledby={addressId} className="space-y-1 text-sm">
         <h2 id={addressId} className="font-medium">
           {CHECKOUT_COPY.confirmation.addressHeading}

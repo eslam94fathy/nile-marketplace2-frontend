@@ -122,6 +122,42 @@ describe('order detail (spec 01 SF-18)', { timeout: 15_000 }, () => {
     },
   );
 
+  it('with a coupon: items before the discount, the coupon row, the API total; paid line totals (T-K4)', async () => {
+    serveOrder(
+      order({
+        itemsTotal: '450.00',
+        deliveryFee: '45.00',
+        total: '495.00',
+        coupon: { code: 'SAVE10', discountTotal: '50.00' },
+        sellerOrders: [
+          sellerOrder({
+            discountAmount: '50.00',
+            discountFunding: 'platform',
+            items: [item({ discountAmount: '50.00', paidTotal: '450.00' })],
+          }),
+        ],
+      }),
+    );
+    renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
+    const totals = await screen.findByRole('region', { name: 'Total' });
+    const row = (label: string) => within(totals).getByText(label).nextElementSibling?.textContent;
+    // Added back for display only: 450.00 after the coupon + 50.00.
+    expect(row('Items total')).toMatch(/500\.00/);
+    expect(row('Coupon SAVE10')).toMatch(/^−.*50\.00$/);
+    expect(row('Total')).toMatch(/495\.00/);
+    const block = screen.getByRole('region', { name: 'Sold by Nile Crafts' });
+    expect(within(block).getByText(/^Was .*500\.00$/)).toBeDefined();
+    expect(within(block).getByText('Coupon discount').nextElementSibling?.textContent).toMatch(/^−.*50\.00$/);
+  });
+
+  it('without a coupon: no coupon rows, the line total as it is', async () => {
+    serveOrder(order());
+    renderWithProviders(<OrderDetail orderId={ORDER_ID} />);
+    await screen.findByRole('region', { name: 'Total' });
+    expect(screen.queryByText(/^Coupon/)).toBeNull();
+    expect(screen.queryByText(/^Was /)).toBeNull();
+  });
+
   it('items cancelled by the seller: the cancelled and open quantities', async () => {
     serveOrder(
       order({ sellerOrders: [sellerOrder({ items: [item({ quantity: 3, cancelledQuantity: 1 })] })] }),

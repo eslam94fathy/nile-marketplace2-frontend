@@ -346,6 +346,9 @@ TK2-COPY approved: section heading "Reviews", "Reviews couldn't be loaded.", "No
 ### 14.1ba Decided (2026-10-30, T-K3)
 TK3-Q1: the signed-out heart carries the product inside `returnTo` (`/login?returnTo=<page>?wishlist=<id>`), saved once by the shell after sign-in only when it matches the product this tab's heart kept in `sessionStorage` (a link alone saves nothing; security review), and dropped from the URL without a navigation (spec 01 SF-23-A1 updated) · TK3-COPY approved: "Wishlist" (title, header link, menu entry), "Remove {product} from your wishlist", "Your wishlist couldn't be loaded.", other failures the default error message · hearts optimistic on the shared ids, `PUT` / `DELETE` sent once more only on `NETWORK_ERROR` · `productPath` in `lib/routes` (design 01 R-64).
 
+### 14.1bb Decided (2026-10-30, T-K4)
+Order totals with a coupon: the items row shows `itemsTotal + coupon.discountTotal` for display only (the API's `itemsTotal` is after the coupon [VERIFIED]); a written exception in conventions §12.9 · TK4-COPY approved: "Coupon code", "Checking your coupon…", row "Coupon {code}" with "−EGP …", share "Coupon discount", "Your coupon was removed. Check your new total and place your order again.", other failures the default message · the confirmation page (SF-08) shows the order totals · preview keyed by code + cart version, a coupon refused at Place order is removed and placed again with a new key, `KASHIER_TOTAL_ZERO` keeps the coupon and selects cash on delivery (design 01 R-65).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
