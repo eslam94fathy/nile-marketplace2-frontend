@@ -4,15 +4,15 @@ import { toast } from '@nile/ui';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useHasSession } from '@/lib/use-has-session';
-import { WISHLIST_PARAM } from '../api';
+import { takePendingWishlist, WISHLIST_PARAM } from '../api';
 import { WISHLIST_COPY } from '../copy';
 import { useWishlistToggle } from '../hooks';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * After a signed-out heart tap and sign-in (SF-Q-17): the page comes back with `?wishlist=<productId>`; the
- * product is saved once, "Saved to your wishlist." is shown, and the parameter leaves the URL (so Back or a
+ * After a signed-out heart tap and sign-in (SF-Q-17): the page comes back with `?wishlist=<productId>`; when
+ * it matches the product this tab's heart remembered, the product is saved once, "Saved to your wishlist." is shown, and the parameter leaves the URL (so Back or a
  * refresh never saves it again). Mounted once in the storefront shell.
  */
 export function WishlistIntent() {
@@ -38,7 +38,9 @@ export function WishlistIntent() {
     const url = new URL(window.location.href);
     url.searchParams.delete(WISHLIST_PARAM);
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-    if (UUID.test(productId)) mutate({ productId, saved: true });
+    // Only the product this tab's own heart tap asked for (never a parameter from a link alone).
+    const pending = takePendingWishlist();
+    if (pending === productId && UUID.test(productId)) mutate({ productId, saved: true });
   }, [signedIn, productId, mutate]);
 
   return null;

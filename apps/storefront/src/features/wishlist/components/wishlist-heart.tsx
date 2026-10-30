@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { useHasSession } from '@/lib/use-has-session';
-import { WISHLIST_PARAM } from '../api';
+import { setPendingWishlist, WISHLIST_PARAM } from '../api';
 import { WISHLIST_COPY } from '../copy';
 import { useWishlistIds, useWishlistToggle } from '../hooks';
 
@@ -34,6 +34,7 @@ export function WishlistHeart({ productId, className }: WishlistHeartProps) {
 
   const onClick = () => {
     if (!signedIn) {
+      setPendingWishlist(productId);
       const query = new URLSearchParams({ [RETURN_TO_PARAM]: returnToWithSave(productId) });
       router.push(`${ROUTES.login}?${query.toString()}`);
       return;

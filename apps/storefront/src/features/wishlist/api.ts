@@ -16,6 +16,30 @@ export const WISHLIST_LIMIT = 200;
  * sign-in, whatever route the sign-in took (register, verify email) (SF-Q-17).
  */
 export const WISHLIST_PARAM = 'wishlist';
+/**
+ * The product the shopper tapped while signed out, kept in this tab's `sessionStorage`. The URL parameter alone
+ * is never enough: a link from elsewhere carrying `?wishlist=` must not save anything (security review T-K3).
+ */
+export const PENDING_WISHLIST_KEY = 'nile.wishlist.pending';
+
+/** Reads and clears the pending product; `null` when storage is unavailable or empty. */
+export function takePendingWishlist(): string | null {
+  try {
+    const value = window.sessionStorage.getItem(PENDING_WISHLIST_KEY);
+    window.sessionStorage.removeItem(PENDING_WISHLIST_KEY);
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+export function setPendingWishlist(productId: string): void {
+  try {
+    window.sessionStorage.setItem(PENDING_WISHLIST_KEY, productId);
+  } catch {
+    // Without storage the shopper taps the heart again after sign-in.
+  }
+}
 
 export const wishlistKeys = {
   all: () => ['storefront', 'wishlist'] as const,

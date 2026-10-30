@@ -7,7 +7,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
-import type { WishlistItem } from '../api';
+import { PENDING_WISHLIST_KEY, type WishlistItem } from '../api';
 import { WishlistHeart } from './wishlist-heart';
 import { WishlistIntent } from './wishlist-intent';
 import { WishlistView } from './wishlist-view';
@@ -30,6 +30,7 @@ beforeEach(() => {
   push.mockReset();
   session.present = true;
   search.params = new URLSearchParams();
+  window.sessionStorage.clear();
   window.history.replaceState(null, '', '/p/linen-shirt?variant=v1');
 });
 
@@ -98,6 +99,8 @@ describe('wishlist heart (spec 01 SF-23-A1)', { timeout: 15_000 }, () => {
     const target = new URL(String(push.mock.calls[0]?.[0]), 'http://x.test');
     expect(target.pathname).toBe('/login');
     expect(target.searchParams.get('returnTo')).toBe(`/p/linen-shirt?variant=v1&wishlist=${PRODUCT}`);
+    // The tap is remembered in this tab: the URL alone never saves (security review T-K3).
+    expect(window.sessionStorage.getItem(PENDING_WISHLIST_KEY)).toBe(PRODUCT);
     expect(idCalls()).toBe(0);
   });
 
@@ -157,6 +160,7 @@ describe('save after sign-in (SF-Q-17)', { timeout: 15_000 }, () => {
   it('saves the product once, says so and drops the parameter', async () => {
     serveIds([]);
     const puts = serveChange('put', 204);
+    window.sessionStorage.setItem(PENDING_WISHLIST_KEY, PRODUCT);
     search.params = new URLSearchParams({ variant: 'v1', wishlist: PRODUCT });
     window.history.replaceState(null, '', `/p/linen-shirt?variant=v1&wishlist=${PRODUCT}`);
     const view = renderWithProviders(
@@ -168,6 +172,7 @@ describe('save after sign-in (SF-Q-17)', { timeout: 15_000 }, () => {
     expect(await screen.findByText('Saved to your wishlist.')).toBeDefined();
     expect(puts).toEqual([PRODUCT]);
     expect(window.location.search).toBe('?variant=v1');
+    expect(window.sessionStorage.getItem(PENDING_WISHLIST_KEY)).toBeNull();
     view.rerender(
       <>
         <WishlistIntent />
@@ -175,6 +180,21 @@ describe('save after sign-in (SF-Q-17)', { timeout: 15_000 }, () => {
       </>,
     );
     expect(puts).toHaveLength(1);
+  });
+
+  it('a link carrying ?wishlist= saves nothing without a heart tap in this tab; the parameter is dropped', async () => {
+    const puts = serveChange('put', 204);
+    search.params = new URLSearchParams({ wishlist: PRODUCT });
+    window.history.replaceState(null, '', `/?wishlist=${PRODUCT}`);
+    renderWithProviders(<WishlistIntent />);
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    window.sessionStorage.setItem(PENDING_WISHLIST_KEY, OTHER);
+    search.params = new URLSearchParams({ wishlist: PRODUCT });
+    renderWithProviders(<WishlistIntent />);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(puts).toEqual([]);
   });
 
   it('does nothing while signed out or with an invalid id', async () => {
