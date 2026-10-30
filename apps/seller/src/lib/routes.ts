@@ -12,6 +12,8 @@ export const ROUTES = {
   notificationSettings: '/notifications/settings',
   /** SE-20 Reviews (T-L4). */
   reviews: '/reviews',
+  /** SE-25 New ticket (T-L6); `?category=&product=` from a blocked product (SE-Q-14). */
+  supportNew: '/support/new',
   login: '/login',
   register: '/register',
   verifyEmail: '/verify-email',

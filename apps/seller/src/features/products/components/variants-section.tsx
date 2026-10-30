@@ -1,7 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { VARIANT_STATUS_LABELS } from '@nile/domain';
+import { imageAlt, VARIANT_STATUS_LABELS } from '@nile/domain';
 import { errorMessage } from '@nile/query';
 import {
   Button,
@@ -9,6 +9,7 @@ import {
   ConfirmDialog,
   DataTable,
   Money,
+  NileImage,
   StatusBadge,
   toast,
   VARIANT_STATUS_TONES,
@@ -28,8 +29,10 @@ import {
   type SellerVariant,
 } from '../api';
 import { PRODUCTS_COPY as COPY } from '../copy';
+import { imageOfVariant } from '../lib/images';
 import { canAddVariant, isLastActiveVariant, variantOptionsLabel } from '../lib/variants';
 import { AdjustStock } from './adjust-stock';
+import { useProductBlockedHandler } from './product-blocked';
 import { CreateVariantDialog, EditVariantDialog } from './variant-dialogs';
 
 export interface VariantsSectionProps {
@@ -101,6 +104,11 @@ export function VariantsSection({ product, attributes, categoryUnavailable }: Va
   );
 
   const columns: readonly DataTableColumn<SellerVariant>[] = [
+    {
+      id: 'image',
+      header: COPY.images.column,
+      cell: (variant) => <VariantImage product={product} variant={variant} />,
+    },
     { id: 'sku', header: COPY.variantColumns.sku, cell: (variant) => variant.sku },
     {
       id: 'options',
@@ -206,6 +214,7 @@ export function VariantsSection({ product, attributes, categoryUnavailable }: Va
                   />
                 </div>
                 <p>{variantOptionsLabel(variant, known)}</p>
+                <VariantImage product={product} variant={variant} />
                 <p>
                   <Money value={variant.price} />
                   {variant.compareAtPrice === null ? null : (
@@ -265,6 +274,27 @@ export function VariantsSection({ product, attributes, categoryUnavailable }: Va
   );
 }
 
+/** SE-10 item 3: the variant's own image, or "Main image" when it shows the product's. */
+function VariantImage({
+  product,
+  variant,
+}: {
+  readonly product: SellerProduct;
+  readonly variant: SellerVariant;
+}) {
+  const image = imageOfVariant(product, variant.id);
+  if (image === null) return <span className="text-muted-foreground">{COPY.images.main}</span>;
+  return (
+    <NileImage
+      image={image}
+      alt={imageAlt(image, product.name)}
+      sizes="48px"
+      placeholder="product"
+      className="size-12 rounded-md bg-muted object-cover"
+    />
+  );
+}
+
 function StockItem({ label, value }: { readonly label: string; readonly value: number }) {
   return (
     <div>
@@ -285,6 +315,7 @@ function DeleteVariantDialog({
 }) {
   const queryClient = useQueryClient();
   const handleNotApproved = useNotApprovedHandler();
+  const handleBlocked = useProductBlockedHandler(product.id);
 
   const remove = async () => {
     if (variant === null) return;
@@ -292,7 +323,7 @@ function DeleteVariantDialog({
       await deleteVariant(product.id, variant.id);
       toast({ title: COPY.variant.deleted });
     } catch (error) {
-      if (!handleNotApproved(error) && !isApiError(error, 'VARIANT_NOT_FOUND')) {
+      if (!handleNotApproved(error) && !handleBlocked(error) && !isApiError(error, 'VARIANT_NOT_FOUND')) {
         toast({ title: errorMessage(error), tone: 'destructive' });
       }
     } finally {

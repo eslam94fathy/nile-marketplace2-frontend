@@ -128,7 +128,7 @@ Inputs:
 
 | Task | Scope | Main endpoints |
 |---|---|---|
-| T-L1 Product images | Image manager on the product: upload (up to 8), reorder (keyboard-operable, not drag only), set primary by moving first, tie to a variant, alt text, remove; blocked product state (`adminBlocked`, reason, status locked: `PRODUCT_BLOCKED`) | `/seller/products/{id}/images*` |
+| T-L1 Product images (**done 2026-10-30**, design 01 R-71; TL1-Q1…Q3, TL1-COPY approved) | Image manager on the product: upload (up to 8), reorder (keyboard-operable, not drag only), set primary by moving first, tie to a variant, alt text, remove; blocked product state (`adminBlocked`, reason, status locked: `PRODUCT_BLOCKED`) | `/seller/products/{id}/images*` |
 | T-L2 Finance and order amounts | Available (may be negative, explained) and pending balance, holds list (`blockedByReturn`), new ledger entry labels; seller order shows discount, funding and returned sums | `/seller/finance/balance`, `/holds`, `/entries`, `/seller/orders/{id}` |
 | T-L3 Returns | Returns queue (deadline sort), detail without customer data, approve, reject with reason, confirm receipt with restock choice per item (idempotent), dispute with reason and photos; overview card | `/seller/returns*` |
 | T-L4 Reviews | Reviews of my products (filters: product, rating, replied, dates), reply once (approved sellers only) | `/seller/reviews*` |

@@ -19,6 +19,12 @@ export function variantOptionsLabel(
     .join(' · ');
 }
 
+/** "Red / M" for image ties (spec 02 SE-10-I); the SKU for the default variant, which has no options. */
+export function variantShortLabel(variant: SellerVariant): string {
+  if (variant.isDefault || variant.options.length === 0) return variant.sku;
+  return variant.options.map((option) => option.value).join(' / ');
+}
+
 /** Option signatures of the product's variants (deleted variants aren't returned). */
 export function takenCombinations(variants: readonly SellerVariant[]): ReadonlySet<string> {
   return new Set(

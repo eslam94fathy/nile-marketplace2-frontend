@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fixtureId, mockApi, sellerProductListItemFactory } from '@nile/test-utils';
+import { fixtureId, imageFactory, mockApi, sellerProductListItemFactory } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -84,6 +84,25 @@ describe('products list (spec 02 SE-08)', { timeout: 15_000 }, () => {
     expect(screen.getByRole('link', { name: 'Tea set' }).getAttribute('href')).toMatch(
       /^\/products\/01900000-/,
     );
+  });
+
+  it('rows: the main image as a thumbnail and "Blocked by Nile"', async () => {
+    serveProfile(server);
+    serveProducts([
+      sellerProductListItemFactory({ name: 'Linen shirt', primaryImage: imageFactory() }),
+      sellerProductListItemFactory({
+        name: 'Fake watch',
+        adminBlocked: true,
+        adminBlockReason: 'Counterfeit',
+      }),
+    ]);
+    renderWithProviders(<ProductsList params={{}} />);
+    const table = await screen.findByRole('table', { name: 'Your products' });
+    const rowOf = (name: string) => within(table).getByRole('link', { name }).closest('tr') as HTMLElement;
+    await within(table).findByRole('link', { name: 'Linen shirt' });
+    expect(rowOf('Linen shirt').querySelector('img')?.getAttribute('src')).toMatch(/medium.webp$/);
+    expect(within(rowOf('Linen shirt')).queryByText('Blocked by Nile')).toBeNull();
+    expect(within(rowOf('Fake watch')).getByText('Blocked by Nile')).toBeDefined();
   });
 
   it('URL filters reach the API as literal keys; newest first, 20 per page', async () => {
