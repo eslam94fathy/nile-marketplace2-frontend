@@ -48,3 +48,23 @@ export function RatingStars({ avg, count, className }: RatingStarsProps) {
     </span>
   );
 }
+
+export interface StarRatingProps {
+  /** A single review's rating, 1..5. */
+  readonly rating: number;
+  readonly className?: string;
+}
+
+/** One review's stars, read as "Rated 4 out of 5" (spec 01 SF-05-R). */
+export function StarRating({ rating, className }: StarRatingProps) {
+  return (
+    <span className={cn('inline-flex items-center', className)}>
+      <span className="sr-only">{UI_COPY.ratedValue(rating)}</span>
+      <span aria-hidden="true" className="inline-flex items-center">
+        {starFills(`${String(rating)}.00`).map((fill, index) => (
+          <StarIcon key={index} fill={fill} />
+        ))}
+      </span>
+    </span>
+  );
+}

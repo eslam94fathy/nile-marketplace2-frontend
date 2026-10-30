@@ -115,7 +115,7 @@ Inputs:
 | Task | Scope | Main endpoints |
 |---|---|---|
 | T-K1 Images and ratings in the catalog (**done 2026-10-30**, design 01 R-62; item thumbnails in cart, checkout and orders added, TK1-COPY approved) | Images on cards, product gallery with variant switch, category tiles; rating stars + count on cards and detail; `rating[gte]` filter and `-rating` sort in the URL mapping (R-28); seller rating on the detail | `GET /products`, `/products/{id}`, `/categories` |
-| T-K2 Product reviews | Rating summary + distribution, reviews list (filter by rating, with images), images lightbox, seller reply | `/products/{id}/reviews`, `/reviews/summary` |
+| T-K2 Product reviews (**done 2026-10-30**, design 01 R-63; TK2-COPY approved) | Rating summary + distribution, reviews list (filter by rating, with images), images lightbox, seller reply | `/products/{id}/reviews`, `/reviews/summary` |
 | T-K3 Wishlist | Heart on cards and detail (signed in; signed out → login with return), `product-ids` once per session, wishlist page with unavailable items, limit message | `/me/wishlist*` |
 | T-K4 Coupon at checkout | Coupon field on checkout: preview, applied discount per order, remove; `couponCode` + new `expectedTotal`; `COUPON_*` errors; coupon and discount lines on confirmation and order detail (B-7) | `/cart/coupon-preview`, `/checkout`, `/orders/{id}` |
 | T-K5 Write and manage reviews | "To review" list, write from a delivered order item (rating, title, body, up to 4 images), my reviews, edit within the window, delete | `/me/reviewable-items`, `/reviews`, `/me/reviews*` |

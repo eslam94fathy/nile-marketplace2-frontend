@@ -9,6 +9,7 @@ import {
   ProductView,
   type ProductDetail,
 } from '@/features/catalog';
+import { ProductReviews } from '@/features/reviews';
 import { getProduct } from '@/lib/server/catalog';
 
 const META_DESCRIPTION_LENGTH = 160;
@@ -70,6 +71,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
         {/* Plain text from the seller: rendered as text, line breaks kept (CLAUDE.md §7). */}
         <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
       </section>
+      <ProductReviews productId={product.id} sellerName={product.seller.businessName} />
     </article>
   );
 }

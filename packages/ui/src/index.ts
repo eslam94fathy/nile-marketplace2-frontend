@@ -124,7 +124,12 @@ export {
   type NileImageSource,
 } from './components/nile-image';
 export { PrivateImage, type PrivateImageProps } from './components/private-image';
-export { RatingStars, type RatingStarsProps } from './components/rating-stars';
+export {
+  RatingStars,
+  StarRating,
+  type RatingStarsProps,
+  type StarRatingProps,
+} from './components/rating-stars';
 export { Lightbox, type LightboxImage, type LightboxProps } from './components/lightbox';
 export { ImageGallery, type ImageGalleryProps } from './components/image-gallery';
 export {

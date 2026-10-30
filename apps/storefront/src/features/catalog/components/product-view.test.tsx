@@ -250,10 +250,14 @@ describe('product page images and ratings (spec 01 §10.3, T-K1)', { timeout: 15
         seller: { id: 's', businessName: 'Nile Crafts', ratingAvg: '4.80', ratingCount: 30 },
       }),
     });
-    expect(screen.getByText('Rated 4.3 out of 5 from 12 reviews')).toBeDefined();
+    expect(
+      screen.getByRole('link', { name: 'Rated 4.3 out of 5 from 12 reviews' }).getAttribute('href'),
+    ).toBe('#reviews');
     expect(screen.getByText('Rated 4.8 out of 5 from 30 reviews')).toBeDefined();
     unmount();
     renderView();
     expect(screen.getAllByText('No reviews yet')).toHaveLength(1);
+    // Nothing to jump to without reviews.
+    expect(screen.queryByRole('link', { name: 'No reviews yet' })).toBeNull();
   });
 });

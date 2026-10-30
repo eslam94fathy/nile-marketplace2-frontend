@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useId, useState, type ReactNode } from 'react';
 import { AddToCart } from '@/features/cart';
+import { REVIEWS_SECTION_ID } from '@/features/reviews';
 import { useHasSession } from '@/lib/use-has-session';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { CATALOG_COPY } from '../copy';
@@ -142,7 +143,16 @@ export function ProductView({ product, variantId, quantity: quantityParam, headi
       <div className="space-y-6">
         <div className="space-y-2">
           {heading}
-          <RatingStars avg={product.rating.avg} count={product.rating.count} />
+          {product.rating.count === 0 ? (
+            <RatingStars avg={product.rating.avg} count={product.rating.count} />
+          ) : (
+            <a
+              href={`#${REVIEWS_SECTION_ID}`}
+              className="inline-flex rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <RatingStars avg={product.rating.avg} count={product.rating.count} />
+            </a>
+          )}
         </div>
         <div className="space-y-1">
           {variant === null ? (

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { UI_COPY } from '../copy';
 import { expectNoAxeViolations } from '../test/axe';
-import { RatingStars } from './rating-stars';
+import { RatingStars, StarRating } from './rating-stars';
 
 describe('RatingStars (conventions §12.8)', () => {
   it('shows the API average with one decimal and the count, read as a sentence', async () => {
@@ -22,5 +22,13 @@ describe('RatingStars (conventions §12.8)', () => {
     const { container } = render(<RatingStars avg={null} count={0} />);
     expect(screen.getByText(UI_COPY.noReviewsYet)).toBeDefined();
     expect(container.querySelector('svg')).toBeNull();
+  });
+});
+
+describe('StarRating (one review)', () => {
+  it('is read as "Rated n out of 5" with five decorative stars', () => {
+    const { container } = render(<StarRating rating={4} />);
+    expect(screen.getByText('Rated 4 out of 5')).toBeDefined();
+    expect(container.querySelectorAll('svg')).toHaveLength(5);
   });
 });

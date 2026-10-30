@@ -56,7 +56,9 @@ export const UI_COPY = {
   noReviewsYet: 'No reviews yet',
   ratingShort: (avg: string, count: number) => `${avg} (${reviewCount(count)})`,
   ratedOutOf: (avg: string, count: number) => `Rated ${avg} out of 5 from ${reviewCount(count)}`,
-  /** Product photos and their lightbox (conventions §12.1) [PROPOSED T-K1]. */
+  /** One review's rating (approved 2026-10-30, TK2-COPY). */
+  ratedValue: (rating: number) => `Rated ${String(rating)} out of 5`,
+  /** Product photos and their lightbox (conventions §12.1; approved 2026-10-30, TK1-COPY). */
   photos: 'Photos',
   showPhoto: (index: number, total: number) => `Show photo ${String(index)} of ${String(total)}`,
   enlargePhoto: 'View larger',

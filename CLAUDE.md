@@ -340,6 +340,9 @@ Link targets of later phases get placeholder pages naming their task (storefront
 ### 14.1ay Decided (2026-10-30, T-K1)
 Phase k on `phase/k-storefront-r2` from `main` · TK1-COPY approved: thumbnail list "Photos", "Show photo {n} of {total}", "View larger", lightbox counter "Photo {n} of {total}", "Previous photo", "Next photo", rating filter "{n} stars & up" ("1 star & up") · SF-02 subcategories stay text chips; category images only on the home tiles · item thumbnails in cart, checkout, confirmation and order detail (spec 01 §10.3) built in T-K1 · URL `rating=1..5` ↔ `rating[gte]`, "Top rated" `sort=rating` ↔ `-rating` · "Sold by" → `/s/<id>` in T-K8, rating → reviews link in T-K2 (design 01 R-62).
 
+### 14.1az Decided (2026-10-30, T-K2)
+TK2-COPY approved: section heading "Reviews", "Reviews couldn't be loaded.", "No reviews match these filters." + "Show all reviews", "Rating summary", "out of 5", "Filter by rating", chips "5 stars" … "1 star", one review read "Rated {n} out of 5", review photos "Photos from {reviewer}" · review filters live in component state, not the URL · 5 reviews first, then 10 per "Show more reviews" · the rating under the product name links to `#reviews` only with reviews (design 01 R-63).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
