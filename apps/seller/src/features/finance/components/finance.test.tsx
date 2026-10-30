@@ -185,8 +185,12 @@ describe('finance page (spec 02 SE-16)', { timeout: 15_000 }, () => {
     renderWithProviders(<FinanceView tab="statement" />);
     const table = await screen.findByRole('table', { name: 'Your statement' });
     expect(await within(table).findByText('Earnings released')).toBeDefined();
-    expect(within(table).getByText('Returned items')).toBeDefined();
-    expect(within(table).getByText('Return delivery fee')).toBeDefined();
+    // Entries about a return link to it (SE-19, T-L3); the released hold has no page of its own.
+    expect(within(table).queryByRole('link', { name: 'Earnings released' })).toBeNull();
+    expect(within(table).getByRole('link', { name: 'Returned items' }).getAttribute('href')).toBe(
+      `/returns/${fixtureId(7001)}`,
+    );
+    expect(within(table).getByRole('link', { name: 'Return delivery fee' })).toBeDefined();
     expect(warn).not.toHaveBeenCalled();
   });
 

@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { useId } from 'react';
 import { BalanceCard } from '@/features/finance';
 import { profileQuery, useSellerAccess } from '@/features/profile';
+import { ReturnQueue } from '@/features/returns';
 import { ROUTES } from '@/lib/routes';
 import { OVERVIEW_COPY as COPY } from '../copy';
 import { OrderQueue } from './order-queue';
 
 /**
- * SE-06 Overview (split decided 2026-10-15): the pending-approval checklist, the two order queues (T-H4),
+ * SE-06 Overview (split decided 2026-10-15): the pending-approval checklist, the two order queues (T-H4), the return queues (T-L3, SE-Q-11),
  * the balance card (T-H5) and the shortcuts. The status banner comes from the shell.
  */
 export function Overview() {
@@ -23,6 +24,8 @@ export function Overview() {
       {profile?.status === 'pending_approval' ? <PendingChecklist /> : null}
       <OrderQueue queue="toConfirm" />
       <OrderQueue queue="returns" />
+      <ReturnQueue queue="toDecide" />
+      <ReturnQueue queue="toCheck" />
       <BalanceCard variant="overview" />
       <Shortcuts />
     </div>

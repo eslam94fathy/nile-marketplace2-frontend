@@ -16,7 +16,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { orderPath, ROUTES } from '@/lib/routes';
+import { orderPath, returnPath, ROUTES } from '@/lib/routes';
 import {
   entriesListOptions,
   holdsListOptions,
@@ -77,7 +77,7 @@ function SignedAmount({ entry }: { readonly entry: LedgerEntry }) {
   );
 }
 
-/** Release 2 entries (spec 02 §8.6); their returns get links with the returns screens (T-L3). */
+/** Release 2 entries (spec 02 §8.6); the ones about a return link to it (SE-19). */
 const PLAIN_DESCRIPTIONS: Partial<Record<LedgerEntry['entryType'], string>> = {
   seller_net_released: COPY.earningsReleased,
   seller_net_reversed: COPY.returnedItems,
@@ -103,6 +103,13 @@ function Description({ entry }: { readonly entry: LedgerEntry }) {
     );
   }
   const text = PLAIN_DESCRIPTIONS[entry.entryType];
+  if (text !== undefined && entry.referenceType === 'return') {
+    return (
+      <Link href={returnPath(entry.referenceId)} className={LINK}>
+        {text}
+      </Link>
+    );
+  }
   if (text !== undefined) return <span>{text}</span>;
   // Never on a seller account [SPEC 12 §1.2]: shown as sent, and reported (below).
   return <span>{entry.entryType}</span>;

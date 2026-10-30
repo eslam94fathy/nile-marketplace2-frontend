@@ -24,6 +24,7 @@ import {
   SELLER_ORDER_STATUS_TONES,
   Skeleton,
   StatusBadge,
+  usePassed,
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -38,7 +39,6 @@ import { WriteReviewLink } from '@/features/reviews';
 import { CancelSellerOrder } from './cancel-seller-order';
 import { ItemAmount, OrderTotals } from './order-amounts';
 import { returnWindowEnd } from '../lib/return-window';
-import { usePassed } from '@/lib/use-passed';
 
 const COPY = ORDERS_COPY;
 

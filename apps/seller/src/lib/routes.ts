@@ -2,6 +2,8 @@
 export const ROUTES = {
   overview: '/',
   orders: '/orders',
+  /** SE-18 Returns (T-L3). */
+  returns: '/returns',
   products: '/products',
   newProduct: '/products/new',
   finance: '/finance',

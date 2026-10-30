@@ -2,7 +2,7 @@
 
 import { isApiError } from '@nile/api';
 import { useRealtimeConnected } from '@nile/realtime';
-import { buttonVariants, Countdown, ErrorState, PageHeader, Skeleton } from '@nile/ui';
+import { buttonVariants, Countdown, ErrorState, PageHeader, Skeleton, usePassed } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
@@ -25,7 +25,6 @@ import {
   PAYMENT_RETURN_POLL_MS,
   PAYMENT_RETURN_SOCKET_WAIT_MS,
 } from '../lib/constants';
-import { usePassed } from '@/lib/use-passed';
 
 const COPY = CHECKOUT_COPY.kashier;
 

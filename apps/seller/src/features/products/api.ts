@@ -16,6 +16,8 @@ export type ProductImage = Schema<'ProductImageDto'>;
 const PRODUCTS_PAGE_SIZE = 20;
 
 export const productKeys = {
+  /** Prefix of every product key (lists, detail). */
+  all: () => ['seller', 'products'] as const,
   lists: () => queryKey('seller', 'products', 'list'),
   list: (filters: ProductFilters) => queryKey('seller', 'products', 'list', filters),
   detail: (productId: string) => queryKey('seller', 'products', 'detail', { productId }),

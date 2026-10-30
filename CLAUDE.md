@@ -370,6 +370,9 @@ Phase l on `phase/l-seller-r2`, stacked on `phase/k-storefront-r2` (not merged y
 ### 14.1bi Decided (2026-10-30, T-L2)
 SE-16 "On hold" tab (`?tab=on-hold`, `GET /seller/finance/holds` sorted by `releaseAfter`, load more) and SE-15 coupon and return amounts, every amount from the API (seller-order `subtotal` is before the coupon, commission and net after it [SPEC 09 §8.7]) · TL2-Q1: coupon lines on the order detail only; the list keeps its `sellerNet` column · TL2-Q2: returned sums as the spec's one sentence with `returnedSellerNet` only · TL2-COPY approved: caption "Earnings on hold", columns "Order" / "Amount" / "Release", "Your earnings on hold couldn't be loaded.", discount row "Coupon discount · Funded by you" / "· Funded by Nile" with "−{amount}" (design 01 R-72).
 
+### 14.1bj Decided (2026-10-30, T-L3)
+Seller returns SE-18 (`/returns?tab=to-decide|to-check|in-progress|closed`), SE-19 with approve, reject, confirm receipt (restock on by default, every item once, idempotent) and report a problem (reason + up to 4 photos), SE-06 queues "Returns to decide" / "Returns to check" (hidden when empty, 60 s poll only without a socket), statement return entries linked to SE-19; `return.updated` refreshes returns, the seller order and finance · TL3-Q1: the detail shows only the deadline that matters for the status · TL3-Q2: items count = returned units · TL3-Q3: `usePassed` lives in `@nile/ui` (moved from the storefront) · TL3-Q4: one seller returns E2E at the end of phase l (customer request on `deliveredCodOrder`, seller approve / reject); the receipt path stays in component tests until phase n · TL3-COPY approved as listed in design 01 R-73 (design 01 R-73).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
