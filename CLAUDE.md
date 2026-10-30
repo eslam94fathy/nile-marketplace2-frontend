@@ -373,6 +373,9 @@ SE-16 "On hold" tab (`?tab=on-hold`, `GET /seller/finance/holds` sorted by `rele
 ### 14.1bj Decided (2026-10-30, T-L3)
 Seller returns SE-18 (`/returns?tab=to-decide|to-check|in-progress|closed`), SE-19 with approve, reject, confirm receipt (restock on by default, every item once, idempotent) and report a problem (reason + up to 4 photos), SE-06 queues "Returns to decide" / "Returns to check" (hidden when empty, 60 s poll only without a socket), statement return entries linked to SE-19; `return.updated` refreshes returns, the seller order and finance · TL3-Q1: the detail shows only the deadline that matters for the status · TL3-Q2: items count = returned units · TL3-Q3: `usePassed` lives in `@nile/ui` (moved from the storefront) · TL3-Q4: one seller returns E2E at the end of phase l (customer request on `deliveredCodOrder`, seller approve / reject); the receipt path stays in component tests until phase n · TL3-COPY approved as listed in design 01 R-73 (design 01 R-73).
 
+### 14.1bk Decided (2026-10-30, T-L4)
+SE-20 `/reviews` (sidebar entry) with URL filters, inline reply once for approved sellers (answer replaces the row in every cached list) · TL4-Q1: one "From" date (`createdAt[gte]`, Cairo day); the backend is asked whether `createdAt[lte]` is missing from the OpenAPI document (OQ-21) · TL4-Q2: product choices = every product (100 per page, at most 10 pages), by name, cached 5 min, in the existing Select · TL4-Q3: `?rating=4,5` · TL4-Q4: the seller keeper composes `notification.created`: the notifications keys plus the review lists when the link is `/seller/reviews` [SPEC 13 NO-32] · TL4-COPY approved: "Reviews", "Product" / "All products" / "Your products couldn't be loaded for the filter.", "Filter by rating" with "5 stars" … "1 star", "Not replied", "From", "Clear filters", "Reviews of your products", "No reviews match these filters.", "Reviews couldn't be loaded.", "Edited", "Photos from {reviewer}", "Your reply", "Reply" (name "Reply to {reviewer}"), "Send reply", "Cancel", "Reply sent.", "{n} / 1000" (design 01 R-74).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
@@ -391,6 +394,7 @@ FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 | OQ-18 | Notification `link` values assume one prefixed web app (backend NO-12) | Ask the backend to confirm the link list as a stable contract |
 | OQ-19 | Local backend container predates R2-P6/P7 (no returns or coupon routes) | Rebuild api, worker and realtime at `ecbcd19` before T-J1 |
 | OQ-20 | Customer `GET /orders/{id}` has no `refunds[]` for the SF-18 refunds block (TK8-Q1) | Ask the backend to add `refunds: { amount, status, createdAt, refundedAt }[]` to the customer `OrderDetailDto`; the block is built once the snapshot has it |
+| OQ-21 | `GET /seller/reviews` documents `createdAt[gte|lte]` but the OpenAPI parameters have `createdAt[gte]` only (TL4-Q1) | Ask the backend: add `createdAt[lte]` to the document (or confirm it isn't supported); SE-20 gets a "To" date once the snapshot has it |
 | TB-2 | `unrs-resolver` install script (npm install-script approval) | Left unapproved: lint and import resolution work without it. Approve only if a resolver error appears |
 
 New ones go here as rows. When a decision is made, move it to §14.1.

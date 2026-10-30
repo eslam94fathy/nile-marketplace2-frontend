@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ReviewsList } from '@/features/reviews';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Reviews' };
 
-/** SE-20 Reviews: a notification link target since T-J6 (spec 00 §12.5), built in T-L4. */
-export default async function ReviewsPage() {
+/** SE-20 Reviews: filters come from the URL; the list is fetched on the client. */
+export default async function ReviewsPage({ searchParams }: PageProps<'/reviews'>) {
   await requireSession();
-  return <PlaceholderScreen title="Reviews" task="T-L4" />;
+  return <ReviewsList params={await searchParams} />;
 }

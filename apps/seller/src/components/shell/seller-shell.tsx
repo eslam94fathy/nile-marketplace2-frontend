@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  Star,
   Undo2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ const NAV = [
   { href: ROUTES.orders, label: 'Orders', icon: ShoppingBag },
   { href: ROUTES.returns, label: 'Returns', icon: Undo2 },
   { href: ROUTES.products, label: 'Products', icon: Package },
+  { href: ROUTES.reviews, label: 'Reviews', icon: Star },
   { href: ROUTES.finance, label: 'Finance', icon: Banknote },
   { href: ROUTES.profile, label: 'Profile', icon: Store },
   { href: ROUTES.security, label: 'Security', icon: ShieldCheck },
