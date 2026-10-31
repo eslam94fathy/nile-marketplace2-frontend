@@ -5,6 +5,7 @@ import {
   NULLABLE_REQUEST_FIELDS,
   OPTIONAL_RESPONSE_FIELDS,
   REQUIRED_REQUEST_FIELDS,
+  SCALAR_MAP_FIELDS,
   STRING_MAP_FIELDS,
   OpenApiFixError,
   type OpenApiDocument,
@@ -102,6 +103,11 @@ function fixture(): OpenApiDocument {
           type: 'object',
           required: ['fields'],
           properties: { fields: { type: 'object' } },
+        },
+        AuditChangesDto: {
+          type: 'object',
+          required: ['before', 'after'],
+          properties: { before: { type: 'object' }, after: { type: 'object' } },
         },
         ...nullableRequests,
       },
@@ -260,6 +266,28 @@ describe('OA-R2-10 string maps', () => {
   });
 });
 
+describe('OA-R2-11 scalar maps', () => {
+  it('types the audit before / after values as scalars', () => {
+    const { document, report } = applyFixes(fixture());
+    for (const field of ['before', 'after']) {
+      expect(schemaOf(document, 'AuditChangesDto').properties?.[field]).toEqual({
+        type: 'object',
+        additionalProperties: { type: ['string', 'number', 'boolean', 'null'] },
+      });
+    }
+    expect(report.scalarMapProperties).toBe(Object.values(SCALAR_MAP_FIELDS).flat().length);
+  });
+
+  it('throws when the audit changes gain declared keys', () => {
+    const doc = fixture();
+    schemaOf(doc, 'AuditChangesDto').properties = {
+      before: { type: 'object', properties: {} },
+      after: { type: 'object' },
+    };
+    expect(() => applyFixes(doc)).toThrow(OpenApiFixError);
+  });
+});
+
 describe('the pinned snapshot', () => {
   const snapshot = JSON.parse(readFileSync(SNAPSHOT_FILE, 'utf8')) as OpenApiDocument;
   const { document, report } = applyFixes(snapshot);
@@ -278,6 +306,7 @@ describe('the pinned snapshot', () => {
       requiredRequestProperties: 2,
       removedAttrParameter: true,
       stringMapProperties: 1,
+      scalarMapProperties: 2,
     });
   });
 

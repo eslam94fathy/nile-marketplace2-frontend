@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ReturnDetail } from '@/features/returns';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Return' };
 
-/** SE-19 Return: a notification link target since T-J6 (spec 00 §12.5), built in T-L3. */
-export default async function ReturnPage() {
+/** SE-19 Return: fetched on the client (another seller's return is "not found"). */
+export default async function ReturnPage({ params }: PageProps<'/returns/[returnId]'>) {
   await requireSession();
-  return <PlaceholderScreen title="Return" task="T-L3" />;
+  return <ReturnDetail returnId={(await params).returnId} />;
 }

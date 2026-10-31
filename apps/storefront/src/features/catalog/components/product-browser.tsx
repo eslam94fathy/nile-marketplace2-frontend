@@ -15,7 +15,7 @@ import {
   type ResolvedListing,
   type SortKey,
 } from '../lib/listing-params';
-import { FilterPanel, withAttribute, type ListingPatch } from './filter-panel';
+import { CLEARED_FILTERS, FilterPanel, withAttribute, type ListingPatch } from './filter-panel';
 import { ProductResults } from './product-results';
 
 /** A category choice for the search page's refinement select (indented by depth). */
@@ -33,8 +33,8 @@ export interface ProductBrowserProps {
   readonly listing: ResolvedListing;
   /** Its `GET /products` query (first page prefetched under the same key). */
   readonly query: ProductQueryInput;
-  /** The page the listing lives on (`/search` or `/c/<slug>`). */
-  readonly basePath: '/search' | `/c/${string}`;
+  /** The page the listing lives on (`/search`, `/c/<slug>` or the seller page `/s/<id>`). */
+  readonly basePath: '/search' | `/c/${string}` | `/s/${string}`;
   readonly attributes: readonly EffectiveAttribute[] | null;
   /** Search page only: the category refinement (spec 01 SF-03). */
   readonly categoryOptions?: readonly CategoryOption[];
@@ -58,6 +58,9 @@ function activeChips(listing: ResolvedListing, attributes: readonly EffectiveAtt
   const price = priceLabel(listing.minPrice, listing.maxPrice);
   if (price !== null) chips.push({ key: 'price', label: price, patch: { minPrice: null, maxPrice: null } });
   if (listing.inStock) chips.push({ key: 'stock', label: CATALOG_COPY.inStock, patch: { inStock: false } });
+  if (listing.rating !== null) {
+    chips.push({ key: 'rating', label: CATALOG_COPY.starsAndUp(listing.rating), patch: { rating: null } });
+  }
   for (const attribute of attributes ?? []) {
     const selected = listing.attributes[attribute.code] ?? [];
     for (const option of attribute.options.filter((o) => selected.includes(o.code))) {
@@ -91,7 +94,8 @@ export function ProductBrowser({
   const categoryId = useId();
 
   const go = (next: Omit<ResolvedListing, 'categoryId'>) => {
-    const search = listingQueryString(next);
+    // The seller page is the seller: like a route category, it is not repeated in the URL.
+    const search = listingQueryString(basePath.startsWith('/s/') ? { ...next, seller: null } : next);
     startTransition(() => {
       router.push(search === '' ? basePath : `${basePath}?${search}`, { scroll: false });
     });
@@ -100,15 +104,12 @@ export function ProductBrowser({
     go({ ...listing, ...patch });
   };
   const clearFilters = () => {
-    change({ minPrice: null, maxPrice: null, inStock: false, attributes: {} });
+    change(CLEARED_FILTERS);
   };
   const resetToDefaults = () => {
     go({
       ...listing,
-      minPrice: null,
-      maxPrice: null,
-      inStock: false,
-      attributes: {},
+      ...CLEARED_FILTERS,
       sort: listing.q === null ? 'newest' : 'best-match',
     });
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { NOTIFICATIONS_COPY, NotificationBell } from '@nile/notifications';
+import { NotificationBell } from '@nile/notifications';
 import {
   Button,
   DropdownMenu,
@@ -11,25 +11,19 @@ import {
   UI_COPY,
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, ShoppingCart, User } from 'lucide-react';
+import { ChevronDown, Heart, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { CartLink } from '@/features/cart';
+import { WISHLIST_COPY } from '@/features/wishlist';
 import { RETURN_TO_PARAM, ROUTES } from '@/lib/routes';
 import { sessionClient } from '@/lib/session-client';
 import { profileQuery } from '../api';
 import { ACCOUNT_COPY } from '../copy';
+import { ACCOUNT_NAV } from '../nav';
 import { useHasSession } from '@/lib/use-has-session';
 
 const LINK = 'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted';
 const ICON_LINK = 'inline-flex size-10 items-center justify-center rounded-md hover:bg-muted';
-
-const MENU_LINKS = [
-  { href: ROUTES.orders, label: ACCOUNT_COPY.orders },
-  { href: ROUTES.notifications, label: NOTIFICATIONS_COPY.title },
-  { href: ROUTES.addresses, label: ACCOUNT_COPY.addresses },
-  { href: ROUTES.account, label: ACCOUNT_COPY.account },
-  { href: ROUTES.security, label: ACCOUNT_COPY.security },
-] as const;
 
 function SignedInMenu() {
   // While loading or after a failure the menu still works; only the greeting needs the profile.
@@ -46,7 +40,7 @@ function SignedInMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        {MENU_LINKS.map((item) => (
+        {ACCOUNT_NAV.map((item) => (
           <DropdownMenuItem key={item.href} asChild>
             <Link href={item.href}>{item.label}</Link>
           </DropdownMenuItem>
@@ -66,7 +60,7 @@ function SignedInMenu() {
 
 /**
  * Header account area and cart link (spec 01 §2.2): sign-in links for visitors (with `returnTo`), the
- * notification bell (T-J6) and the "Hi, {firstName}" menu with sign-out for customers, and the cart button
+ * notification bell (T-J6), the wishlist link (T-K3) and the "Hi, {firstName}" menu with sign-out for customers, and the cart button
  * with its count (T-F1).
  */
 export function AccountArea({ pathname }: { readonly pathname: string }) {
@@ -90,6 +84,11 @@ export function AccountArea({ pathname }: { readonly pathname: string }) {
           </Link>
         </>
       )}
+      {signedIn ? (
+        <Link href={ROUTES.wishlist} aria-label={WISHLIST_COPY.title} className={ICON_LINK}>
+          <Heart aria-hidden="true" className="size-5" />
+        </Link>
+      ) : null}
       {signedIn ? (
         <CartLink className={ICON_LINK} />
       ) : (

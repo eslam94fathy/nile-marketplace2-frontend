@@ -1,8 +1,8 @@
 import { SELLER_ORDER_STATUS_LABELS } from '@nile/domain';
-import { Money } from '@nile/ui';
+import { NileImage } from '@nile/ui';
 import { useId } from 'react';
 import { addressLines } from '@/features/addresses';
-import type { Order } from '@/features/orders';
+import { ItemAmount, OrderTotals, type Order } from '@/features/orders';
 import { CHECKOUT_COPY } from '../copy';
 
 /** An order's parcels (seller, status, items) and its delivery address, as `GET /orders/{id}` returns them. */
@@ -26,8 +26,15 @@ export function OrderSummaryBlocks({ order: data }: { readonly order: Order }) {
           </div>
           <ul className="divide-y divide-border">
             {sellerOrder.items.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
-                <span>
+              <li key={item.id} className="flex gap-3 px-4 py-3 text-sm">
+                <NileImage
+                  image={item.image}
+                  alt=""
+                  sizes="64px"
+                  placeholder="product"
+                  className="size-16 shrink-0 rounded-md bg-muted"
+                />
+                <span className="flex-1">
                   <span className="block font-medium">{item.productName}</span>
                   {item.attributes.length === 0 ? null : (
                     <span className="block text-muted-foreground">
@@ -36,12 +43,15 @@ export function OrderSummaryBlocks({ order: data }: { readonly order: Order }) {
                   )}
                   <span className="block text-muted-foreground">{CHECKOUT_COPY.quantity(item.quantity)}</span>
                 </span>
-                <Money value={item.lineTotal} />
+                <ItemAmount item={item} />
               </li>
             ))}
           </ul>
         </section>
       ))}
+      <section aria-label={CHECKOUT_COPY.total} className="max-w-sm">
+        <OrderTotals order={data} />
+      </section>
       <section aria-labelledby={addressId} className="space-y-1 text-sm">
         <h2 id={addressId} className="font-medium">
           {CHECKOUT_COPY.confirmation.addressHeading}

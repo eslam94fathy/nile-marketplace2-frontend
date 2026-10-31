@@ -4,17 +4,20 @@ import { queryOptions } from '@tanstack/react-query';
 import { browserApi } from '@/lib/browser-api';
 import { refundApiQuery, type RefundFilters } from './lib/list-params';
 
-// Payments and refunds (spec 03 AD-15 payment summary, AD-16, AD-17; design 02 §2.4 `orders.payment`,
-// `payments.detail`, `refunds.list`, §3.4 "Record refund").
+// Payments and refunds (spec 03 AD-15 payment summary, AD-16, AD-17, AD-34; design 02 §2.4 `orders.payment`,
+// `payments.detail`, `refunds.list`, §3.4 "Record refund", §5.2 `refunds.detail`, §5.4 record / retry).
 
 export type AdminPayment = Schema<'AdminPaymentDto'>;
 export type Refund = Schema<'RefundDto'>;
+export type RefundDetail = Schema<'RefundDetailDto'>;
 
 const REFUNDS_PAGE_SIZE = 20;
 
 export const paymentKeys = {
   refundLists: () => queryKey('admin', 'refunds', 'list'),
   refunds: (filters: RefundFilters) => queryKey('admin', 'refunds', 'list', filters),
+  refund: (refundId: string) => queryKey('admin', 'refunds', 'detail', { refundId }),
+  refundDetails: () => queryKey('admin', 'refunds', 'detail'),
   detail: (paymentId: string) => queryKey('admin', 'payments', 'detail', { paymentId }),
   details: () => queryKey('admin', 'payments', 'detail'),
   orderPayment: (orderId: string) => queryKey('admin', 'orders', 'payment', { orderId }),
@@ -41,6 +44,32 @@ export function refundsListOptions(filters: RefundFilters) {
       ),
     staleTime: 0,
   });
+}
+
+/**
+ * AD-34: stale 0 and `gcTime` 0 (design 02 §5.2): a COD refund carries the customer's payout details, which are
+ * never kept once the screen is left.
+ */
+export function refundQuery(refundId: string) {
+  return queryOptions({
+    queryKey: paymentKeys.refund(refundId),
+    queryFn: async ({ signal }) =>
+      (
+        await unwrap(
+          browserApi.GET('/api/v1/admin/payments/refunds/{refundId}', {
+            params: { path: { refundId } },
+            signal,
+          }),
+        )
+      ).data,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+/** No such refund, or not a refund id at all (the backend checks the id format first, as R-36). */
+export function isRefundMissing(error: unknown): boolean {
+  return isApiError(error, 'REFUND_NOT_FOUND') || isApiError(error, 'VALIDATION_FAILED');
 }
 
 /** AD-17: stale 0. */
@@ -90,6 +119,15 @@ export async function recordRefund(input: RecordRefundInput, idempotencyKey: str
         params: { path: { refundId: input.refundId }, header: { 'Idempotency-Key': idempotencyKey } },
         body: { providerRefundRef: input.providerRefundRef },
       }),
+    )
+  ).data;
+}
+
+/** A `pending_manual` refund of a Kashier payment back to the job (spec 10 §8.4); no key, never retried. */
+export async function retryRefund(refundId: string): Promise<Refund> {
+  return (
+    await unwrap(
+      browserApi.POST('/api/v1/admin/payments/refunds/{refundId}/retry', { params: { path: { refundId } } }),
     )
   ).data;
 }

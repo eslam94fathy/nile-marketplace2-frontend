@@ -23,6 +23,7 @@ import {
   productValues,
   type ProductValues,
 } from '../schemas';
+import { useProductBlockedHandler } from './product-blocked';
 import { ProductFields } from './product-fields';
 
 /**
@@ -36,6 +37,7 @@ export function ProductDetailsForm({ product }: { readonly product: SellerProduc
   const hydrated = useHydrated();
   const access = useSellerAccess();
   const handleNotApproved = useNotApprovedHandler();
+  const handleBlocked = useProductBlockedHandler(product.id);
   const reasonId = useId();
   const categories = useQuery(categoriesTreeQuery(browserApi));
   const choices = useMemo(() => {
@@ -62,7 +64,7 @@ export function ProductDetailsForm({ product }: { readonly product: SellerProduc
       void queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       toast({ title: COPY.saved });
     } catch (error) {
-      if (handleNotApproved(error)) return;
+      if (handleNotApproved(error) || handleBlocked(error)) return;
       if (isApiError(error, 'PRODUCT_CATEGORY_LOCKED')) {
         void queryClient.invalidateQueries({ queryKey: productKeys.detail(product.id) });
         form.setError('categoryId', { type: 'server', message: COPY.errors.PRODUCT_CATEGORY_LOCKED });

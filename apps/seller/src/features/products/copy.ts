@@ -128,6 +128,53 @@ export const PRODUCTS_COPY = {
     },
   },
 
+  // SE-08 / SE-10 blocked product (spec 02 §8.3)
+  blockedBadge: 'Blocked by Nile',
+  blocked: (reason: string) =>
+    `Nile blocked this product: ${reason}. It's hidden from the store and its status can't be changed. Contact support if you think this is a mistake.`,
+  contactSupport: 'Contact support',
+  /** Publish / Unpublish disabled on a blocked product (TL1-COPY). */
+  blockedStatusLocked: "The status can't be changed while Nile blocks this product.",
+
+  // SE-10-I images (spec 02 §8.3; the rest approved as TL1-COPY, CLAUDE.md §14.1bh)
+  images: {
+    heading: 'Images',
+    note: 'Images help customers decide. Products can be published without images.',
+    add: 'Add images',
+    limit: 'A product can have up to 8 images.',
+    none: 'No images yet.',
+    /** list name */
+    listLabel: 'Product images',
+    main: 'Main image',
+    shownFor: (variant: string) => `Shown for: ${variant}`,
+    noDescription: 'No description',
+    /** tile menu trigger */
+    actions: (position: number, total: number) => `Actions for image ${String(position)} of ${String(total)}`,
+    moveEarlier: 'Move earlier',
+    moveLater: 'Move later',
+    makeMain: 'Make main image',
+    edit: 'Edit',
+    remove: 'Remove',
+    moved: (position: number, total: number) =>
+      `Image moved to position ${String(position)} of ${String(total)}.`,
+    added: 'Image added.',
+    editTitle: 'Edit image',
+    altText: 'Image description',
+    altTextHint: "Describes the image for people who can't see it.",
+    showFor: 'Show for variant',
+    allVariants: 'All variants',
+    save: 'Save',
+    saved: 'Image saved.',
+    removeTitle: 'Remove image',
+    removeConfirm: 'Remove this image?',
+    removed: 'Image removed.',
+    /** the image disappeared meanwhile */
+    gone: 'This image no longer exists.',
+    orderChanged: "The images changed. We've refreshed them, please try again.",
+    /** Variants table column. */
+    column: 'Image',
+  },
+
   errors: {
     CATEGORY_NOT_FOUND: 'This category is no longer available.',
     PRODUCT_CATEGORY_LOCKED: "The category can't be changed because the product has variants.",

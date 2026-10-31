@@ -14,7 +14,7 @@ import * as z from 'zod';
 import { agentKeys, agentPickerQuery } from '@/features/lookups';
 import { createRemittance, financeKeys, ownerAccountQuery, type CreateRemittanceBody } from '../api';
 import { FINANCE_COPY as COPY } from '../copy';
-import { StepDialog, type Step } from './step-dialog';
+import { StepDialog, type Step } from '@/components/step-dialog';
 
 /** `CreateRemittanceDto` [VERIFIED]: amount > 0, note optional 1..500 (omitted when empty). */
 const schema = z.object({
@@ -49,7 +49,10 @@ export function RecordRemittanceDialog({ initialAgentId, onClose }: RecordRemitt
   const [notice, setNotice] = useState<string | null>(null);
   const [step, setStep] = useState<Step>('form');
   const [body, setBody] = useState<CreateRemittanceBody | null>(null);
-  const mutation = useIdempotentMutation({ mutationFn: createRemittance });
+  const mutation = useIdempotentMutation({
+    mutationFn: createRemittance,
+    intentScope: ['admin', 'remittance'],
+  });
   const agents = useQuery(agentPickerQuery());
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),

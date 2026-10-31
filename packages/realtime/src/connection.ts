@@ -5,7 +5,6 @@ import {
   type RealtimeDisconnectReason,
   type RealtimeMessage,
 } from '@nile/api';
-import { io } from 'socket.io-client';
 
 // One socket per tab (design 01 §15.3, backend docs/realtime.md). Framework-free: the React provider drives it.
 // The socket only notifies; the app refetches over REST. The access token lives only in this closure (CLAUDE.md
@@ -35,7 +34,8 @@ export interface SocketOptions {
   readonly auth: (callback: (data: { token?: string }) => void) => void;
 }
 
-export type CreateSocket = (url: string, options: SocketOptions) => SocketLike;
+/** Synchronous in tests; the default loads the Socket.IO client on first use (a promise). */
+export type CreateSocket = (url: string, options: SocketOptions) => SocketLike | Promise<SocketLike>;
 
 /** Result of the session coordinator's refresh (`@nile/auth` `SessionClient.refresh`). */
 export type RefreshOutcome = 'ok' | 'transient' | 'ended';
@@ -84,7 +84,14 @@ export const ACK_TIMEOUT_MS = 5_000;
 const SOCKET_PATH = '/realtime';
 const SESSION_ENDED = 'session.ended';
 
-const defaultCreateSocket: CreateSocket = (url, options) => io(url, options);
+// Loaded on the first connect only (T-O3): signed-out visitors and the first paint never download the client.
+const defaultCreateSocket: CreateSocket = async (url, options) => {
+  const { io } = await import('socket.io-client');
+  return io(url, options);
+};
+
+const isPromise = <T>(value: T | Promise<T>): value is Promise<T> =>
+  typeof (value as { then?: unknown } | null)?.then === 'function';
 
 const STOP_CODES: ReadonlySet<string> = new Set<RealtimeConnectErrorCode>([
   'ORIGIN_NOT_ALLOWED',
@@ -111,6 +118,7 @@ export function createRealtimeConnection(options: RealtimeConnectionOptions): Re
     });
 
   let socket: SocketLike | null = null;
+  let loading = false;
   let status: RealtimeStatus = 'idle';
   let running = false;
   let retryTimer: unknown = null;
@@ -133,9 +141,41 @@ export function createRealtimeConnection(options: RealtimeConnectionOptions): Re
 
   const connectNow = () => {
     clearRetry();
-    if (!running || socket === null || socket.connected) return;
+    if (!running) return;
+    if (socket === null) {
+      load();
+      return;
+    }
+    if (socket.connected) return;
     setStatus('connecting');
     socket.connect();
+  };
+
+  const adopt = (created: SocketLike) => {
+    socket = wire(created);
+    connectNow();
+  };
+
+  /** Creates the socket once; a failed load of the client is retried like a refused connection. */
+  const load = () => {
+    if (loading) return;
+    const created = createSocket(options.url, socketOptions());
+    if (!isPromise(created)) {
+      adopt(created);
+      return;
+    }
+    loading = true;
+    setStatus('connecting');
+    created.then(
+      (ready) => {
+        loading = false;
+        adopt(ready);
+      },
+      () => {
+        loading = false;
+        connectLater(backoff());
+      },
+    );
   };
 
   const connectLater = (ms: number) => {
@@ -258,26 +298,27 @@ export function createRealtimeConnection(options: RealtimeConnectionOptions): Re
     options.onMessage(payload);
   };
 
-  const build = (): SocketLike => {
-    const created = createSocket(options.url, {
-      path: SOCKET_PATH,
-      transports: ['websocket'],
-      autoConnect: false,
-      reconnection: true,
-      reconnectionDelay: RECONNECT_DELAY_MS,
-      reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
-      auth: (callback) => {
-        obtainToken().then(
-          (token) => {
-            callback({ token });
-          },
-          () => {
-            // The server answers UNAUTHENTICATED (or the connection was stopped meanwhile).
-            callback({});
-          },
-        );
-      },
-    });
+  const socketOptions = (): SocketOptions => ({
+    path: SOCKET_PATH,
+    transports: ['websocket'],
+    autoConnect: false,
+    reconnection: true,
+    reconnectionDelay: RECONNECT_DELAY_MS,
+    reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
+    auth: (callback) => {
+      obtainToken().then(
+        (token) => {
+          callback({ token });
+        },
+        () => {
+          // The server answers UNAUTHENTICATED (or the connection was stopped meanwhile).
+          callback({});
+        },
+      );
+    },
+  });
+
+  const wire = (created: SocketLike): SocketLike => {
     created.on('connect', () => {
       retries = 0;
       authRefusals = 0;
@@ -296,7 +337,6 @@ export function createRealtimeConnection(options: RealtimeConnectionOptions): Re
     start() {
       if (running) return;
       running = true;
-      socket ??= build();
       connectNow();
     },
     stop() {

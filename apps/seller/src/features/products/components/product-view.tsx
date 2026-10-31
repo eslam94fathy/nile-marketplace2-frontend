@@ -21,7 +21,9 @@ import { ROUTES, STOREFRONT_PRODUCT_PATH } from '@/lib/routes';
 import { isProductMissing, productQuery, type SellerProduct } from '../api';
 import { PRODUCTS_COPY as COPY } from '../copy';
 import { ProductActions } from './product-actions';
+import { ProductBlockedBanner } from './product-blocked';
 import { ProductDetailsForm } from './product-details-form';
+import { ProductImages } from './product-images';
 import { VariantsSection } from './variants-section';
 
 /** SE-10 Product: `GET /seller/products/{id}`, its status actions, details form and variants. */
@@ -77,6 +79,7 @@ function ProductContent({ product }: { readonly product: SellerProduct }) {
         description={
           <span className="flex flex-wrap items-center gap-2">
             <StatusBadge value={product.status} labels={PRODUCT_STATUS_LABELS} tones={PRODUCT_STATUS_TONES} />
+            {product.adminBlocked ? <Badge tone="warning">{COPY.blockedBadge}</Badge> : null}
             <Badge tone={product.visible ? 'success' : 'neutral'}>
               {product.visible ? COPY.visible : COPY.hidden}
             </Badge>
@@ -91,7 +94,9 @@ function ProductContent({ product }: { readonly product: SellerProduct }) {
           </span>
         }
       />
+      <ProductBlockedBanner product={product} />
       <ProductActions product={product} />
+      <ProductImages product={product} />
       {/* A newer answer from the API (another save, a variant change) resets the form to it. */}
       <ProductDetailsForm key={product.updatedAt} product={product} />
       <VariantsSection

@@ -2,9 +2,11 @@
 
 import { isApiError } from '@nile/api';
 import {
+  addMoney,
   formatDateTime,
   formatMoney,
   formatRatePercent,
+  moneyGreaterThan,
   ORDER_STATUS_LABELS,
   ORDER_STATUSES,
   PAYMENT_METHOD_LABELS,
@@ -14,10 +16,13 @@ import {
   SELLER_ORDER_STATUSES,
 } from '@nile/domain';
 import {
+  Button,
   buttonVariants,
   DataTable,
   ErrorState,
-  Notice,
+  FormAlert,
+  Money,
+  NileImage,
   NotFoundScreen,
   ORDER_STATUS_TONES,
   PageHeader,
@@ -29,30 +34,38 @@ import {
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { useActorLabel } from '@/features/lookups';
 import { OrderPaymentSummary } from '@/features/payments';
 import {
   customerOrdersPath,
+  customerReturnsPath,
   orderShipmentsPath,
+  productPath,
   ROUTES,
   sellerOrderLedgerPath,
   sellerPath,
   shipmentPath,
 } from '@/lib/routes';
 import {
+  isAdminCancellable,
   isOrderMissing,
   orderQuery,
   orderShipmentsQuery,
   type AdminOrder,
   type AdminSellerOrder,
+  type CancelTarget,
   type HistoryEntry,
 } from '../api';
 import { ORDERS_COPY as COPY } from '../copy';
+import { CancelDialog } from './cancel-dialog';
 
 type Item = AdminSellerOrder['items'][number];
 
 const linkClass = 'text-primary underline-offset-4 hover:underline';
+/** A link outside running text: at least 24 px tall (WCAG 2.2 target-size). */
+const TARGET_CLASS = 'inline-flex min-h-6 items-center';
 
 /** History statuses are plain strings in the API: known ones get their label, anything else shows as is. */
 function labelOf(labels: Readonly<Record<string, string>>, known: readonly string[]) {
@@ -66,7 +79,7 @@ export interface OrderDetailProps {
   readonly currentUserId: string;
 }
 
-/** AD-15 Order: read-only (no admin cancellation in R1, SPEC 09 S-9). */
+/** AD-15 Order: everything about one order; R2 adds admin cancellation of a part or the whole order (T-M3). */
 export function OrderDetail({ orderId, currentUserId }: OrderDetailProps) {
   const order = useQuery(orderQuery(orderId));
   if (order.isError) {
@@ -113,6 +126,9 @@ function OrderContent({
 }) {
   const actor = useActorLabel(currentUserId);
   const shipments = useQuery(orderShipmentsQuery(order.id));
+  const [cancelling, setCancelling] = useState<CancelTarget | null>(null);
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const anyCancellable = order.sellerOrders.some(isAdminCancellable);
   const address = order.shippingAddress;
   const dateOrNone = (iso: string | null) => (iso === null ? COPY.none : formatDateTime(iso));
   const historyColumns = (label: (status: string) => string): readonly DataTableColumn<HistoryEntry>[] => [
@@ -127,7 +143,10 @@ function OrderContent({
     { id: 'date', header: COPY.historyColumns.date, cell: (row) => formatDateTime(row.at) },
   ];
   const shipmentOf = (sellerOrderId: string) =>
-    shipments.data?.find((shipment) => shipment.sellerOrderId === sellerOrderId);
+    // A seller order can also have return shipments (T-M7); this row is its delivery.
+    shipments.data?.find(
+      (shipment) => shipment.sellerOrderId === sellerOrderId && shipment.kind === 'delivery',
+    );
 
   return (
     <div className="space-y-8">
@@ -143,8 +162,24 @@ function OrderContent({
             />
           </span>
         }
+        actions={
+          <>
+            <HistoryLink targetType="order" targetId={order.id} />
+            {anyCancellable ? (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setBlocked(null);
+                  setCancelling({ kind: 'order', orderId: order.id });
+                }}
+              >
+                {COPY.cancelOrder}
+              </Button>
+            ) : null}
+          </>
+        }
       />
-      <Notice>{COPY.noCancel}</Notice>
+      {blocked === null ? null : <FormAlert>{blocked}</FormAlert>}
       <div className="grid gap-8 lg:grid-cols-2">
         <Section id="order-overview" title={COPY.overviewHeading}>
           <dl className="space-y-2 text-sm">
@@ -158,10 +193,14 @@ function OrderContent({
               <Row label={COPY.paymentDeadline}>{formatDateTime(order.paymentExpiresAt)}</Row>
             ) : null}
             <Row label={COPY.customer}>
-              <span className="flex flex-wrap gap-x-3">
+              {/* Side by side or wrapped, each link keeps a 24 px target (WCAG 2.2 target-size, T-O4 E2E). */}
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>{COPY.shortId(order.customerId)}</span>
-                <Link href={customerOrdersPath(order.customerId)} className={linkClass}>
+                <Link href={customerOrdersPath(order.customerId)} className={`${TARGET_CLASS} ${linkClass}`}>
                   {COPY.otherOrders}
+                </Link>
+                <Link href={customerReturnsPath(order.customerId)} className={`${TARGET_CLASS} ${linkClass}`}>
+                  {COPY.customerReturns}
                 </Link>
               </span>
             </Row>
@@ -188,7 +227,20 @@ function OrderContent({
           </Section>
           <Section id="order-totals" title={COPY.totalsHeading}>
             <dl className="space-y-2 text-sm">
-              <Row label={COPY.itemsTotal}>{formatMoney(order.itemsTotal)}</Row>
+              {/* The API's itemsTotal is after the coupon: the items row adds it back for display only, as the
+                  storefront does (conventions §12.9, T-K4); the total is always the API's. */}
+              <Row label={COPY.itemsTotal}>
+                {formatMoney(
+                  order.coupon === null
+                    ? order.itemsTotal
+                    : addMoney(order.itemsTotal, order.coupon.discountTotal),
+                )}
+              </Row>
+              {order.coupon === null ? null : (
+                <Row label={COPY.couponLine(order.coupon.code)}>
+                  <Money value={order.coupon.discountTotal} negative />
+                </Row>
+              )}
               <Row label={COPY.deliveryFee}>{formatMoney(order.deliveryFee)}</Row>
               <Row label={COPY.total}>
                 <span className="font-semibold">{formatMoney(order.total)}</span>
@@ -206,6 +258,10 @@ function OrderContent({
               shipmentId={shipmentOf(sellerOrder.id)?.id ?? null}
               shipmentsLoading={shipments.isPending}
               historyColumns={historyColumns(sellerOrderStatusLabel)}
+              onCancel={() => {
+                setBlocked(null);
+                setCancelling({ kind: 'sellerOrder', sellerOrderId: sellerOrder.id });
+              }}
             />
           ))}
         </div>
@@ -223,6 +279,16 @@ function OrderContent({
         />
       </Section>
       <OrderPaymentSummary orderId={order.id} currentUserId={currentUserId} />
+      {cancelling === null ? null : (
+        <CancelDialog
+          order={order}
+          target={cancelling}
+          onClose={() => {
+            setCancelling(null);
+          }}
+          onBlocked={setBlocked}
+        />
+      )}
     </div>
   );
 }
@@ -232,6 +298,8 @@ interface SellerOrderCardProps {
   readonly shipmentId: string | null;
   readonly shipmentsLoading: boolean;
   readonly historyColumns: readonly DataTableColumn<HistoryEntry>[];
+  /** Offered only while the seller order can be cancelled (placed, accepted, ready for pickup). */
+  readonly onCancel: () => void;
 }
 
 /** AD-15 item 4: one seller order with items, money, timeline, history, shipment and ledger link. */
@@ -240,6 +308,7 @@ function SellerOrderCard({
   shipmentId,
   shipmentsLoading,
   historyColumns,
+  onCancel,
 }: SellerOrderCardProps) {
   const headingId = `seller-order-${sellerOrder.id}`;
   const itemColumns: readonly DataTableColumn<Item>[] = [
@@ -247,10 +316,22 @@ function SellerOrderCard({
       id: 'product',
       header: COPY.itemColumns.product,
       cell: (item) => (
-        <span className="flex flex-col">
-          <span>{item.productName}</span>
-          <span className="text-muted-foreground">
-            {item.attributes.map((attribute) => `${attribute.attribute}: ${attribute.value}`).join(', ')}
+        <span className="flex items-start gap-3">
+          <NileImage
+            image={item.image}
+            // Decorative: the product name follows as the link text.
+            alt=""
+            sizes="40px"
+            placeholder="product"
+            className="size-10 shrink-0 rounded bg-muted object-cover"
+          />
+          <span className="flex flex-col">
+            <Link href={productPath(item.productId)} className={linkClass}>
+              {item.productName}
+            </Link>
+            <span className="text-muted-foreground">
+              {item.attributes.map((attribute) => `${attribute.attribute}: ${attribute.value}`).join(', ')}
+            </span>
           </span>
         </span>
       ),
@@ -268,6 +349,12 @@ function SellerOrderCard({
       header: COPY.itemColumns.cancelled,
       align: 'end',
       cell: (item) => item.cancelledQuantity,
+    },
+    {
+      id: 'returned',
+      header: COPY.itemColumns.returned,
+      align: 'end',
+      cell: (item) => item.returnedQuantity,
     },
     {
       id: 'lineTotal',
@@ -300,6 +387,17 @@ function SellerOrderCard({
           labels={SELLER_ORDER_STATUS_LABELS.admin}
           tones={SELLER_ORDER_STATUS_TONES}
         />
+        {isAdminCancellable(sellerOrder) ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ms-auto"
+            aria-label={COPY.cancelPartAction(sellerOrder.businessName)}
+            onClick={onCancel}
+          >
+            {COPY.cancelPart}
+          </Button>
+        ) : null}
       </header>
       <DataTable
         caption={COPY.itemsCaption(sellerOrder.businessName)}
@@ -319,6 +417,13 @@ function SellerOrderCard({
             </Row>
           )}
           <Row label={COPY.subtotal}>{formatMoney(sellerOrder.subtotal)}</Row>
+          {/* The subtotal is before the coupon; commission and net after it [SPEC 09 §8.7]. */}
+          {sellerOrder.discountFunding === null ||
+          !moneyGreaterThan(sellerOrder.discountAmount, '0') ? null : (
+            <Row label={COPY.discountLine(sellerOrder.discountFunding)}>
+              <Money value={sellerOrder.discountAmount} negative />
+            </Row>
+          )}
           <Row label={COPY.commission}>
             {COPY.commissionValue(
               formatRatePercent(sellerOrder.commissionRate),
@@ -326,6 +431,13 @@ function SellerOrderCard({
             )}
           </Row>
           <Row label={COPY.sellerNet}>{formatMoney(sellerOrder.sellerNet)}</Row>
+          {moneyGreaterThan(sellerOrder.returnedPaid, '0') ? (
+            <>
+              <Row label={COPY.returnedPaid}>{formatMoney(sellerOrder.returnedPaid)}</Row>
+              <Row label={COPY.returnedCommission}>{formatMoney(sellerOrder.returnedCommission)}</Row>
+              <Row label={COPY.returnedSellerNet}>{formatMoney(sellerOrder.returnedSellerNet)}</Row>
+            </>
+          ) : null}
           <Row label={COPY.shipment}>{shipment}</Row>
           <Row label={COPY.ledger}>
             <Link href={sellerOrderLedgerPath(sellerOrder.id)} className={linkClass}>

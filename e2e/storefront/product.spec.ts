@@ -6,12 +6,31 @@ import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 
 type ProductDetail = Schema<'ProductDetailDto'>;
 
+/** Pages of 100 products read at most while looking for a seeded product with options. */
+const PRODUCT_PAGES = 10;
+
 test.describe('product page', () => {
   let product: ProductDetail;
 
   test.beforeAll(async ({ accounts }) => {
-    const list = await accounts.backend.request('GET', '/api/v1/products?limit=40&inStock[eq]=true');
-    for (const item of (list.body as { data: { slug: string }[] }).data) {
+    // The newest products are mostly one-option E2E products: look through a few pages for a seeded one.
+    const slugs: string[] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < PRODUCT_PAGES; page += 1) {
+      const list = await accounts.backend.request(
+        'GET',
+        `/api/v1/products?limit=100&inStock[eq]=true${cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`}`,
+      );
+      const body = list.body as {
+        data: { slug: string; name: string }[];
+        meta: { nextCursor: string | null };
+      };
+      slugs.push(...body.data.filter((item) => !item.name.startsWith('E2E ')).map((item) => item.slug));
+      cursor = body.meta.nextCursor;
+      if (cursor === null || slugs.length >= 40) break;
+    }
+    for (const slug of slugs) {
+      const item = { slug };
       const detail = await accounts.backend.request('GET', `/api/v1/products/${item.slug}`);
       const candidate = (detail.body as { data: ProductDetail }).data;
       // An attribute with one option starts selected (spec 01 SF-05): only one with a choice makes the

@@ -67,10 +67,20 @@ export const ORDERS_COPY = {
   },
   cancelledQuantity: (count: number) => `${count} cancelled`,
   openQuantity: (count: number) => `${count} still ordered`,
+  returnedQuantity: (count: number) => `${count} returned`,
   moneyHeading: 'Amounts',
   subtotal: 'Subtotal',
   commission: (percent: string) => `Nile's commission (${percent})`,
   net: 'You receive',
+  // Coupons and returns (spec 02 §8.3 SE-15).
+  couponDiscount: 'Coupon discount',
+  fundedBy: { seller: 'Funded by you', platform: 'Funded by Nile' },
+  fundingNote: {
+    seller: 'Commission is calculated after your coupon discount.',
+    platform: "Nile covers this discount; your earnings aren't reduced.",
+  },
+  /** `amount` already formatted. */
+  returned: (amount: string) => `Returned by the customer: −${amount} from your earnings`,
   snapshotNote: 'Amounts are fixed at the time of the order.',
   deliveryHeading: 'Delivery',
   dropoff: (governorate: string) => `Drop-off in ${governorate}`,

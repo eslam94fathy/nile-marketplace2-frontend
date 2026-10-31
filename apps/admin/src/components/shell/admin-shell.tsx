@@ -30,9 +30,20 @@ const NAV_GROUPS = [
     items: [
       { href: ROUTES.sellers, label: 'Sellers' },
       { href: ROUTES.orders, label: 'Orders' },
+      { href: ROUTES.returns, label: 'Returns' },
       { href: ROUTES.refunds, label: 'Refunds' },
+      { href: ROUTES.coupons, label: 'Coupons' },
+      { href: ROUTES.reviews, label: 'Reviews' },
     ],
   },
+  {
+    label: 'People',
+    items: [
+      { href: ROUTES.users, label: 'Users' },
+      { href: ROUTES.customers, label: 'Customers' },
+    ],
+  },
+  { label: 'Support', items: [{ href: ROUTES.support, label: 'Tickets' }] },
   { label: 'Catalog', items: [{ href: ROUTES.categories, label: 'Categories' }] },
   {
     label: 'Delivery',
@@ -56,6 +67,7 @@ const NAV_GROUPS = [
     items: [
       { href: ROUTES.commission, label: 'Commission' },
       { href: ROUTES.admins, label: 'Admins' },
+      { href: ROUTES.audit, label: 'Audit log' },
     ],
   },
 ] as const;

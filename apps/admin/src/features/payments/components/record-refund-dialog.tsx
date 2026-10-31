@@ -6,11 +6,13 @@ import { isApiError } from '@nile/api';
 import { useSubmitFailure } from '@nile/auth-screens';
 import { fields, formatMoney } from '@nile/domain';
 import { applyServerErrors, useIdempotentMutation } from '@nile/query';
-import { ConfirmDialog, Field, FormAlert, Input, toast } from '@nile/ui';
+import { Field, Input, toast } from '@nile/ui';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { paymentKeys, recordRefund, type Refund } from '../api';
+import { StepDialog, type Step } from '@/components/step-dialog';
+import { paymentKeys, recordRefund, type RefundDetail } from '../api';
 import { PAYMENTS_COPY as COPY } from '../copy';
 
 /** `RecordRefundDto.providerRefundRef`: 1..100 characters, trimmed [VERIFIED]. */
@@ -20,14 +22,23 @@ const FIELD_MAP = {
   providerRefundRef: { field: 'providerRefundRef', message: fields.FIELD_MESSAGES.tooLong(100) },
 } as const;
 
-/** After a record (or news that it can't be): every view of refunds and payments reads again. */
+/**
+ * Orders and returns show their refunds; the prefixes are literal because both features build on payments
+ * (AD-15 payment summary, AD-33 refund status).
+ */
+const ORDERS_PREFIX = ['admin', 'orders'] as const;
+const RETURNS_PREFIX = ['admin', 'returns'] as const;
+
+/** After a record or a retry (or news that it can't be): every view of refunds and payments reads again. */
 export function useRefundRefresh() {
   const queryClient = useQueryClient();
   return () => {
     for (const queryKey of [
       paymentKeys.refundLists(),
+      paymentKeys.refundDetails(),
       paymentKeys.details(),
-      paymentKeys.orderPayments(),
+      ORDERS_PREFIX,
+      RETURNS_PREFIX,
       paymentKeys.dashboard(),
     ]) {
       void queryClient.invalidateQueries({ queryKey });
@@ -36,18 +47,32 @@ export function useRefundRefresh() {
 }
 
 export interface RecordRefundDialogProps {
-  readonly refund: Refund;
+  readonly refund: RefundDetail;
+  /** The instruction and the reference depend on how the customer is paid back (spec 03 AD-34). */
+  readonly instruction: string;
+  readonly referenceLabel: string;
   readonly onClose: () => void;
 }
 
 /**
- * AD-16 "Record refund": the instruction to refund in Kashier first is always shown; one idempotency key per
- * intent (refund + reference), reused when the same intent is retried, so it is never recorded twice.
+ * AD-34 "Record refund" (spec 03 §7.6): the instruction to pay first, the reference, then a summary to confirm
+ * (AD-Q-5); one idempotency key per intent (refund + reference), reused when the same intent is retried, so it
+ * is never recorded twice.
  */
-export function RecordRefundDialog({ refund, onClose }: RecordRefundDialogProps) {
+export function RecordRefundDialog({
+  refund,
+  instruction,
+  referenceLabel,
+  onClose,
+}: RecordRefundDialogProps) {
   const failure = useSubmitFailure();
   const refresh = useRefundRefresh();
-  const mutation = useIdempotentMutation({ mutationFn: recordRefund });
+  const [step, setStep] = useState<Step>('form');
+  const [reference, setReference] = useState<string | null>(null);
+  const mutation = useIdempotentMutation({
+    mutationFn: recordRefund,
+    intentScope: ['admin', 'refund-record', refund.id],
+  });
   const amount = formatMoney(refund.amount);
   const form = useForm<{ providerRefundRef: string }, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
@@ -55,15 +80,20 @@ export function RecordRefundDialog({ refund, onClose }: RecordRefundDialogProps)
     defaultValues: { providerRefundRef: '' },
   });
 
-  const confirm = async () => {
+  const onContinue = form.handleSubmit((values) => {
     failure.clear();
-    let reference: string | undefined;
-    await form.handleSubmit((values) => {
-      reference = values.providerRefundRef;
-    })();
-    if (reference === undefined) throw new Error('invalid');
+    setReference(values.providerRefundRef);
+    setStep('confirm');
+  });
+
+  const onConfirm = async () => {
+    if (reference === null) return;
+    failure.clear();
     try {
       await mutation.mutateAsync({ refundId: refund.id, providerRefundRef: reference });
+      refresh();
+      toast({ title: COPY.recorded(amount), tone: 'success' });
+      onClose();
     } catch (error) {
       if (isApiError(error, 'REFUND_ALREADY_RECORDED') || isApiError(error, 'REFUND_NOT_FOUND')) {
         refresh();
@@ -71,45 +101,51 @@ export function RecordRefundDialog({ refund, onClose }: RecordRefundDialogProps)
           title: isApiError(error, 'REFUND_NOT_FOUND') ? COPY.refundGone : COPY.alreadyRecorded,
           tone: 'destructive',
         });
+        onClose();
         return;
       }
-      if (!applyServerErrors(error, form.setError, FIELD_MAP)) failure.fail(error);
-      throw error;
+      if (applyServerErrors(error, form.setError, FIELD_MAP)) {
+        setStep('form');
+        return;
+      }
+      failure.fail(error);
     }
-    refresh();
-    toast({ title: COPY.recorded(amount), tone: 'success' });
   };
 
   return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      title={COPY.recordFor(amount)}
-      description={COPY.recordInstruction(amount)}
+    <StepDialog
+      title={COPY.recordTitle(amount)}
+      confirmTitle={COPY.recordConfirmTitle}
+      step={step}
+      summary={reference === null ? '' : COPY.recordSummary(amount, reference)}
       confirmLabel={COPY.recordConfirm}
-      onConfirm={confirm}
+      pending={mutation.isPending}
+      failure={{ message: failure.message, correlationId: failure.correlationId }}
+      onContinue={() => void onContinue()}
+      onBack={() => {
+        failure.clear();
+        setStep('form');
+      }}
+      onConfirm={() => void onConfirm()}
+      onClose={onClose}
     >
       <form
         noValidate
         className="space-y-3"
         onSubmit={(event) => {
-          // Enter must not submit: the dialog's button confirms and tracks the pending state.
+          // Enter must not submit: "Continue" moves on.
           event.preventDefault();
         }}
       >
-        {failure.message === null ? null : (
-          <FormAlert correlationId={failure.correlationId}>{failure.message}</FormAlert>
-        )}
+        <p className="text-sm">{instruction}</p>
         <Field
           control={form.control}
           name="providerRefundRef"
-          label={COPY.reference}
+          label={referenceLabel}
           required
           render={({ field, controlProps }) => <Input {...field} {...controlProps} autoComplete="off" />}
         />
       </form>
-    </ConfirmDialog>
+    </StepDialog>
   );
 }

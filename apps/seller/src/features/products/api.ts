@@ -11,10 +11,13 @@ export type SellerProduct = Schema<'SellerProductDetailDto'>;
 export type SellerVariant = Schema<'SellerVariantDto'>;
 export type CategoryNode = Schema<'CategoryNodeDto'>;
 export type EffectiveAttribute = Schema<'EffectiveAttributeDto'>;
+export type ProductImage = Schema<'ProductImageDto'>;
 
 const PRODUCTS_PAGE_SIZE = 20;
 
 export const productKeys = {
+  /** Prefix of every product key (lists, detail). */
+  all: () => ['seller', 'products'] as const,
   lists: () => queryKey('seller', 'products', 'list'),
   list: (filters: ProductFilters) => queryKey('seller', 'products', 'list', filters),
   detail: (productId: string) => queryKey('seller', 'products', 'detail', { productId }),
@@ -128,5 +131,55 @@ export async function deleteVariant(productId: string, variantId: string): Promi
       '/api/v1/seller/products/{productId}/variants/{variantId}',
       variantPath(productId, variantId),
     ),
+  );
+}
+
+const imagePath = (productId: string, imageId: string) => ({ params: { path: { productId, imageId } } });
+
+/** SE-10-I: appends the uploaded media; the answer is the product's whole image list. */
+export async function addProductImage(productId: string, mediaId: string): Promise<ProductImage[]> {
+  return (
+    await unwrap(
+      browserApi.POST('/api/v1/seller/products/{productId}/images', {
+        ...path(productId),
+        body: { mediaId },
+      }),
+    )
+  ).data;
+}
+
+/** SE-10-I: the full new order (SE-Q-9); the answer is the product's whole image list. */
+export async function reorderProductImages(
+  productId: string,
+  imageIds: readonly string[],
+): Promise<ProductImage[]> {
+  return (
+    await unwrap(
+      browserApi.PUT('/api/v1/seller/products/{productId}/images/order', {
+        ...path(productId),
+        body: { imageIds: [...imageIds] },
+      }),
+    )
+  ).data;
+}
+
+export async function updateProductImage(
+  productId: string,
+  imageId: string,
+  body: Schema<'UpdateProductImageDto'>,
+): Promise<ProductImage> {
+  return (
+    await unwrap(
+      browserApi.PATCH('/api/v1/seller/products/{productId}/images/{imageId}', {
+        ...imagePath(productId, imageId),
+        body,
+      }),
+    )
+  ).data;
+}
+
+export async function deleteProductImage(productId: string, imageId: string): Promise<void> {
+  await unwrap(
+    browserApi.DELETE('/api/v1/seller/products/{productId}/images/{imageId}', imagePath(productId, imageId)),
   );
 }

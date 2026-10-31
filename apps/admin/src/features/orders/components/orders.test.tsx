@@ -130,7 +130,7 @@ describe('orders list (spec 03 AD-14)', { timeout: 15_000 }, () => {
 });
 
 describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
-  it('overview, address, totals, seller order with money, history and links; no actions', async () => {
+  it('overview, address, totals, seller order with money, history and links; cancel actions', async () => {
     const shipment = adminShipmentFactory({
       orderId: ORDER.id,
       sellerOrderId: ORDER.sellerOrders[0]?.id ?? '',
@@ -140,8 +140,9 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: `Order ${ORDER.orderNumber}` }, { timeout: 5000 }),
     ).toBeDefined();
-    expect(screen.getByText('To cancel, ask the seller or the customer.')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
+    expect(screen.queryByText('To cancel, ask the seller or the customer.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel order' })).toBeDefined();
+    expect(screen.getByRole('button', { name: "Cancel Nile Crafts's part" })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Other orders of this customer' }).getAttribute('href')).toBe(
       `/orders?status=all&customer=${ORDER.customerId}`,
     );
@@ -154,6 +155,13 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(within(seller).getAllByText('Placed (awaiting seller)')).toHaveLength(2);
     expect(within(seller).getByText(/^10% \(EGP\s?25\.00\)$/)).toBeDefined();
     expect(within(seller).getByText('Size: Large')).toBeDefined();
+    const [item] = ORDER.sellerOrders[0]?.items ?? [];
+    // Items link to AD-27 (T-M4).
+    expect(
+      within(seller)
+        .getByRole('link', { name: item?.productName ?? '' })
+        .getAttribute('href'),
+    ).toBe(`/products/${item?.productId ?? ''}`);
     expect(
       (await within(seller).findByRole('link', { name: 'Open the shipment' })).getAttribute('href'),
     ).toBe(`/delivery/shipments/${shipment.id}`);
@@ -165,6 +173,65 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(within(history).getByText('Created → Placed')).toBeDefined();
     expect(within(history).getByText('Customer')).toBeDefined();
     expect(await screen.findByText('No payment record')).toBeDefined();
+  });
+
+  it('returns: returned quantity and sums, "Returns of this customer"; a return shipment is not the delivery', async () => {
+    const [sellerOrder] = ORDER.sellerOrders;
+    const [item] = sellerOrder?.items ?? [];
+    if (sellerOrder === undefined || item === undefined) throw new Error('fixture');
+    const order: Order = {
+      ...ORDER,
+      sellerOrders: [
+        {
+          ...sellerOrder,
+          items: [{ ...item, returnedQuantity: 1 }],
+          returnedPaid: '150.00',
+          returnedSubtotal: '150.00',
+          returnedCommission: '15.00',
+          returnedSellerNet: '135.00',
+        },
+      ],
+    };
+    const returnShipment = adminShipmentFactory({
+      orderId: order.id,
+      sellerOrderId: sellerOrder.id,
+      kind: 'return',
+      returnId: ME.id,
+    });
+    serveOrder(order, [returnShipment]);
+    renderDetail(order);
+    const seller = await screen.findByRole('article', { name: 'Nile Crafts' }, { timeout: 5000 });
+    expect(screen.getByRole('link', { name: 'Returns of this customer' }).getAttribute('href')).toBe(
+      `/returns?customer=${order.customerId}`,
+    );
+    // Regression (T-O4 E2E, axe target-size): the customer links keep a 24 px target when they wrap.
+    for (const name of ['Returns of this customer', 'Other orders of this customer']) {
+      expect(screen.getByRole('link', { name }).className).toContain('min-h-6');
+    }
+    const items = within(seller).getByRole('table', { name: 'Items from Nile Crafts' });
+    expect(within(items).getByRole('columnheader', { name: 'Returned' })).toBeDefined();
+    expect(within(seller).getByText('Paid for returned items')).toBeDefined();
+    expect(within(seller).getByText(/^EGP\s?135\.00$/)).toBeDefined();
+    expect(await within(seller).findByText('No shipment yet')).toBeDefined();
+    expect(within(seller).queryByRole('link', { name: 'Open the shipment' })).toBeNull();
+  });
+
+  it('a coupon: the items row before it, the coupon row, and the funded discount on the seller order', async () => {
+    const [sellerOrder] = ORDER.sellerOrders;
+    if (sellerOrder === undefined) throw new Error('fixture');
+    const order: Order = {
+      ...ORDER,
+      itemsTotal: '230.00',
+      coupon: { code: 'NILE20', discountTotal: '20.00' },
+      sellerOrders: [{ ...sellerOrder, discountAmount: '20.00', discountFunding: 'platform' }],
+    };
+    serveOrder(order);
+    renderDetail(order);
+    const totals = await screen.findByRole('region', { name: 'Totals' }, { timeout: 5000 });
+    expect(within(totals).getByText(/^EGP\s?250\.00$/)).toBeDefined();
+    expect(within(totals).getByText('Coupon NILE20')).toBeDefined();
+    const seller = screen.getByRole('article', { name: 'Nile Crafts' });
+    expect(within(seller).getByText('Coupon discount · Funded by Nile')).toBeDefined();
   });
 
   it('a cancelled seller order shows the neutral cancel reason (OQ-16)', async () => {

@@ -1,13 +1,20 @@
-// AG-04…AG-06 copy (spec 04). Status and attempt reason labels: @nile/domain (agent view).
+// AG-04…AG-06 copy (spec 04; return pickups spec 04 §7.3, §7.5, TN1-COPY for wording the spec doesn't
+// give). Status, kind and attempt reason labels: @nile/domain (agent, agentReturn and pickup views).
 
 export const SHIPMENTS_COPY = {
   // AG-04
   title: 'Shipments',
   /** The push card on this screen (spec 04 AG-09, AG-Q-8). */
   pushCard: 'Get notified when a new shipment is assigned to you.',
+  /** Spec 04 §7.3 live announcements. */
+  assignedAnnouncement: 'New pickup assigned.',
+  unassignedAnnouncement: 'A shipment was reassigned.',
   tabsLabel: 'Shipment lists',
-  tabs: { pickup: 'To pick up', deliver: 'To deliver', returns: 'Returns' },
-  empty: { pickup: 'Nothing to pick up.', deliver: 'Nothing to deliver.', returns: 'No returns.' },
+  tabs: { pickup: 'To pick up', deliver: 'To deliver', seller: 'To the seller' },
+  empty: { pickup: 'Nothing to pick up.', deliver: 'Nothing to deliver.' },
+  /** "To the seller" in two sections (TN1-Q1). */
+  sellerSections: ['Failed deliveries', 'Collected returns'],
+  sellerSectionsEmpty: ['No failed deliveries.', 'No collected returns.'],
   offShiftEmpty: "You're off shift. Go on shift to get new shipments.",
   listFailed: "Your shipments couldn't be loaded.",
   orderNumber: (orderNumber: string) => `Order ${orderNumber}`,
@@ -17,6 +24,9 @@ export const SHIPMENTS_COPY = {
   prepaid: 'Prepaid — collect nothing',
   nextAttempt: (attempt: number, max: number) => `Attempt ${attempt} of ${max}`,
   assignedAt: (date: string) => `Assigned ${date}`,
+  collectFrom: 'Collect from',
+  nothingToCollect: 'Nothing to collect',
+  pickupAttempt: (attempt: number, max: number) => `Pickup attempt ${attempt} of ${max}`,
 
   // AG-05
   loadFailed: "This shipment couldn't be loaded.",
@@ -27,6 +37,13 @@ export const SHIPMENTS_COPY = {
   paymentHeading: 'Payment',
   attemptsHeading: 'Failed attempts',
   timesHeading: 'Times',
+  returnTitle: 'Return pickup',
+  collectFromHeading: 'Collect from (customer)',
+  deliverToSellerHeading: 'Deliver to (seller)',
+  pickupAttemptsHeading: 'Pickup attempts',
+  nothingToCollectSentence: 'Nothing to collect.',
+  collectedTime: 'Collected',
+  handedTime: 'Handed to the seller',
   call: (name: string) => `Call ${name}`,
   openInMaps: 'Open in maps',
   openInMapsFor: (place: string) => `Open ${place} in maps`,
@@ -77,6 +94,21 @@ export const SHIPMENTS_COPY = {
   handBackConfirm: (business: string) => `Did you hand the parcel back to ${business}?`,
   handBackDone: 'Marked as handed back.',
   changed: 'This shipment changed meanwhile. Here is its current state.',
+  // Return pickup actions (spec 04 §7.3 R1…R3)
+  collectedAction: 'Collected from the customer',
+  collectedTitle: 'Collected the items?',
+  collectedConfirm: (recipient: string) => `Did you collect the items from ${recipient}?`,
+  collectedDone: 'Marked as collected.',
+  pickupFailedAction: 'Pickup failed',
+  pickupFailedTitle: 'Pickup failed',
+  pickupRefusedConsequence: 'The return is closed. No more attempts.',
+  pickupLastConsequence: 'This was the last attempt. The return is closed.',
+  reportPickup: 'Report failed pickup',
+  pickupFailedDone: 'Failed pickup recorded.',
+  handToSellerAction: 'Handed to the seller',
+  handToSellerTitle: 'Hand the items over?',
+  handToSellerConfirm: (business: string) => `Hand the items to ${business}? Nothing to collect.`,
+  handedToSellerDone: 'Handed to the seller.',
 
   // AG-06
   historyTitle: 'History',
@@ -85,8 +117,12 @@ export const SHIPMENTS_COPY = {
   historyFailed: "Your history couldn't be loaded.",
   historyEmpty: 'No finished shipments yet.',
   historyEmptyFiltered: 'No shipments in these dates.',
+  historyEmptyKind: 'No finished shipments of this kind yet.',
   clearDates: 'Clear dates',
   collected: (amount: string) => `Collected ${amount}`,
   prepaidShort: 'Prepaid',
   deliveredOn: (date: string) => `Delivered ${date}`,
+  handedOn: (date: string) => `Handed to the seller ${date}`,
+  kindFilter: 'Show',
+  kinds: { all: 'All', delivery: 'Deliveries', return: 'Return pickups' },
 } as const;

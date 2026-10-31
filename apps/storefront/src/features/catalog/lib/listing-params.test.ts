@@ -37,6 +37,8 @@ const ATTRIBUTES = [
   attribute('a6', ['x'], 6),
 ];
 
+const NO_CATEGORY = { categoryId: null, categoryAttributes: null };
+
 /** What `GET /products` receives for a URL, as the API client serialises it. */
 function apiQuery(params: SearchParams, categoryId: string | null = null): string {
   const listing = resolveListing(parseListingParams(params), {
@@ -65,8 +67,27 @@ describe('URL → GET /products (spec 01 SF-04)', () => {
 
   it('never sends relevance without a search text', () => {
     expect(apiQuery({ sort: 'best-match' })).toBe('limit=20&sort=-publishedAt');
-    expect(availableSorts(null)).toEqual(['newest', 'price-asc', 'price-desc']);
-    expect(availableSorts('phone')).toEqual(['newest', 'price-asc', 'price-desc', 'best-match']);
+    expect(availableSorts(null)).toEqual(['newest', 'price-asc', 'price-desc', 'rating']);
+    expect(availableSorts('phone')).toEqual(['newest', 'price-asc', 'price-desc', 'best-match', 'rating']);
+  });
+
+  it('rating: whole stars 1..5 as rating[gte]; anything else is dropped (spec 01 §10.3)', () => {
+    expect(apiQuery({ rating: '4' })).toBe('limit=20&sort=-publishedAt&rating[gte]=4');
+    expect(apiQuery({ rating: '1' })).toBe('limit=20&sort=-publishedAt&rating[gte]=1');
+    for (const rating of ['0', '6', '3.5', 'four', ' 4', '']) {
+      expect(apiQuery({ rating })).toBe('limit=20&sort=-publishedAt');
+    }
+    expect(hasFilters(resolveListing(parseListingParams({ rating: '3' }), NO_CATEGORY))).toBe(true);
+    expect(listingQueryString(resolveListing(parseListingParams({ rating: '3' }), NO_CATEGORY))).toBe(
+      'rating=3',
+    );
+  });
+
+  it('"Top rated" sorts by -rating', () => {
+    expect(apiQuery({ sort: 'rating' })).toBe('limit=20&sort=-rating');
+    expect(listingQueryString(resolveListing(parseListingParams({ sort: 'rating' }), NO_CATEGORY))).toBe(
+      'sort=rating',
+    );
   });
 
   it('maps every filter to its API parameter', () => {

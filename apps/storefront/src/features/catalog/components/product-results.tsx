@@ -8,7 +8,7 @@ import { useEffect, useEffectEvent } from 'react';
 import { browserApi } from '@/lib/browser-api';
 import { productListOptions } from '../api';
 import { CATALOG_COPY } from '../copy';
-import { ProductGrid } from './product-card';
+import { FIRST_ROW_CARDS, ProductGrid } from './product-card';
 
 const SKELETON_CARDS = 6;
 
@@ -91,7 +91,7 @@ export function ProductResults({
         </div>
       ) : null}
       <div aria-busy={busy} className={busy ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-        <ProductGrid products={items} />
+        <ProductGrid products={items} priorityCount={FIRST_ROW_CARDS} />
       </div>
       <LoadMore
         hasMore={products.hasNextPage}

@@ -74,8 +74,11 @@ export interface Accounts {
   customer(): Promise<Account>;
   /** A seller with a verified email; `approved: true` (default) also has the admin approve it. */
   seller(options?: { readonly approved?: boolean }): Promise<Account & { readonly sellerId: string }>;
-  /** A delivery agent created by the admin, invite accepted. */
-  agent(): Promise<Account & { readonly agentId: string }>;
+  /**
+   * A delivery agent created by the admin, invite accepted. `fullName` (default "E2E Agent") makes it findable
+   * by name in admin screens, where every test agent otherwise shares one name.
+   */
+  agent(options?: { readonly fullName?: string }): Promise<Account & { readonly agentId: string }>;
 }
 
 export interface AccountsOptions {
@@ -199,7 +202,7 @@ export function createAccounts(env: E2eEnv = e2eEnv(), options: AccountsOptions 
       }
       return { ...account, sellerId };
     },
-    async agent() {
+    async agent({ fullName = 'E2E Agent' } = {}) {
       const { accessToken } = await admin();
       const email = uniqueEmail('agent');
       const password = randomPassword();
@@ -210,7 +213,7 @@ export function createAccounts(env: E2eEnv = e2eEnv(), options: AccountsOptions 
           token: accessToken,
           body: {
             email,
-            fullName: 'E2E Agent',
+            fullName,
             phone: randomPhone(),
             homeGovernorateId,
           } satisfies Schema<'CreateAgentDto'>,

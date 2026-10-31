@@ -13,6 +13,7 @@ import {
   Input,
   Label,
   Money,
+  NileImage,
   PageHeader,
   PRODUCT_STATUS_TONES,
   Select,
@@ -154,19 +155,32 @@ function columns(
       id: 'name',
       header: COPY.columns.name,
       cell: (row) => (
-        <Link
-          href={productPath(row.id)}
-          className="font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {row.name}
-        </Link>
+        <span className="flex items-center gap-3">
+          {/* Decorative: the product's name follows as the link text. */}
+          <NileImage
+            image={row.primaryImage}
+            alt=""
+            sizes="40px"
+            placeholder="product"
+            className="size-10 shrink-0 rounded-md bg-muted object-cover"
+          />
+          <Link
+            href={productPath(row.id)}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {row.name}
+          </Link>
+        </span>
       ),
     },
     {
       id: 'status',
       header: COPY.columns.status,
       cell: (row) => (
-        <StatusBadge value={row.status} labels={PRODUCT_STATUS_LABELS} tones={PRODUCT_STATUS_TONES} />
+        <span className="flex flex-wrap gap-1">
+          <StatusBadge value={row.status} labels={PRODUCT_STATUS_LABELS} tones={PRODUCT_STATUS_TONES} />
+          {row.adminBlocked ? <Badge tone="warning">{COPY.blockedBadge}</Badge> : null}
+        </span>
       ),
     },
     {

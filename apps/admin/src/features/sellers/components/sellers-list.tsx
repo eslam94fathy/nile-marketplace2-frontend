@@ -11,6 +11,7 @@ import {
   Input,
   Label,
   PageHeader,
+  RatingStars,
   Select,
   SELLER_STATUS_TONES,
   StatusBadge,
@@ -85,6 +86,11 @@ export function SellersList({ params }: { readonly params: RawSellerParams }) {
       cell: (seller) => (
         <StatusBadge value={seller.status} labels={SELLER_STATUS_LABELS} tones={SELLER_STATUS_TONES} />
       ),
+    },
+    {
+      id: 'rating',
+      header: COPY.columns.rating,
+      cell: (seller) => <RatingStars avg={seller.ratingAvg} count={seller.ratingCount} />,
     },
     {
       id: 'commission',

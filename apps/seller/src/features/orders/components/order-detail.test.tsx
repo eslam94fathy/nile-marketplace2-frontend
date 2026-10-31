@@ -129,6 +129,10 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     expect(within(items).getByRole('button', { name: 'Cancel items of Ordered product 1' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Mark ready for pickup' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Confirm return received' })).toBeNull();
+    // SE-15 "Get help" (spec 02 §8.3): SE-25 with this seller order preselected.
+    expect(screen.getByRole('link', { name: 'Get help with this order' }).getAttribute('href')).toBe(
+      `/support/new?sellerOrder=${ORDER.id}`,
+    );
   });
 
   it.each([
@@ -166,6 +170,67 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     await heading();
     expect(screen.getByText('Not confirmed within 24 hours')).toBeDefined();
     expect(within(screen.getByRole('region', { name: 'Timeline' })).getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('cancelled by Nile: the reason', async () => {
+    serveOrder({
+      ...ORDER,
+      status: 'cancelled',
+      cancelReason: 'admin_cancelled',
+      cancelledAt: '2026-10-16T10:00:00.000Z',
+      acceptDeadlineAt: null,
+    });
+    renderPage();
+    await heading();
+    expect(screen.getByText('Cancelled by Nile')).toBeDefined();
+  });
+
+  it.each([
+    ['seller', 'Funded by you', 'Commission is calculated after your coupon discount.'],
+    ['platform', 'Funded by Nile', "Nile covers this discount; your earnings aren't reduced."],
+  ] as const)(
+    'a %s-funded coupon: the discount row and what it means for the net',
+    async (funding, label, note) => {
+      serveOrder({ ...ORDER, discountAmount: '20.00', discountFunding: funding });
+      renderPage();
+      await heading();
+      const amounts = screen.getByRole('region', { name: 'Amounts' });
+      expect(within(amounts).getByText(`Coupon discount · ${label}`)).toBeDefined();
+      expect(within(amounts).getByText(/20\.00/)).toBeDefined();
+      expect(within(amounts).getByText(note)).toBeDefined();
+    },
+  );
+
+  it('no coupon, nothing returned: no discount or returned lines', async () => {
+    serveOrder(ORDER);
+    renderPage();
+    await heading();
+    const amounts = screen.getByRole('region', { name: 'Amounts' });
+    expect(within(amounts).queryByText(/Coupon discount/)).toBeNull();
+    expect(within(amounts).queryByText(/Returned by the customer/)).toBeNull();
+    expect(screen.queryByText(/returned$/)).toBeNull();
+  });
+
+  it('returned items: the earnings taken back and "{n} returned" on the item', async () => {
+    const [item] = ORDER.items;
+    if (item === undefined) throw new Error('item expected');
+    serveOrder({
+      ...ORDER,
+      status: 'delivered',
+      acceptDeadlineAt: null,
+      deliveredAt: '2026-10-17T10:00:00.000Z',
+      returnedSubtotal: '150.00',
+      returnedCommission: '15.00',
+      returnedSellerNet: '135.00',
+      items: [{ ...item, returnedQuantity: 1 }],
+    });
+    renderPage();
+    await heading();
+    const amounts = screen.getByRole('region', { name: 'Amounts' });
+    expect(
+      within(amounts).getByText(/^Returned by the customer: −.*135\.00 from your earnings$/),
+    ).toBeDefined();
+    expect(screen.getByText('1 returned')).toBeDefined();
   });
 
   it('Confirm order: the answer replaces the order', async () => {
@@ -278,14 +343,14 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Confirm return received: asked first, idempotent', async () => {
+  it('Confirm return received: asked first, idempotent; a retry reuses the key', async () => {
     const returning = { ...ORDER, status: 'returning_to_seller' as const, acceptDeadlineAt: null };
     serveOrder(returning);
-    const sent = serveAction('/seller/orders/{sellerOrderId}/return-received', {
-      ...returning,
-      status: 'returned_to_seller',
-      returnedAt: '2026-10-17T09:00:00.000Z',
-    });
+    const sent = serveAction(
+      '/seller/orders/{sellerOrderId}/return-received',
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      { ...returning, status: 'returned_to_seller', returnedAt: '2026-10-17T09:00:00.000Z' },
+    );
     const view = renderPage(returning);
     await heading();
     await view.user.click(screen.getByRole('button', { name: 'Confirm return received' }));
@@ -296,8 +361,11 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
       ),
     ).toBeDefined();
     await view.user.click(within(dialog).getByRole('button', { name: 'Confirm return received' }));
+    expect(await within(dialog).findByRole('alert')).toBeDefined();
+    await view.user.click(within(dialog).getByRole('button', { name: 'Confirm return received' }));
     expect(await screen.findByText('Return confirmed.')).toBeDefined();
     expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
     expect(screen.getByText('Returned')).toBeDefined();
   });
 
@@ -372,9 +440,13 @@ describe('cancel items (spec 02 SE-15 A4)', { timeout: 20_000 }, () => {
     expect(sent).toHaveLength(0);
   });
 
-  it('"Other" needs a note; the body carries quantity, reason and the trimmed note; idempotent', async () => {
+  it('"Other" needs a note; the body carries quantity, reason and the trimmed note; a retry reuses the key', async () => {
     serveOrder(twoLines);
-    const sent = serveAction('/seller/orders/{sellerOrderId}/items/{itemId}/cancel', twoLines);
+    const sent = serveAction(
+      '/seller/orders/{sellerOrderId}/items/{itemId}/cancel',
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      twoLines,
+    );
     const view = renderPage(twoLines);
     const dialog = await open(view, 'Mug');
     await view.user.type(within(dialog).getByRole('textbox', { name: /^Quantity to cancel/ }), '1');
@@ -383,9 +455,12 @@ describe('cancel items (spec 02 SE-15 A4)', { timeout: 20_000 }, () => {
     expect(await within(dialog).findByText('Add a note when the reason is Other.')).toBeDefined();
     await view.user.type(within(dialog).getByRole('textbox', { name: /^Note/ }), ' damaged ');
     await view.user.click(within(dialog).getByRole('button', { name: 'Cancel items' }));
+    expect(await within(dialog).findByRole('alert')).toBeDefined();
+    await view.user.click(within(dialog).getByRole('button', { name: 'Cancel items' }));
     expect(await screen.findByText('1 item cancelled.')).toBeDefined();
     expect(sent[0]?.body).toEqual({ quantity: 1, reason: 'other', note: 'damaged' });
     expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 

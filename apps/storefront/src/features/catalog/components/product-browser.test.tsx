@@ -121,9 +121,11 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
     expect(card.textContent).toMatch(/250\.00.*300\.00/);
     expect(within(card).getByText('Tees')).toBeDefined();
     expect(within(card).getByRole('link', { name: 'Nile Crafts' }).getAttribute('href')).toBe(
-      `/search?seller=${SELLER.id}`,
+      `/s/${SELLER.id}`,
     );
     expect(within(card).getByText('Out of stock')).toBeDefined();
+    // SF-23-A1: every card has the heart.
+    expect(within(card).getByRole('button', { name: 'Save to wishlist' })).toBeDefined();
   });
 
   it('"Load more" asks for the next cursor and appends without duplicates', async () => {
@@ -147,6 +149,7 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
       'Newest',
       'Price: low to high',
       'Price: high to low',
+      'Top rated',
     ]);
     await view.user.click(screen.getByRole('option', { name: 'Price: high to low' }));
     expect(lastPush()).toBe('/search?sort=price-desc');
@@ -170,6 +173,54 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
     await view.user.type(within(sidebar).getByLabelText('Max'), '250');
     await view.user.click(within(sidebar).getByRole('button', { name: 'Apply' }));
     expect(lastPush()).toBe('/c/tees?minPrice=100&maxPrice=250');
+  });
+
+  it('rating: "4 stars & up" goes into the URL, shows as a chip, "Any" and the chip remove it', async () => {
+    servePages({ data: [product()], nextCursor: null }, { data: [product()], nextCursor: null });
+    const view = renderBrowser({ rating: '3' });
+    const sidebar = await screen.findByRole('complementary', { name: 'Filters' });
+    const group = within(sidebar).getByRole('group', { name: 'Rating' });
+    expect(within(group).getByRole('radio', { name: '3 stars & up' })).toHaveProperty('checked', true);
+    await view.user.click(within(group).getByRole('radio', { name: '4 stars & up' }));
+    expect(lastPush()).toBe('/c/tees?rating=4');
+    await view.user.click(within(group).getByRole('radio', { name: 'Any' }));
+    expect(lastPush()).toBe('/c/tees');
+    const chips = screen.getByRole('list', { name: 'Active filters' });
+    await view.user.click(within(chips).getByRole('button', { name: 'Remove filter: 3 stars & up' }));
+    expect(lastPush()).toBe('/c/tees');
+  });
+
+  it('cards: the primary image (placeholder without one) and the rating only with reviews', async () => {
+    servePages({
+      data: [
+        product({
+          name: 'Linen shirt',
+          rating: { avg: '4.50', count: 8 },
+          primaryImage: {
+            id: '01900000-0000-7000-8000-0000000000e1',
+            urls: {
+              thumb: 'https://media.test/t.webp',
+              medium: 'https://media.test/m.webp',
+              large: 'https://media.test/l.webp',
+            },
+            width: 1200,
+            height: 1200,
+          },
+        }),
+        product({ name: 'Wool scarf', slug: 'wool-scarf' }),
+      ],
+      nextCursor: null,
+    });
+    renderBrowser({});
+    const shirt = (await screen.findByRole('link', { name: 'Linen shirt' })).closest('article');
+    const scarf = screen.getByRole('link', { name: 'Wool scarf' }).closest('article');
+    if (shirt === null || scarf === null) throw new Error('no card');
+    const photo = within(shirt).getByRole('img', { name: 'Linen shirt' });
+    expect(photo.getAttribute('src')).toBe('https://media.test/m.webp');
+    expect(photo.getAttribute('loading')).toBe('eager');
+    expect(within(shirt).getByText('Rated 4.5 out of 5 from 8 reviews')).toBeDefined();
+    expect(within(scarf).getByRole('img', { name: 'Wool scarf' }).tagName.toLowerCase()).toBe('svg');
+    expect(within(scarf).queryByText(/Rated|No reviews/)).toBeNull();
   });
 
   it('active filters show as removable chips; "Clear all" keeps the search text', async () => {
@@ -211,6 +262,14 @@ describe('product listing (spec 01 SF-04)', { timeout: 15_000 }, () => {
     await view.user.click(await screen.findByRole('combobox', { name: 'Category' }));
     await view.user.click(screen.getByRole('option', { name: /Polos/ }));
     expect(lastPush()).toBe('/search?q=shirt&category=polos');
+  });
+
+  it('seller page (SF-22): the seller is fixed in the API query and never repeated in the URL', async () => {
+    const queries = servePages({ data: [], nextCursor: null });
+    const view = renderBrowser({ seller: SELLER.id, inStock: '1' }, { basePath: `/s/${SELLER.id}` }, false);
+    await view.user.click(await screen.findByRole('button', { name: 'Clear filters' }));
+    expect(lastPush()).toBe(`/s/${SELLER.id}`);
+    expect(queries[0]).toContain(`sellerId[eq]=${SELLER.id}`);
   });
 
   it('empty: says so and offers to clear the filters', async () => {

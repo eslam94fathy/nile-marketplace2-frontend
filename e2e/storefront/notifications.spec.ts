@@ -5,7 +5,7 @@
 // Needs the backend's CORS_ALLOWED_ORIGINS to list http://localhost:4100 (OQ-17).
 import { randomUUID } from 'node:crypto';
 import { expectData } from '@nile/test-utils/e2e';
-import { expect, test } from '../fixtures';
+import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
 import { placeCodOrder, signInThroughForm } from '../fixtures/orders';
 
@@ -57,6 +57,7 @@ test("a seller's action brings the customer a notification in the bell, linking 
   const panel = page.getByRole('dialog', { name: 'Notifications' });
   const item = panel.getByRole('link', { name: /Order accepted/ }).first();
   await expect(item).toHaveAttribute('href', `/account/orders/${order.id}`);
+  await expectNoBlockingA11yViolations(page);
 
   await item.click();
   await expect(page).toHaveURL(new RegExp(`/account/orders/${order.id}$`));

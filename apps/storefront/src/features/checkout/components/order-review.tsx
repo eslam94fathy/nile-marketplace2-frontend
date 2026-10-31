@@ -1,9 +1,14 @@
-import { Money } from '@nile/ui';
+import { parseMoney } from '@nile/domain';
+import { Money, NileImage } from '@nile/ui';
 import type { Cart } from '@/features/cart';
+import type { CouponQuote } from '../api';
 import { CHECKOUT_COPY } from '../copy';
 
-/** SF-07 §3 Review: the cart's items grouped by seller, as the API returned them. */
-export function OrderReview({ cart }: { readonly cart: Cart }) {
+/**
+ * SF-07 §3 Review: the cart's items grouped by seller, as the API returned them, with each seller's share of
+ * an applied coupon (SF-07-C).
+ */
+export function OrderReview({ cart, quote }: { readonly cart: Cart; readonly quote: CouponQuote | null }) {
   return (
     <div className="space-y-4">
       {cart.sellers.length > 1 ? (
@@ -20,8 +25,15 @@ export function OrderReview({ cart }: { readonly cart: Cart }) {
           </h3>
           <ul className="divide-y divide-border">
             {seller.items.map((item) => (
-              <li key={item.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
-                <span>
+              <li key={item.id} className="flex gap-3 px-4 py-3 text-sm">
+                <NileImage
+                  image={item.image}
+                  alt=""
+                  sizes="64px"
+                  placeholder="product"
+                  className="size-16 shrink-0 rounded-md bg-muted"
+                />
+                <span className="flex-1">
                   <span className="block font-medium">{item.productName}</span>
                   {item.attributes.length === 0 ? null : (
                     <span className="block text-muted-foreground">
@@ -34,8 +46,20 @@ export function OrderReview({ cart }: { readonly cart: Cart }) {
               </li>
             ))}
           </ul>
+          <SellerShare quote={quote} sellerId={seller.sellerId} />
         </section>
       ))}
     </div>
+  );
+}
+
+function SellerShare({ quote, sellerId }: { readonly quote: CouponQuote | null; readonly sellerId: string }) {
+  const share = quote?.sellerOrders.find((entry) => entry.sellerId === sellerId);
+  if (share === undefined || parseMoney(share.discount).isZero()) return null;
+  return (
+    <p className="flex justify-between border-t border-border px-4 py-2 text-sm">
+      <span>{CHECKOUT_COPY.coupon.sellerShare}</span>
+      <Money value={share.discount} negative />
+    </p>
   );
 }

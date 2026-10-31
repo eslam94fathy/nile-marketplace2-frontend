@@ -9,6 +9,7 @@ import {
   ProductView,
   type ProductDetail,
 } from '@/features/catalog';
+import { ProductReviews } from '@/features/reviews';
 import { getProduct } from '@/lib/server/catalog';
 
 const META_DESCRIPTION_LENGTH = 160;
@@ -57,21 +58,20 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
         }))}
         current={product.name}
       />
-      <div className="grid gap-8 lg:grid-cols-2">
-        <h1 className="text-2xl font-semibold lg:col-span-2">{product.name}</h1>
-        <ProductView
-          product={product}
-          variantId={first(query[PRODUCT_PARAMS.variant])}
-          quantity={first(query[PRODUCT_PARAMS.quantity])}
-        />
-        <section aria-labelledby="product-description" className="space-y-2">
-          <h2 id="product-description" className="font-medium">
-            {CATALOG_COPY.description}
-          </h2>
-          {/* Plain text from the seller: rendered as text, line breaks kept (CLAUDE.md §7). */}
-          <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
-        </section>
-      </div>
+      <ProductView
+        product={product}
+        variantId={first(query[PRODUCT_PARAMS.variant])}
+        quantity={first(query[PRODUCT_PARAMS.quantity])}
+        heading={<h1 className="text-2xl font-semibold">{product.name}</h1>}
+      />
+      <section aria-labelledby="product-description" className="space-y-2">
+        <h2 id="product-description" className="font-medium">
+          {CATALOG_COPY.description}
+        </h2>
+        {/* Plain text from the seller: rendered as text, line breaks kept (CLAUDE.md §7). */}
+        <p className="whitespace-pre-line text-muted-foreground">{product.description}</p>
+      </section>
+      <ProductReviews productId={product.id} sellerName={product.seller.businessName} />
     </article>
   );
 }

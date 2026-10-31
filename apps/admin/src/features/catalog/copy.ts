@@ -75,6 +75,27 @@ export const CATALOG_COPY = {
   edit: 'Edit',
   delete: 'Delete',
 
+  // AD-07 Image (spec 03 §7.3; TM4-COPY)
+  image: {
+    heading: 'Image',
+    note: "Shown on the store's home page tiles.",
+    none: 'No image yet.',
+    noDescription: 'No description.',
+    upload: 'Upload image',
+    replace: 'Replace image',
+    set: 'Image saved.',
+    editDescription: 'Edit description',
+    description: 'Image description',
+    descriptionHint: "Describes the image for people who can't see it.",
+    descriptionSaved: 'Description saved.',
+    save: 'Save',
+    reupload: "This image can't be used any more. Upload it again.",
+    remove: 'Remove image',
+    removeTitle: 'Remove image',
+    removeConfirm: (name: string) =>
+      `Remove the image of ${name}? The store shows the Nile placeholder instead.`,
+    removed: 'Image removed.',
+  },
   errors: {
     CATEGORY_NAME_TAKEN: 'Another category at this level already has this name.',
     CATEGORY_SLUG_TAKEN: 'This slug is taken. Enter another one.',

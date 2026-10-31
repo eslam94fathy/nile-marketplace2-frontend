@@ -1,7 +1,8 @@
 import { dehydrate, getQueryClient, HydrationBoundary } from '@nile/query';
 import { MAIN_CONTENT_ID } from '@nile/ui';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
+import { WishlistIntent } from '@/features/wishlist';
 import { APP } from '@/lib/app';
 import { ROUTES } from '@/lib/routes';
 import { getCategoryTree } from '@/lib/server/categories';
@@ -50,6 +51,10 @@ export async function StorefrontShell({ children }: { readonly children: ReactNo
         {children}
       </main>
       <Footer />
+      {/* Reads the URL's search parameters: its own boundary keeps the pages statically renderable. */}
+      <Suspense fallback={null}>
+        <WishlistIntent />
+      </Suspense>
     </div>
   );
 }

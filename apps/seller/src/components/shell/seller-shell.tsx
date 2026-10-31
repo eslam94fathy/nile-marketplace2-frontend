@@ -14,12 +14,16 @@ import {
 import {
   Banknote,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   Package,
   ShieldCheck,
   ShoppingBag,
   Store,
+  TicketPercent,
+  Star,
+  Undo2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -35,8 +39,12 @@ import { sessionClient } from '@/lib/session-client';
 const NAV = [
   { href: ROUTES.overview, label: 'Overview', icon: LayoutDashboard },
   { href: ROUTES.orders, label: 'Orders', icon: ShoppingBag },
+  { href: ROUTES.returns, label: 'Returns', icon: Undo2 },
   { href: ROUTES.products, label: 'Products', icon: Package },
+  { href: ROUTES.reviews, label: 'Reviews', icon: Star },
+  { href: ROUTES.coupons, label: 'Coupons', icon: TicketPercent },
   { href: ROUTES.finance, label: 'Finance', icon: Banknote },
+  { href: ROUTES.support, label: 'Support', icon: LifeBuoy },
   { href: ROUTES.profile, label: 'Profile', icon: Store },
   { href: ROUTES.security, label: 'Security', icon: ShieldCheck },
 ] as const;

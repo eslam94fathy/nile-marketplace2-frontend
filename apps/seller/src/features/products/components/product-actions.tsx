@@ -11,6 +11,7 @@ import { ROUTES } from '@/lib/routes';
 import { activateProduct, deactivateProduct, deleteProduct, productKeys, type SellerProduct } from '../api';
 import { PRODUCTS_COPY as COPY } from '../copy';
 import { hasActiveVariant } from '../lib/variants';
+import { useProductBlockedHandler } from './product-blocked';
 
 /**
  * SE-10-A2 Publish, A3 Unpublish, A4 Delete. Each answer replaces the cached product (design 02 §3.3); a
@@ -22,12 +23,21 @@ export function ProductActions({ product }: { readonly product: SellerProduct })
   const queryClient = useQueryClient();
   const access = useSellerAccess();
   const handleNotApproved = useNotApprovedHandler();
+  const handleBlocked = useProductBlockedHandler(product.id);
   const reasonId = useId();
   const [pending, setPending] = useState(false);
   const [confirm, setConfirm] = useState<'unpublish' | 'delete' | null>(null);
 
   const publishBlocked = access.catalog && !hasActiveVariant(product);
-  const reason = access.catalog ? (publishBlocked ? COPY.publishNeedsVariant : null) : access.reason;
+  // Nile's block locks the status (spec 02 §8.3); deleting stays possible.
+  const statusLocked = product.adminBlocked;
+  const reason = !access.catalog
+    ? access.reason
+    : statusLocked
+      ? COPY.blockedStatusLocked
+      : publishBlocked
+        ? COPY.publishNeedsVariant
+        : null;
   const describedBy = reason === null ? undefined : reasonId;
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: productKeys.detail(product.id) });
@@ -39,7 +49,7 @@ export function ProductActions({ product }: { readonly product: SellerProduct })
 
   /** Reports a failure; a product that changed under the page is refetched. */
   const fail = (error: unknown) => {
-    if (handleNotApproved(error)) return;
+    if (handleNotApproved(error) || handleBlocked(error)) return;
     if (isApiError(error, 'PRODUCT_INVALID_STATUS_TRANSITION')) {
       void refetch();
       toast({ title: COPY.statusChanged, tone: 'destructive' });
@@ -98,7 +108,7 @@ export function ProductActions({ product }: { readonly product: SellerProduct })
         {product.status === 'active' ? (
           <Button
             variant="outline"
-            disabled={!access.catalog}
+            disabled={!access.catalog || statusLocked}
             aria-describedby={describedBy}
             onClick={() => {
               setConfirm('unpublish');
@@ -109,7 +119,7 @@ export function ProductActions({ product }: { readonly product: SellerProduct })
         ) : (
           <Button
             loading={pending}
-            disabled={!access.catalog || publishBlocked}
+            disabled={!access.catalog || statusLocked || publishBlocked}
             aria-describedby={describedBy}
             onClick={() => void publish()}
           >

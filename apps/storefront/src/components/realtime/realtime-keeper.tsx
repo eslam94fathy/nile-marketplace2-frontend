@@ -3,9 +3,11 @@
 import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
+import { supportInvalidation } from '@nile/support-screens';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { ORDERS_INVALIDATION } from '@/features/orders';
+import { RETURNS_INVALIDATION } from '@/features/returns';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
@@ -13,6 +15,8 @@ import { sessionClient } from '@/lib/session-client';
 /** This app's message → query map (design 02 §5.3); each feature owns its part. */
 const INVALIDATION_MAP: InvalidationMap = {
   ...ORDERS_INVALIDATION,
+  ...RETURNS_INVALIDATION,
+  ...supportInvalidation(APP.name),
   ...notificationsInvalidation(APP.name),
 };
 

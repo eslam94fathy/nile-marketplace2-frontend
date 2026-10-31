@@ -4,7 +4,12 @@ import { fields } from '@nile/domain';
 import { Button, Checkbox, Input, Label } from '@nile/ui';
 import { useId, useState, type SyntheticEvent } from 'react';
 import { CATALOG_COPY } from '../copy';
-import { hasFilters, type EffectiveAttribute, type ResolvedListing } from '../lib/listing-params';
+import {
+  hasFilters,
+  RATING_FILTERS,
+  type EffectiveAttribute,
+  type ResolvedListing,
+} from '../lib/listing-params';
 
 /** `attributes` with `code` set to `values`, or without `code` when `values` is empty. */
 export function withAttribute(
@@ -17,8 +22,20 @@ export function withAttribute(
 }
 
 export type ListingPatch = Partial<
-  Pick<ResolvedListing, 'minPrice' | 'maxPrice' | 'inStock' | 'attributes' | 'categorySlug' | 'sort'>
+  Pick<
+    ResolvedListing,
+    'minPrice' | 'maxPrice' | 'inStock' | 'rating' | 'attributes' | 'categorySlug' | 'sort'
+  >
 >;
+
+/** Every filter off ("Clear all"); search text, category, seller and sort stay. */
+export const CLEARED_FILTERS = {
+  minPrice: null,
+  maxPrice: null,
+  inStock: false,
+  rating: null,
+  attributes: {},
+} as const satisfies ListingPatch;
 
 export interface FilterPanelProps {
   readonly listing: ResolvedListing;
@@ -98,6 +115,40 @@ function PriceFilter({ listing, onChange }: Pick<FilterPanelProps, 'listing' | '
   );
 }
 
+/** "Rating": 4 stars & up, 3 stars & up, Any (spec 01 §10.3). */
+function RatingFilter({ listing, onChange }: Pick<FilterPanelProps, 'listing' | 'onChange'>) {
+  const name = useId();
+  const choices = [
+    ...RATING_FILTERS.map((stars) => ({ value: stars, label: CATALOG_COPY.starsAndUp(stars) })),
+    { value: null, label: CATALOG_COPY.anyRating },
+  ];
+  return (
+    <fieldset className="space-y-2">
+      <legend className="font-medium">{CATALOG_COPY.rating}</legend>
+      {choices.map((choice) => {
+        const id = `${name}-${String(choice.value ?? 'any')}`;
+        return (
+          <div key={id} className="flex items-center gap-2">
+            <input
+              id={id}
+              type="radio"
+              name={name}
+              className="size-4 accent-primary"
+              checked={listing.rating === choice.value}
+              onChange={() => {
+                onChange({ rating: choice.value });
+              }}
+            />
+            <Label htmlFor={id} className="font-normal">
+              {choice.label}
+            </Label>
+          </div>
+        );
+      })}
+    </fieldset>
+  );
+}
+
 function CheckboxRow({
   label,
   checked,
@@ -124,7 +175,7 @@ function CheckboxRow({
   );
 }
 
-/** Filter panel (spec 01 SF-04): price, in stock, one group per attribute (with a category), clear all. */
+/** Filter panel (spec 01 SF-04, §10.3): price, in stock, rating, one group per attribute (with a category), clear all. */
 export function FilterPanel({ listing, attributes, onChange }: FilterPanelProps) {
   const toggleOption = (code: string, option: string, checked: boolean) => {
     const current = Object.hasOwn(listing.attributes, code) ? (listing.attributes[code] ?? []) : [];
@@ -147,6 +198,7 @@ export function FilterPanel({ listing, attributes, onChange }: FilterPanelProps)
           onChange({ inStock });
         }}
       />
+      <RatingFilter listing={listing} onChange={onChange} />
       {(attributes ?? []).map((attribute) => (
         <fieldset key={attribute.id} className="space-y-2">
           <legend className="font-medium">{attribute.name}</legend>
@@ -167,7 +219,7 @@ export function FilterPanel({ listing, attributes, onChange }: FilterPanelProps)
           variant="link"
           className="px-0"
           onClick={() => {
-            onChange({ minPrice: null, maxPrice: null, inStock: false, attributes: {} });
+            onChange(CLEARED_FILTERS);
           }}
         >
           {CATALOG_COPY.clearAll}

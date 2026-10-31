@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  maxMoney,
   moneyGreaterThan,
+  moneyShare,
   addMoney,
   formatMoney,
   formatMoneyRange,
@@ -140,5 +142,24 @@ describe('moneyGreaterThan', () => {
     expect(moneyGreaterThan('100.01', '100')).toBe(true);
     expect(moneyGreaterThan('100', '100.00')).toBe(false);
     expect(moneyGreaterThan('0.10', '-5.00')).toBe(true);
+  });
+});
+
+describe('maxMoney and moneyShare (dashboard bars)', () => {
+  it('finds the largest amount exactly, 0.00 for none', () => {
+    expect(maxMoney(['10.10', '1250.5', '0.00'])).toBe('1250.50');
+    expect(maxMoney([])).toBe('0.00');
+  });
+
+  it('gives a bar length in percent of the scale, clamped to 0..100', () => {
+    expect(moneyShare('50.00', '200.00')).toBe('25.00');
+    expect(moneyShare('200.00', '200.00')).toBe('100.00');
+    expect(moneyShare('1.00', '3.00')).toBe('33.33');
+    expect(moneyShare('-5.00', '200.00')).toBe('0.00');
+    expect(moneyShare('300.00', '200.00')).toBe('100.00');
+  });
+
+  it('draws no bar on a zero scale', () => {
+    expect(moneyShare('0.00', '0.00')).toBe('0.00');
   });
 });

@@ -2,6 +2,8 @@
 export const ROUTES = {
   overview: '/',
   orders: '/orders',
+  /** SE-18 Returns (T-L3). */
+  returns: '/returns',
   products: '/products',
   newProduct: '/products/new',
   finance: '/finance',
@@ -12,6 +14,13 @@ export const ROUTES = {
   notificationSettings: '/notifications/settings',
   /** SE-20 Reviews (T-L4). */
   reviews: '/reviews',
+  /** SE-21 / SE-22 Coupons (T-L5). */
+  coupons: '/coupons',
+  newCoupon: '/coupons/new',
+  /** SE-24 Support tickets (T-L6). */
+  support: '/support',
+  /** SE-25 New ticket: `?category=&sellerOrder=` (SE-15, SE-19), `?category=&product=` (blocked product, SE-Q-14). */
+  supportNew: '/support/new',
   login: '/login',
   register: '/register',
   verifyEmail: '/verify-email',
@@ -27,6 +36,9 @@ export const couponPath = (couponId: string) => `/coupons/${couponId}` as const;
 
 /** SE-26 Support ticket (T-L6). */
 export const supportTicketPath = (ticketId: string) => `/support/${ticketId}` as const;
+
+/** SE-24 with its tab. */
+export const supportListPath = (tab: 'open' | 'closed') => `/support?status=${tab}` as const;
 
 /** Sign-in screens: never a `returnTo` destination. */
 export const AUTH_PATHS = [

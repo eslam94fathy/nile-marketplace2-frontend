@@ -1,13 +1,19 @@
 'use client';
 
-import { formatDate, formatMoney, PAYMENT_METHOD_LABELS, SHIPMENT_STATUS_LABELS } from '@nile/domain';
+import {
+  formatDate,
+  formatMoney,
+  PAYMENT_METHOD_LABELS,
+  SHIPMENT_KIND_LABELS,
+  SHIPMENT_STATUS_LABELS,
+} from '@nile/domain';
 import type { Page } from '@nile/query';
 import { DataTable, SHIPMENT_STATUS_TONES, StatusBadge, type DataTableColumn } from '@nile/ui';
 import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useAgentNames, useGovernorateName } from '@/features/lookups';
-import { agentPath, shipmentPath } from '@/lib/routes';
+import { agentPath, returnPath, shipmentPath } from '@/lib/routes';
 import type { AdminShipment } from '../api';
 import { SHIPMENTS_COPY as COPY } from '../copy';
 
@@ -25,17 +31,31 @@ export function ShipmentsTable({ caption, query, empty, toolbar }: ShipmentsTabl
   const rows = query.data?.pages.flatMap((page) => page.data) ?? [];
   const agentName = useAgentNames(rows.map((row) => row.agentId));
   const governorates = useGovernorateName();
+  const Seller = ({ row }: { readonly row: AdminShipment }) => (
+    <span className="flex flex-col">
+      <span>{row.pickup.businessName}</span>
+      <span className="text-muted-foreground">{governorates.name(row.pickup.governorateId)}</span>
+    </span>
+  );
 
   const columns: readonly DataTableColumn<AdminShipment>[] = [
     {
       id: 'order',
       header: COPY.columns.order,
       cell: (row) => (
-        <Link href={shipmentPath(row.id)} className={linkClass}>
-          {COPY.orderNumber(row.orderNumber)}
-        </Link>
+        <span className="flex flex-col">
+          <Link href={shipmentPath(row.id)} className={linkClass}>
+            {COPY.orderNumber(row.orderNumber)}
+          </Link>
+          {row.returnId === null ? null : (
+            <Link href={returnPath(row.returnId)} className="text-primary underline-offset-4 hover:underline">
+              {COPY.returnLink(row.returnId)}
+            </Link>
+          )}
+        </span>
       ),
     },
+    { id: 'kind', header: COPY.columns.kind, cell: (row) => SHIPMENT_KIND_LABELS.admin[row.kind] },
     {
       id: 'status',
       header: COPY.columns.status,
@@ -47,14 +67,14 @@ export function ShipmentsTable({ caption, query, empty, toolbar }: ShipmentsTabl
     {
       id: 'pickup',
       header: COPY.columns.pickup,
-      cell: (row) => (
-        <span className="flex flex-col">
-          <span>{row.pickup.businessName}</span>
-          <span className="text-muted-foreground">{governorates.name(row.pickup.governorateId)}</span>
-        </span>
-      ),
+      // A return is collected at the customer and handed to the seller (SPEC 11 DE-26): the columns follow the trip.
+      cell: (row) => (row.kind === 'return' ? row.dropoff.governorateName : <Seller row={row} />),
     },
-    { id: 'dropoff', header: COPY.columns.dropoff, cell: (row) => row.dropoff.governorateName },
+    {
+      id: 'dropoff',
+      header: COPY.columns.dropoff,
+      cell: (row) => (row.kind === 'return' ? <Seller row={row} /> : row.dropoff.governorateName),
+    },
     {
       id: 'agent',
       header: COPY.columns.agent,

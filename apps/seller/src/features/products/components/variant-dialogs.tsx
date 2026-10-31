@@ -31,6 +31,7 @@ import {
   type SellerVariant,
 } from '../api';
 import { PRODUCTS_COPY } from '../copy';
+import { useProductBlockedHandler } from './product-blocked';
 import {
   attributesWithProblems,
   isLastActiveVariant,
@@ -117,6 +118,7 @@ function CreateVariantForm({
   const failure = useSubmitFailure();
   const [alert, setAlert] = useState<string | null>(null);
   const handleNotApproved = useNotApprovedHandler();
+  const handleBlocked = useProductBlockedHandler(product.id);
   const refreshProduct = useRefreshProduct(product.id);
   const taken = useMemo(() => takenCombinations(product.variants), [product.variants]);
   const schema = useMemo(() => createVariantSchema(attributes, taken), [attributes, taken]);
@@ -143,7 +145,7 @@ function CreateVariantForm({
         if (addAnother) form.reset(emptyVariantValues(attributes));
         else onDone();
       } catch (error) {
-        if (handleNotApproved(error)) return;
+        if (handleNotApproved(error) || handleBlocked(error)) return;
         if (isApiError(error, 'VARIANT_OPTIONS_INVALID')) {
           // The category's options changed since the form loaded: reload them and ask again.
           void queryClient.invalidateQueries({ queryKey: publicKeys.categoryAttributes(product.categoryId) });
@@ -368,6 +370,7 @@ function EditVariantForm({
 }) {
   const failure = useSubmitFailure();
   const handleNotApproved = useNotApprovedHandler();
+  const handleBlocked = useProductBlockedHandler(product.id);
   const refreshProduct = useRefreshProduct(product.id);
   const [confirmHide, setConfirmHide] = useState(false);
   const form: EditForm = useForm<EditVariantValues, unknown, z.output<typeof editVariantSchema>>({
@@ -387,7 +390,7 @@ function EditVariantForm({
       toast({ title: COPY.saved, tone: 'success' });
       onDone();
     } catch (error) {
-      if (handleNotApproved(error)) return;
+      if (handleNotApproved(error) || handleBlocked(error)) return;
       if (isApiError(error, 'SKU_TAKEN')) {
         form.setError('sku', { type: 'server', message: COPY.errors.SKU_TAKEN });
         return;

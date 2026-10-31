@@ -8,15 +8,22 @@ export const isAssignable = (shipment: Pick<AdminShipment, 'status'>): boolean =
   shipment.status === 'unassigned' || shipment.status === 'assigned';
 
 /**
+ * Where the agent collects the parcel: the seller for a delivery, the customer (`dropoff`) for a return (the DTO
+ * keeps each address by party, SPEC 11 DE-26; auto-assignment keys on the same governorate, DE-17).
+ */
+export const collectionGovernorateId = (shipment: Pick<AdminShipment, 'kind' | 'pickup' | 'dropoff'>) =>
+  shipment.kind === 'return' ? shipment.dropoff.governorateId : shipment.pickup.governorateId;
+
+/**
  * The agents to offer: active ones (the query asks for them) except the current agent; agents based in the
- * pickup governorate **and** on shift first, the rest after, each group in the API's order.
+ * collection governorate **and** on shift first, the rest after, each group in the API's order.
  */
 export function assignCandidates(
   agents: readonly AdminAgent[],
-  shipment: Pick<AdminShipment, 'agentId' | 'pickup'>,
+  shipment: Pick<AdminShipment, 'agentId' | 'kind' | 'pickup' | 'dropoff'>,
 ): AdminAgent[] {
   const offered = agents.filter((agent) => agent.status === 'active' && agent.id !== shipment.agentId);
-  const preferred = (agent: AdminAgent) =>
-    agent.onShift && agent.homeGovernorateId === shipment.pickup.governorateId;
+  const here = collectionGovernorateId(shipment);
+  const preferred = (agent: AdminAgent) => agent.onShift && agent.homeGovernorateId === here;
   return [...offered.filter(preferred), ...offered.filter((agent) => !preferred(agent))];
 }

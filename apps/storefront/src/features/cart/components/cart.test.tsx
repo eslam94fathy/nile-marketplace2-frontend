@@ -103,6 +103,27 @@ describe('cart page (spec 01 SF-06)', { timeout: 15_000 }, () => {
     expect(screen.getByRole('link', { name: 'Proceed to checkout' }).getAttribute('href')).toBe('/checkout');
   });
 
+  it('each line shows its image as a thumbnail, the placeholder without one (spec 01 §10.3)', async () => {
+    const image = {
+      id: uuid(),
+      urls: {
+        thumb: 'https://media.test/t.webp',
+        medium: 'https://media.test/m.webp',
+        large: 'https://media.test/l.webp',
+      },
+      width: 1200,
+      height: 1200,
+    };
+    serveCart(cart([line({ image }), line({ productName: 'Wool scarf', productSlug: 'wool-scarf' })]));
+    renderWithProviders(<CartView />);
+    const group = await screen.findByRole('region', { name: 'Sold by Nile Crafts' });
+    const [withImage, withoutImage] = within(group).getAllByRole('listitem');
+    const thumb = withImage?.querySelector('img');
+    expect(thumb?.getAttribute('src')).toBe('https://media.test/m.webp');
+    expect(thumb?.getAttribute('alt')).toBe('');
+    expect(withoutImage?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+  });
+
   it('empty: says so and links to the shop', async () => {
     serveCart(cart([], { itemsTotal: '0.00', itemCount: 0, id: null as unknown as string }));
     renderWithProviders(<CartView />);

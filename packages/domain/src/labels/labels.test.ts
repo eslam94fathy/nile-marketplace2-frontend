@@ -11,6 +11,7 @@ import {
   COUPON_DISPLAY_STATUSES,
   COUPON_FUNDINGS,
   COUPON_SCOPES,
+  REDEMPTION_STATUSES,
   DISCOUNT_TYPES,
   ITEM_CANCEL_REASONS,
   LEDGER_ENTRY_TYPES,
@@ -47,6 +48,7 @@ import {
   ACTOR_ROLE_LABELS,
   AGENT_STATUS_LABELS,
   ATTEMPT_FAILURE_REASON_LABELS,
+  AUDIT_ACTION_AREAS,
   AUDIT_ACTION_LABELS,
   AUDIT_ACTOR_TYPE_LABELS,
   AUDIT_TARGET_TYPE_LABELS,
@@ -56,6 +58,7 @@ import {
   COUPON_SCOPE_LABELS,
   DISCOUNT_TYPE_LABELS,
   ITEM_CANCEL_REASON_LABELS,
+  REDEMPTION_STATUS_LABELS,
   LEDGER_ENTRY_TYPE_LABELS,
   LEDGER_REFERENCE_TYPE_LABELS,
   NOTIFICATION_CATEGORY_LABELS,
@@ -117,6 +120,8 @@ const cases: [string, readonly string[], Readonly<Record<string, string>>][] = [
   ['ShipmentStatus agent', SHIPMENT_STATUSES, SHIPMENT_STATUS_LABELS.agent],
   ['AttemptFailureReason admin', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.admin],
   ['AttemptFailureReason agent', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.agent],
+  ['AttemptFailureReason pickup', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.pickup],
+  ['ShipmentStatus agent return', SHIPMENT_STATUSES, SHIPMENT_STATUS_LABELS.agentReturn],
   ['AgentStatus', AGENT_STATUSES, AGENT_STATUS_LABELS],
   ['AccountType', ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS],
   ['LedgerEntryType', LEDGER_ENTRY_TYPES, LEDGER_ENTRY_TYPE_LABELS],
@@ -145,6 +150,7 @@ const cases: [string, readonly string[], Readonly<Record<string, string>>][] = [
   ['DiscountType', DISCOUNT_TYPES, DISCOUNT_TYPE_LABELS],
   ['CouponScope seller', COUPON_SCOPES, COUPON_SCOPE_LABELS.seller],
   ['CouponScope admin', COUPON_SCOPES, COUPON_SCOPE_LABELS.admin],
+  ['RedemptionStatus', REDEMPTION_STATUSES, REDEMPTION_STATUS_LABELS],
   ['AuditActorType', AUDIT_ACTOR_TYPES, AUDIT_ACTOR_TYPE_LABELS],
   ['AuditTargetType', AUDIT_TARGET_TYPES, AUDIT_TARGET_TYPE_LABELS],
   ['AuditAction', AUDIT_ACTIONS, AUDIT_ACTION_LABELS],
@@ -162,6 +168,8 @@ describe('label maps', () => {
     expect(SELLER_ORDER_STATUS_LABELS.admin.placed).toBe('Placed (awaiting seller)');
     expect(SELLER_ORDER_STATUS_LABELS.seller.placed).toBe('New — confirm');
     expect(SHIPMENT_STATUS_LABELS.agent.out_for_delivery).toBe('On the way');
+    expect(SHIPMENT_STATUS_LABELS.agentReturn.picked_up).toBe('Collected — take to the seller');
+    expect(SHIPMENT_STATUS_LABELS.agentReturn.delivered).toBe('Handed to the seller');
     expect(USER_STATUS_LABELS.pending_email_verification).toBe('Email not verified');
     expect(ACTOR_ROLE_LABELS.delivery_agent).toBe('Agent');
     expect(PAYMENT_STATUS_LABELS.partially_refunded).toBe('Partly refunded');
@@ -180,5 +188,13 @@ describe('cartLineIssueMessage', () => {
       'Out of stock.',
       'Only 3 available.',
     ]);
+  });
+});
+
+describe('AUDIT_ACTION_AREAS', () => {
+  it('puts every audit action in exactly one area', () => {
+    const grouped = AUDIT_ACTION_AREAS.flatMap((group) => [...group.actions]);
+    expect([...grouped].sort()).toEqual([...AUDIT_ACTIONS].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
   });
 });

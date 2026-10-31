@@ -5,11 +5,8 @@ import { formatDate, formatMoney } from '@nile/domain';
 import Link from 'next/link';
 import { ORDERS_COPY, orderKeys } from '@/features/orders';
 import { browserApi } from '@/lib/browser-api';
-import { orderPath, ROUTES } from '@/lib/routes';
+import { ORDERS_AWAITING_PAYMENT_PATH, orderPath } from '@/lib/routes';
 import { dashboardQueueOptions, QueueCard, useQueueCard } from '../queue-card';
-
-/** The AD-14 tab of orders awaiting payment (spec 01 SF-17 group). */
-const AWAITING_PAYMENT_HREF = `${ROUTES.orders}?status=awaiting-payment` as const;
 
 /** AD-02 queue 5 (T-H10): orders awaiting card payment, oldest first → AD-15. */
 export function AwaitingCardPaymentQueue() {
@@ -26,7 +23,7 @@ export function AwaitingCardPaymentQueue() {
   return (
     <QueueCard
       title={ORDERS_COPY.queueTitle}
-      seeAllHref={AWAITING_PAYMENT_HREF}
+      seeAllHref={ORDERS_AWAITING_PAYMENT_PATH}
       seeAllLabel={ORDERS_COPY.queueSeeAll}
       getRowId={(order) => order.id}
       renderRow={(order) => (

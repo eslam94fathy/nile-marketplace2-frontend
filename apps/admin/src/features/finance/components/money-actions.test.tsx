@@ -183,6 +183,36 @@ describe('COD remittances (spec 03 AD-20)', { timeout: 20_000 }, () => {
     expect(calls[1]?.key).toBe(calls[0]?.key);
   });
 
+  it('closed after a failure and opened again: the same values reuse the key (T-O1 F-1)', async () => {
+    const user = userEvent.setup();
+    const calls = serveRemittance([
+      { status: 500, code: 'INTERNAL_ERROR' },
+      remittanceFactory({ amount: '200.00' }),
+    ]);
+    render(<Remittances params={{ agent: SAM.id }} currentUserId={ME.id} />);
+    const record = async () => {
+      await user.click(await screen.findByRole('button', { name: 'Record cash received' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Record cash received' });
+      await within(dialog).findByText(/^Holds /);
+      await user.type(within(dialog).getByLabelText(/^Amount/), '200');
+      await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
+      const confirm = await screen.findByRole('dialog', { name: 'Confirm cash received' });
+      await user.click(within(confirm).getByRole('button', { name: 'Record cash received' }));
+      return confirm;
+    };
+    expect(await within(await record()).findByRole('alert')).toBeDefined();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    await record();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.key).toBe(calls[0]?.key);
+  });
+
   it('REMITTANCE_EXCEEDS_BALANCE reads the balance again and shows it', async () => {
     const user = userEvent.setup();
     serveRemittance([{ status: 422, code: 'REMITTANCE_EXCEEDS_BALANCE' }]);
@@ -246,6 +276,25 @@ describe('payouts (spec 03 AD-21)', { timeout: 20_000 }, () => {
       paidAt: '2026-01-15T08:30:00.000Z',
     });
     expect(calls[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('a failed try is sent again with the same key (T-O1 F-3)', async () => {
+    const user = userEvent.setup();
+    const calls = servePayout([{ status: 500, code: 'INTERNAL_ERROR' }, payoutFactory({ amount: '10.00' })]);
+    render(<Payouts params={{ payeeType: 'seller', payeeId: SHOP.id }} currentUserId={ME.id} />);
+    await user.click(await screen.findByRole('button', { name: 'Record payout' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Record payout' });
+    await within(dialog).findByText(/^Nile owes /);
+    await user.type(within(dialog).getByLabelText(/^Amount/), '10');
+    await user.type(within(dialog).getByLabelText(/^External reference/), 'TRX-9');
+    await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
+    const confirm = await screen.findByRole('dialog', { name: 'Confirm payout' });
+    await user.click(within(confirm).getByRole('button', { name: 'Record payout' }));
+    expect(await within(confirm).findByRole('alert')).toBeDefined();
+    await user.click(within(confirm).getByRole('button', { name: 'Record payout' }));
+    expect(await screen.findByText(/^Payout of EGP\s?10\.00 to Nile Crafts recorded\.$/)).toBeDefined();
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.key).toBe(calls[0]?.key);
   });
 
   it('a paid-at in the future is refused before sending', async () => {

@@ -36,6 +36,7 @@ export {
   type IdempotentMutationOptions,
   type IdempotentMutationResult,
 } from './idempotent-mutation';
+export { clearIdempotencyIntents, type IntentScope } from './intent-store';
 export { QueryProvider } from './provider';
 export { applyServerErrors, errorMessage, type ServerFieldMap, type SetFieldError } from './server-errors';
 export { dehydrate, HydrationBoundary } from '@tanstack/react-query';

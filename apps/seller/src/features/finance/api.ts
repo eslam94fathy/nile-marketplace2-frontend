@@ -9,6 +9,7 @@ import { browserApi } from '@/lib/browser-api';
 export type SellerBalance = Schema<'SellerBalanceDto'>;
 export type LedgerEntry = Schema<'LedgerEntryDto'>;
 export type Payout = Schema<'PayoutDto'>;
+export type SellerHold = Schema<'SellerHoldDto'>;
 
 const FINANCE_PAGE_SIZE = 20;
 
@@ -16,6 +17,7 @@ export const financeKeys = {
   balance: () => queryKey('seller', 'finance', 'balance'),
   entries: () => queryKey('seller', 'finance', 'entries'),
   payouts: () => queryKey('seller', 'finance', 'payouts'),
+  holds: () => queryKey('seller', 'finance', 'holds'),
 };
 
 export function balanceQuery() {
@@ -59,6 +61,27 @@ export function payoutsListOptions() {
             query: {
               limit: FINANCE_PAGE_SIZE,
               sort: '-createdAt',
+              ...(cursor === undefined ? {} : { cursor }),
+            },
+          },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** SE-16 On hold (spec 02 §8.3): the earnings still held, next release first (the API's default sort). */
+export function holdsListOptions() {
+  return infiniteListOptions({
+    queryKey: financeKeys.holds(),
+    staleTime: 0,
+    fetchPage: async (cursor, signal) =>
+      unwrap(
+        browserApi.GET('/api/v1/seller/finance/holds', {
+          params: {
+            query: {
+              limit: FINANCE_PAGE_SIZE,
+              sort: 'releaseAfter',
               ...(cursor === undefined ? {} : { cursor }),
             },
           },

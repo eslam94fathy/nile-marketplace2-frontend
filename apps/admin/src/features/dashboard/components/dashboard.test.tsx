@@ -35,7 +35,7 @@ const card = (props: Partial<Parameters<typeof QueueCard<Row>>[0]> = {}) => (
 
 describe('dashboard (spec 03 AD-02)', () => {
   it('the page heading', () => {
-    renderWithProviders(<Dashboard queues={[]} />);
+    renderWithProviders(<Dashboard queues={[]} figures={false} />);
     expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeDefined();
   });
 
@@ -66,7 +66,9 @@ describe('dashboard (spec 03 AD-02)', () => {
   });
 
   it('cards render in a grid', () => {
-    renderWithProviders(<Dashboard queues={[() => card(), () => card({ title: 'Unassigned shipments' })]} />);
+    renderWithProviders(
+      <Dashboard queues={[() => card(), () => card({ title: 'Unassigned shipments' })]} figures={false} />,
+    );
     expect(screen.getByRole('region', { name: 'Sellers waiting for approval' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Unassigned shipments' })).toBeDefined();
   });

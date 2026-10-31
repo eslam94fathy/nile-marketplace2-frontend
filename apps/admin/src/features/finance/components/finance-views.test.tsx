@@ -56,7 +56,9 @@ describe('finance accounts (spec 03 AD-18)', { timeout: 15_000 }, () => {
     renderWithProviders(<AccountsList params={{}} />);
     const table = await screen.findByRole('table', { name: 'Finance accounts' });
     expect(queries[0]).toEqual({ limit: '20', sort: '-balance', 'accountType[eq]': 'seller_payable' });
-    expect(screen.getByText('Nile owes the seller.')).toBeDefined();
+    expect(
+      screen.getByText(/^Nile owes the seller. A negative balance is what the seller owes Nile/),
+    ).toBeDefined();
     const sellerRow = within(table).getByText('Nile Crafts').closest('tr');
     expect(sellerRow).not.toBeNull();
     expect(

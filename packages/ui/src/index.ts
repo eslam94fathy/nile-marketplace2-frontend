@@ -54,6 +54,7 @@ export {
 } from './components/dropdown-menu';
 export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './components/popover';
 export { useCooldown, type Cooldown } from './use-cooldown';
+export { usePassed } from './use-passed';
 export { Label } from './components/label';
 export { Select, type SelectOption, type SelectProps } from './components/select';
 export { Checkbox, Switch } from './components/checkbox';
@@ -124,6 +125,15 @@ export {
   type NileImageSource,
 } from './components/nile-image';
 export { PrivateImage, type PrivateImageProps } from './components/private-image';
+export {
+  RatingStars,
+  StarRating,
+  type RatingStarsProps,
+  type StarRatingProps,
+} from './components/rating-stars';
+export { Lightbox, type LightboxImage, type LightboxProps } from './components/lightbox';
+export { RatingInput, type RatingInputProps } from './components/rating-input';
+export { ImageGallery, type ImageGalleryProps } from './components/image-gallery';
 export {
   UploadTiles,
   type UploadRefusalView,

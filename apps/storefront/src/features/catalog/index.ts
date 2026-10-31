@@ -2,6 +2,7 @@
 // listings, search and product pages arrive with T-E2/T-E3. Server-side loading is in src/lib/server.
 export { CategoriesMenu } from './components/categories-menu';
 export { CategoryHeader } from './components/category-header';
+export { SellerHeader, type PublicSeller } from './components/seller-header';
 export { CategoryTiles } from './components/category-tiles';
 export { catalogKeys, productListOptions } from './api';
 export { ProductBrowser, type CategoryOption, type ProductBrowserProps } from './components/product-browser';

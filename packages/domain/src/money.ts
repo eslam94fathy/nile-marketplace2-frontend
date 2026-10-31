@@ -73,3 +73,23 @@ export function percentToRate(percent: string): string {
   if (value.greaterThan(PERCENT_PER_RATE)) throw new RangeError('Not a valid percent string');
   return value.dividedBy(PERCENT_PER_RATE).toFixed(RATE_DECIMALS);
 }
+
+/** The largest of some money strings (exact comparison), `'0.00'` for none: the scale of a bar chart. */
+export function maxMoney(values: readonly string[]): string {
+  return values
+    .reduce((max, value) => MoneyDecimal.max(max, parseMoney(value)), new MoneyDecimal(0))
+    .toFixed(MONEY_DECIMALS);
+}
+
+/**
+ * `value` as a percent of `max`, 0..100 with 2 decimals, for drawing a bar (not money): `'0.00'` when `max` is
+ * zero or less.
+ */
+export function moneyShare(value: string, max: string): string {
+  const scale = parseMoney(max);
+  if (scale.lessThanOrEqualTo(0)) return new MoneyDecimal(0).toFixed(MONEY_DECIMALS);
+  return MoneyDecimal.min(
+    MoneyDecimal.max(parseMoney(value), 0).dividedBy(scale).times(PERCENT_PER_RATE),
+    100,
+  ).toFixed(MONEY_DECIMALS);
+}

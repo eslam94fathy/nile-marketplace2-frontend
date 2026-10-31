@@ -5,10 +5,10 @@ import { formatDate, formatMoney, REFUND_REASON_LABELS } from '@nile/domain';
 import Link from 'next/link';
 import { PAYMENTS_COPY, paymentKeys } from '@/features/payments';
 import { browserApi } from '@/lib/browser-api';
-import { orderPath, ROUTES } from '@/lib/routes';
+import { refundPath, ROUTES } from '@/lib/routes';
 import { dashboardQueueOptions, QueueCard, useQueueCard } from '../queue-card';
 
-/** AD-02 queue 3 (T-H10): refunds to record, oldest first → the order; "See all" → AD-16 "To record". */
+/** AD-02 queue 3 (T-H10): refunds needing action, oldest first → AD-34 (T-M8); "See all" → AD-16 "Needs action". */
 export function RefundsToRecordQueue() {
   const card = useQueueCard(
     dashboardQueueOptions(paymentKeys.dashboard(), (limit, signal) =>
@@ -29,7 +29,7 @@ export function RefundsToRecordQueue() {
       renderRow={(refund) => (
         <span className="flex flex-wrap justify-between gap-2">
           <Link
-            href={orderPath(refund.orderId)}
+            href={refundPath(refund.id)}
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
             {formatMoney(refund.amount)}

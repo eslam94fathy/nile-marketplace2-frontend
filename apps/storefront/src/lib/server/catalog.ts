@@ -97,3 +97,26 @@ export const getProduct = cache(async (idOrSlug: string) => {
     throw error;
   }
 });
+
+/** SF-22: a seller's public profile is cached for 5 minutes (spec 01). */
+export const SELLER_REVALIDATE_SECONDS = 300;
+
+/**
+ * A public seller page's seller (spec 01 SF-22), cached 5 min and once per request for the page and its
+ * metadata. Null when the seller isn't approved or doesn't exist (`SELLER_NOT_FOUND`; a malformed id is the
+ * same to a visitor).
+ */
+export const getSeller = cache(async (sellerId: string) => {
+  try {
+    return (
+      await unwrap(
+        publicServerApi({ revalidateSeconds: SELLER_REVALIDATE_SECONDS }).GET('/api/v1/sellers/{sellerId}', {
+          params: { path: { sellerId } },
+        }),
+      )
+    ).data;
+  } catch (error) {
+    if (isApiError(error, 'SELLER_NOT_FOUND', 'VALIDATION_FAILED')) return null;
+    throw error;
+  }
+});

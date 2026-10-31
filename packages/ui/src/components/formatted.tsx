@@ -8,12 +8,17 @@ export interface MoneyProps {
   readonly value: string;
   /** Upper end of a price range; shown as `EGP 51.00 – EGP 71.00` when it differs. */
   readonly max?: string;
+  /** A discount: the (positive) amount shown with a minus sign, "−EGP 20.00" (conventions §12.9). */
+  readonly negative?: boolean;
   readonly className?: string;
 }
 
-export function Money({ value, max, className }: MoneyProps) {
+/** U+2212, read as "minus" by screen readers (a hyphen often isn't). */
+const MINUS = '−';
+
+export function Money({ value, max, negative = false, className }: MoneyProps) {
   const text = max === undefined ? formatMoney(value) : formatMoneyRange(value, max);
-  return <span className={cn('tabular-nums', className)}>{text}</span>;
+  return <span className={cn('tabular-nums', className)}>{negative ? `${MINUS}${text}` : text}</span>;
 }
 
 export interface DateTimeProps {

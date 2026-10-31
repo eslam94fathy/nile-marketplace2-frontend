@@ -14,10 +14,10 @@ describe('shipment filters (spec 03 AD-12)', () => {
     expect(shipmentFiltersQuery(filters)).toBe('');
   });
 
-  it('In delivery is three statuses with [in]; other tabs newest first; All has no status', () => {
+  it('In delivery is four statuses with [in] (a failed return pickup too); other tabs newest first; All has no status', () => {
     expect(shipmentApiQuery(parseShipmentFilters({ status: 'in-delivery' }))).toEqual({
       sort: '-createdAt',
-      'status[in]': 'picked_up,out_for_delivery,delivery_failed',
+      'status[in]': 'picked_up,out_for_delivery,delivery_failed,pickup_failed',
     });
     expect(shipmentApiQuery(parseShipmentFilters({ status: 'returned' }))).toEqual({
       sort: '-createdAt',
@@ -26,9 +26,10 @@ describe('shipment filters (spec 03 AD-12)', () => {
     expect(shipmentApiQuery(parseShipmentFilters({ status: 'all' }))).toEqual({ sort: '-createdAt' });
   });
 
-  it('agent, order and Cairo days go to the API; the URL round-trips', () => {
+  it('type, agent, order and Cairo days go to the API; the URL round-trips', () => {
     const filters = parseShipmentFilters({
       status: 'all',
+      kind: 'return',
       agent: AGENT,
       order: ORDER,
       from: '2026-10-01',
@@ -36,6 +37,7 @@ describe('shipment filters (spec 03 AD-12)', () => {
     });
     expect(shipmentApiQuery(filters)).toEqual({
       sort: '-createdAt',
+      'kind[eq]': 'return',
       'agentId[eq]': AGENT,
       'orderId[eq]': ORDER,
       'createdAt[gte]': '2026-09-30T21:00:00.000Z',
@@ -49,7 +51,8 @@ describe('shipment filters (spec 03 AD-12)', () => {
   it('drops invalid values: unknown tab, non-uuid ids, bad days, an end before the start', () => {
     expect(
       parseShipmentFilters({ status: 'lost', agent: 'x', order: '1', from: '2026-13-01', to: 'y' }),
-    ).toEqual({ tab: 'unassigned', agentId: null, orderId: null, from: null, to: null });
+    ).toEqual({ tab: 'unassigned', kind: null, agentId: null, orderId: null, from: null, to: null });
+    expect(parseShipmentFilters({ kind: 'parcel' }).kind).toBeNull();
     expect(parseShipmentFilters({ from: '2026-10-05', to: '2026-10-01' }).to).toBeNull();
   });
 });
@@ -80,5 +83,29 @@ describe('assignment (spec 03 AD-13)', () => {
         (agent) => agent.id,
       ),
     ).toEqual([preferred.id, offShiftHere.id, onShiftElsewhere.id]);
+  });
+
+  it('a return shipment prefers agents where the customer is (the drop-off governorate)', () => {
+    const delivery = adminShipmentFactory();
+    const customerGovernorate = fixtureId(9798);
+    const shipment = {
+      ...delivery,
+      kind: 'return' as const,
+      dropoff: { ...delivery.dropoff, governorateId: customerGovernorate },
+    };
+    const atSeller = adminAgentFactory({
+      id: fixtureId(10011),
+      onShift: true,
+      homeGovernorateId: delivery.pickup.governorateId,
+    });
+    const atCustomer = adminAgentFactory({
+      id: fixtureId(10012),
+      onShift: true,
+      homeGovernorateId: customerGovernorate,
+    });
+    expect(assignCandidates([atSeller, atCustomer], shipment).map((agent) => agent.id)).toEqual([
+      atCustomer.id,
+      atSeller.id,
+    ]);
   });
 });

@@ -2,7 +2,9 @@
 
 import { Button, Dialog, DialogContent, FormAlert, UI_COPY } from '@nile/ui';
 import type { ReactNode } from 'react';
-import { FINANCE_COPY as COPY } from '../copy';
+
+/** The two buttons that move between the steps (spec 03 AD-Q-5). */
+const STEP_COPY = { continue: 'Continue', back: 'Back' } as const;
 
 export type Step = 'form' | 'confirm';
 
@@ -24,7 +26,8 @@ export interface StepDialogProps {
 }
 
 /**
- * A money action in two steps (spec 03 §2.2, AD-Q-5): the form, then a summary to confirm. Escape and the
+ * A money action in two steps (spec 03 §2.2, AD-Q-5): the form, then a summary to confirm (finance, order
+ * cancellation). Escape and the
  * close button are ignored while the request runs, so its outcome is always seen.
  */
 export function StepDialog({
@@ -57,12 +60,12 @@ export function StepDialog({
               <Button variant="outline" onClick={onClose}>
                 {UI_COPY.cancel}
               </Button>
-              <Button onClick={onContinue}>{COPY.continue}</Button>
+              <Button onClick={onContinue}>{STEP_COPY.continue}</Button>
             </>
           ) : (
             <>
               <Button variant="outline" disabled={pending} onClick={onBack}>
-                {COPY.back}
+                {STEP_COPY.back}
               </Button>
               <Button loading={pending} onClick={onConfirm}>
                 {confirmLabel}

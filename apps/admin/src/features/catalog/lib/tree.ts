@@ -56,3 +56,9 @@ export function nextSortOrder(siblings: readonly { readonly sortOrder: number }[
 
 /** Subcategories are possible below depth 3 [SPEC 06 Q-30]. */
 export const canHaveChildren = (node: CategoryNode): boolean => node.depth < MAX_DEPTH;
+
+/** A category named by its path from the top, e.g. "Fashion › Men › Shirts"; `null` when it isn't in the tree. */
+export function categoryPathLabel(tree: readonly CategoryNode[], id: string): string | null {
+  const path = pathTo(tree, id);
+  return path.length === 0 ? null : path.map((node) => node.name).join(' › ');
+}

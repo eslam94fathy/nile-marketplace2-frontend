@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { TicketThread } from '@nile/support-screens';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Support ticket' };
 
-/** SF-31 Support ticket: a notification link target since T-J6 (spec 00 §12.5), built in T-K7. */
-export default async function SupportTicketPage() {
+/** SF-31 Ticket thread. */
+export default async function SupportTicketPage({ params }: PageProps<'/account/support/[ticketId]'>) {
   await requireSession();
-  return <PlaceholderScreen title="Support ticket" task="T-K7" />;
+  const { ticketId } = await params;
+  return <TicketThread ticketId={ticketId} />;
 }

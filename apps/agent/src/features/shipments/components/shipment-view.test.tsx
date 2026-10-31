@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { ErrorCode, Schema } from '@nile/api';
-import { agentProfileFactory, agentShipmentFactory, mockApi } from '@nile/test-utils';
+import { agentProfileFactory, agentShipmentFactory, fixtureId, mockApi } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { Toaster } from '@nile/ui';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -396,5 +396,166 @@ describe('shipment (spec 04 AG-05)', { timeout: 20_000 }, () => {
       await screen.findByRole('heading', { level: 1, name: `Order ${shipment.orderNumber}` }),
     ).toBeDefined();
     expect(screen.queryByRole('group', { name: 'Shipment actions' })).toBeNull();
+  });
+});
+
+describe('return pickup (spec 04 §7.3, T-N1)', { timeout: 20_000 }, () => {
+  /** A return collects nothing [VERIFIED backend spec 11 DE-22, DE-26]. */
+  const returnPickup = (overrides: Partial<Shipment> = {}) =>
+    agentShipmentFactory({
+      kind: 'return',
+      returnId: fixtureId(3),
+      amountToCollect: '0.00',
+      codItemsAmount: '0.00',
+      codFeeAmount: '0.00',
+      ...overrides,
+    });
+
+  it('collect from the customer first, deliver to the seller, nothing to collect; R1 and R2 offered', async () => {
+    const shipment = returnPickup();
+    serveShipment(shipment);
+    render(shipment);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Return pickup' })).toBeDefined();
+    expect(screen.getByText(`Order ${shipment.orderNumber}`)).toBeDefined();
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
+    expect(headings.slice(0, 3)).toEqual(['Collect from (customer)', 'Deliver to (seller)', 'Payment']);
+    expect(screen.getByText('Nothing to collect.')).toBeDefined();
+    expect(screen.queryByText(/EGP/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Call Mona Adel' })).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Open Nile Crafts in maps' })).toBeDefined();
+    const bar = await actions();
+    expect(
+      within(bar)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Pickup failed', 'Collected from the customer']);
+  });
+
+  it('R1 collected: confirmed by the customer name, no key; then R3 is offered', async () => {
+    const user = userEvent.setup();
+    const shipment = returnPickup({ status: 'pickup_failed', attemptCount: 1 });
+    const state = serveShipment(shipment);
+    const calls = serveAction(
+      '/agent/shipments/{shipmentId}/picked-up',
+      [{ ...shipment, status: 'picked_up' }],
+      (next) => {
+        state.shipment = next;
+      },
+    );
+    render(shipment);
+    await user.click(within(await actions()).getByRole('button', { name: 'Collected from the customer' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Collected the items?' });
+    expect(within(dialog).getByText('Did you collect the items from Mona Adel?')).toBeDefined();
+    await user.click(within(dialog).getByRole('button', { name: 'Collected from the customer' }));
+    expect(await screen.findByText('Marked as collected.')).toBeDefined();
+    expect(calls).toEqual([{ key: null, body: undefined }]);
+    expect(
+      await within(await actions()).findByRole('button', { name: 'Handed to the seller' }),
+    ).toBeDefined();
+    expect(screen.getByText('Collected — take to the seller')).toBeDefined();
+  });
+
+  it('R2 pickup failed: pickup reasons, return consequences, one key per intent', async () => {
+    const user = userEvent.setup();
+    const shipment = returnPickup({ attemptCount: 0 });
+    serveShipment(shipment);
+    const calls = serveAction('/agent/shipments/{shipmentId}/failed-attempt', [
+      { ...shipment, status: 'pickup_failed', attemptCount: 1 },
+    ]);
+    render(shipment);
+    await user.click(within(await actions()).getByRole('button', { name: 'Pickup failed' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Pickup failed' });
+    await user.click(within(sheet).getByRole('radio', { name: 'Customer refused' }));
+    expect(within(sheet).getByText('The return is closed. No more attempts.')).toBeDefined();
+    await user.click(within(sheet).getByRole('radio', { name: 'Customer rescheduled' }));
+    expect(within(sheet).getByText('You can try again later (attempt 1 of 3).')).toBeDefined();
+    await user.type(within(sheet).getByRole('textbox', { name: 'Note (optional)' }), ' Call after 5 ');
+    await user.click(within(sheet).getByRole('button', { name: 'Report failed pickup' }));
+    expect(await screen.findByText('Failed pickup recorded.')).toBeDefined();
+    expect(calls[0]?.body).toEqual({ reason: 'customer_rescheduled', note: 'Call after 5' });
+    expect(calls[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('R2 closed after a failure and opened again: the same report reuses the key (T-O1 F-1)', async () => {
+    const user = userEvent.setup();
+    const shipment = returnPickup({ attemptCount: 0 });
+    serveShipment(shipment);
+    const calls = serveAction('/agent/shipments/{shipmentId}/failed-attempt', [
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      { ...shipment, status: 'pickup_failed', attemptCount: 1 },
+    ]);
+    render(shipment);
+    const report = async () => {
+      await user.click(within(await actions()).getByRole('button', { name: 'Pickup failed' }));
+      const sheet = await screen.findByRole('dialog', { name: 'Pickup failed' });
+      await user.click(within(sheet).getByRole('radio', { name: 'Customer rescheduled' }));
+      await user.click(within(sheet).getByRole('button', { name: 'Report failed pickup' }));
+    };
+    await report();
+    await waitFor(() => {
+      expect(calls).toHaveLength(1);
+    });
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    await report();
+    await waitFor(() => {
+      expect(calls).toHaveLength(2);
+    });
+    expect(calls[1]?.key).toBe(calls[0]?.key);
+  });
+
+  it('the return consequence rule: refused or the third failure closes the return', () => {
+    expect(attemptConsequence('customer_refused', 0, 'return')).toBe(
+      'The return is closed. No more attempts.',
+    );
+    expect(attemptConsequence('wrong_address', 2, 'return')).toBe(
+      'This was the last attempt. The return is closed.',
+    );
+    expect(attemptConsequence('wrong_address', 1, 'return')).toBe(
+      'You can try again later (attempt 2 of 3).',
+    );
+  });
+
+  it('R3 handed to the seller: empty body, a key reused on retry; then read-only', async () => {
+    const user = userEvent.setup();
+    const shipment = returnPickup({ status: 'picked_up', pickedUpAt: '2026-10-30T09:00:00.000Z' });
+    const state = serveShipment(shipment);
+    const done = { ...shipment, status: 'delivered' as const, deliveredAt: '2026-10-30T11:00:00.000Z' };
+    const calls = serveAction(
+      '/agent/shipments/{shipmentId}/delivered',
+      [{ status: 503, code: 'SERVICE_UNAVAILABLE' }, done],
+      (next) => {
+        state.shipment = next;
+      },
+    );
+    render(shipment);
+    await user.click(within(await actions()).getByRole('button', { name: 'Handed to the seller' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Hand the items over?' });
+    expect(within(dialog).getByText('Hand the items to Nile Crafts? Nothing to collect.')).toBeDefined();
+    await user.click(within(dialog).getByRole('button', { name: 'Handed to the seller' }));
+    await waitFor(() => {
+      expect(calls).toHaveLength(1);
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Handed to the seller' }));
+    expect(await screen.findByText('Handed to the seller.')).toBeDefined();
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.body).toEqual({});
+    expect(calls[1]?.key).toBe(calls[0]?.key);
+    await waitFor(() => {
+      expect(screen.queryByRole('group', { name: 'Shipment actions' })).toBeNull();
+    });
+  });
+
+  it('never offers delivery actions once handed over or cancelled', async () => {
+    for (const status of ['delivered', 'cancelled'] as const) {
+      const shipment = returnPickup({ status });
+      serveShipment(shipment);
+      const view = render(shipment);
+      expect(await screen.findByRole('heading', { level: 1, name: 'Return pickup' })).toBeDefined();
+      expect(screen.queryByRole('group', { name: 'Shipment actions' })).toBeNull();
+      view.unmount();
+    }
   });
 });

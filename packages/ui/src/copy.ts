@@ -1,4 +1,9 @@
 // Copy owned by the shared components (CLAUDE.md §7: no inline literals). Screen copy lives with the screens.
+
+function reviewCount(count: number): string {
+  return count === 1 ? '1 review' : `${String(count)} reviews`;
+}
+
 export const UI_COPY = {
   /** The product name in UI copy (conventions §11); the logo's accessible name. */
   brandName: 'Nile',
@@ -47,4 +52,19 @@ export const UI_COPY = {
   retryUpload: (fileName: string) => `Try again: ${fileName}`,
   /** Under a form's submit button while photos are still uploading. */
   waitForUploads: 'Wait for the photos to finish uploading.',
+  /** Ratings (conventions §12.8). */
+  noReviewsYet: 'No reviews yet',
+  ratingShort: (avg: string, count: number) => `${avg} (${reviewCount(count)})`,
+  ratedOutOf: (avg: string, count: number) => `Rated ${avg} out of 5 from ${reviewCount(count)}`,
+  /** One review's rating (approved 2026-10-30, TK2-COPY). */
+  ratedValue: (rating: number) => `Rated ${String(rating)} out of 5`,
+  /** Rating input options (conventions §12.8). */
+  stars: (rating: number) => (rating === 1 ? '1 star' : `${String(rating)} stars`),
+  /** Product photos and their lightbox (conventions §12.1; approved 2026-10-30, TK1-COPY). */
+  photos: 'Photos',
+  showPhoto: (index: number, total: number) => `Show photo ${String(index)} of ${String(total)}`,
+  enlargePhoto: 'View larger',
+  photoOf: (index: number, total: number) => `Photo ${String(index)} of ${String(total)}`,
+  previousPhoto: 'Previous photo',
+  nextPhoto: 'Next photo',
 } as const;

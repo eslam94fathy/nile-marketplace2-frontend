@@ -3,17 +3,29 @@
 import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
+import { supportInvalidation } from '@nile/support-screens';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { ORDERS_INVALIDATION } from '@/features/orders';
+import { RETURNS_INVALIDATION } from '@/features/returns';
+import { reviewKeysForNotification } from '@/features/reviews';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
+const NOTIFICATIONS_INVALIDATION = notificationsInvalidation(APP.name);
+
 /** This app's message → query map (design 02 §5.3); each feature owns its part. */
 const INVALIDATION_MAP: InvalidationMap = {
   ...ORDERS_INVALIDATION,
-  ...notificationsInvalidation(APP.name),
+  ...RETURNS_INVALIDATION,
+  ...NOTIFICATIONS_INVALIDATION,
+  ...supportInvalidation(APP.name),
+  // One handler per message: a new review's notification also refreshes the review lists (SE-20).
+  'notification.created': (payload) => [
+    ...NOTIFICATIONS_INVALIDATION['notification.created'](),
+    ...reviewKeysForNotification(payload),
+  ],
 };
 
 const noSubscription = () => () => undefined;

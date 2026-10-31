@@ -1,6 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
+import { SHIPMENT_KIND_LABELS, SHIPMENT_KINDS } from '@nile/domain';
 import { buttonVariants, cn, EmptyState, ErrorState, Input, Label, PageHeader, Select } from '@nile/ui';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
@@ -80,7 +81,14 @@ export function ShipmentsList({ params }: { readonly params: RawShipmentParams }
                 title={COPY.emptyFiltered}
                 action={
                   <Link
-                    href={listHref({ ...filters, agentId: null, orderId: null, from: null, to: null })}
+                    href={listHref({
+                      ...filters,
+                      kind: null,
+                      agentId: null,
+                      orderId: null,
+                      from: null,
+                      to: null,
+                    })}
                     className={buttonVariants({ variant: 'outline' })}
                   >
                     {COPY.clearFilters}
@@ -104,6 +112,7 @@ interface FiltersProps {
 
 function Filters({ filters, onChange }: FiltersProps) {
   const agentId = useId();
+  const kindId = useId();
   const fromId = useId();
   const toId = useId();
   const agents = useQuery(agentPickerQuery());
@@ -130,7 +139,21 @@ function Filters({ filters, onChange }: FiltersProps) {
           </Link>
         </p>
       )}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-1">
+          <Label htmlFor={kindId}>{COPY.kindFilter}</Label>
+          <Select
+            id={kindId}
+            options={[
+              { value: ALL, label: COPY.allKinds },
+              ...SHIPMENT_KINDS.map((kind) => ({ value: kind, label: SHIPMENT_KIND_LABELS.admin[kind] })),
+            ]}
+            value={filters.kind ?? ALL}
+            onValueChange={(value) => {
+              onChange({ ...filters, kind: SHIPMENT_KINDS.find((kind) => kind === value) ?? null });
+            }}
+          />
+        </div>
         <div className="space-y-1">
           <Label htmlFor={agentId}>{COPY.agentFilter}</Label>
           <Select

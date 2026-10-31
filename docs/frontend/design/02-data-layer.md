@@ -150,7 +150,7 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client |
 | POST | `/support/tickets/{ticketId}/read` | Bearer from session | – |
 
-#### admin (103 operations)
+#### admin (104 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
@@ -256,6 +256,7 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/media/uploads` | Bearer from session | – |
 | POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – |
 | GET | `/media/{mediaId}` | Bearer from session | – |
+| GET | `/products` | none (public) | – |
 | GET | `/push/config` | Bearer from session | – |
 
 #### agent (24 operations)
@@ -334,7 +335,7 @@ Notation: key segments after the scope; `stale` = `staleTime`; `poll` = `refetch
 
 | Key | Endpoint | stale / poll | Used by |
 |---|---|---|---|
-| `dashboard.<queue>` (5 queues) | sellers / shipments / refunds / accounts / orders lists with `limit=5` (spec 03 AD-02) | poll 60 s | AD-02 |
+| `dashboard.<queue>` (5 queues) | sellers / shipments / refunds / accounts / orders lists with `limit=5` (spec 03 AD-02) | default; R1 polled 60 s, dropped in R2 (AD-Q-16, T-M1) | AD-02 |
 | `admins.list(status)` | `GET /admin/admins` | default, infinite | AD-03, actor lookup (all pages, 5 min) |
 | `sellers.list(filters)` / `sellers.detail(id)` | `GET /admin/sellers` / `{sellerId}` | default / 0 | AD-04, AD-05; `sellers.byId` lookups 5 min |
 | `settings.commission` | `GET /admin/settings/commission` | default | AD-06 |

@@ -3,7 +3,9 @@
 import { isApiError } from '@nile/api';
 import {
   formatDateTime,
+  formatMoney,
   formatRatePercent,
+  parseMoney,
   SELLER_ORDER_CANCEL_REASON_LABELS,
   SELLER_ORDER_STATUS_LABELS,
   sellerOrderActions,
@@ -28,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useSellerAccess } from '@/features/profile';
+import { SUPPORT_COPY } from '@/features/support';
 import { productPath, ROUTES } from '@/lib/routes';
 import { isSellerOrderMissing, orderQuery, type SellerOrder, type SellerOrderItem } from '../api';
 import { ORDERS_COPY as COPY } from '../copy';
@@ -93,6 +96,8 @@ function OrderContent({
   readonly order: SellerOrder;
   readonly onDeadline: () => void;
 }) {
+  // Funding is set exactly when there is a discount [SPEC 09 §8.6]; the amount decides, to be safe.
+  const funding = parseMoney(order.discountAmount).isZero() ? null : order.discountFunding;
   return (
     <div className="space-y-8">
       <PageHeader
@@ -129,13 +134,29 @@ function OrderContent({
       <div className="grid gap-8 md:grid-cols-2">
         <Section id="money" title={COPY.moneyHeading}>
           <dl className="space-y-1 text-sm">
+            {/* Every amount is the API's: `subtotal` is before the coupon, commission and net after it
+                as the funding decides [SPEC 09 §8.7 R-17]. */}
             <Row label={COPY.subtotal} value={<Money value={order.subtotal} />} />
+            {funding === null ? null : (
+              <Row
+                label={`${COPY.couponDiscount} · ${COPY.fundedBy[funding]}`}
+                value={
+                  <span className="tabular-nums">
+                    −<Money value={order.discountAmount} />
+                  </span>
+                }
+              />
+            )}
             <Row
               label={COPY.commission(formatRatePercent(order.commissionRate))}
               value={<Money value={order.commission} />}
             />
             <Row label={COPY.net} value={<Money value={order.sellerNet} className="font-semibold" />} />
           </dl>
+          {funding === null ? null : <p className="text-sm">{COPY.fundingNote[funding]}</p>}
+          {parseMoney(order.returnedSellerNet).isZero() ? null : (
+            <p className="text-sm">{COPY.returned(formatMoney(order.returnedSellerNet))}</p>
+          )}
           <p className="text-sm text-muted-foreground">{COPY.snapshotNote}</p>
         </Section>
         <Section id="delivery" title={COPY.deliveryHeading}>
@@ -143,6 +164,13 @@ function OrderContent({
           <p className="text-sm text-muted-foreground">{COPY.customerNote}</p>
         </Section>
       </div>
+      {/* SE-15 "Get help" (spec 02 §8.3): the ticket form preselects this seller order. */}
+      <Link
+        href={{ pathname: ROUTES.supportNew, query: { sellerOrder: order.id } }}
+        className={buttonVariants({ variant: 'outline' })}
+      >
+        {SUPPORT_COPY.getHelpWithOrder}
+      </Link>
       <Section id="timeline" title={COPY.timelineHeading}>
         <ol className="space-y-1 text-sm">
           {TIMELINE.map((field) => {
@@ -201,6 +229,11 @@ function Items({ order }: { readonly order: SellerOrder }) {
           {item.cancelledQuantity === 0 ? null : (
             <span className="block text-muted-foreground">
               {COPY.cancelledQuantity(item.cancelledQuantity)} · {COPY.openQuantity(openQuantity(item))}
+            </span>
+          )}
+          {item.returnedQuantity === 0 ? null : (
+            <span className="block text-muted-foreground">
+              {COPY.returnedQuantity(item.returnedQuantity)}
             </span>
           )}
         </span>

@@ -143,6 +143,54 @@ describe('home "Shop by category" (spec 01 SF-01)', () => {
     ]);
   });
 
+  it('each tile shows the category image, or the placeholder, without repeating the name (§10.3)', () => {
+    const image = {
+      id: '01900000-0000-7000-8000-0000000000e2',
+      altText: 'Phones and laptops',
+      urls: {
+        thumb: 'https://media.test/t.webp',
+        medium: 'https://media.test/m.webp',
+        large: 'https://media.test/l.webp',
+      },
+      width: 1200,
+      height: 900,
+    };
+    const [first, ...rest] = TREE;
+    if (first === undefined) throw new Error('no category');
+    renderWithProviders(<CategoryTiles tree={[{ ...first, image }, ...rest]} />);
+    const [withImage, withoutImage] = screen.getAllByRole('link');
+    expect(withImage?.querySelector('img')?.getAttribute('src')).toBe('https://media.test/m.webp');
+    expect(withImage?.querySelector('img')?.getAttribute('alt')).toBe('');
+    expect(withoutImage?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(withImage?.textContent).toBe('Electronics');
+  });
+
+  it('the first phone row loads eagerly with high priority, the rest lazily (T-O3)', () => {
+    const image = {
+      id: '01900000-0000-7000-8000-0000000000e3',
+      altText: null,
+      urls: {
+        thumb: 'https://media.test/t.webp',
+        medium: 'https://media.test/m.webp',
+        large: 'https://media.test/l.webp',
+      },
+      width: 1200,
+      height: 900,
+    };
+    renderWithProviders(<CategoryTiles tree={TREE.map((category) => ({ ...category, image }))} />);
+    const loading = screen
+      .getAllByRole('link')
+      .map((link) => [
+        link.querySelector('img')?.getAttribute('loading'),
+        link.querySelector('img')?.getAttribute('fetchpriority'),
+      ]);
+    expect(loading).toEqual([
+      ['eager', 'high'],
+      ['eager', 'high'],
+      ['lazy', null],
+    ]);
+  });
+
   it('is hidden when there are no categories', () => {
     const view = renderWithProviders(<CategoryTiles tree={[]} />);
     expect(view.container.childElementCount).toBe(0);

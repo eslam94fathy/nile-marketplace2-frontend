@@ -11,12 +11,13 @@ import { DASHBOARD_COPY as COPY } from '../copy';
 // AD-02 work-queue cards (spec 03, AD-Q-1). Each later task adds its queue (decided 2026-10-15): a query made
 // with `dashboardQueueOptions` and a `QueueCard` in `DASHBOARD_QUEUES`.
 
-/** Spec 03 §5: the dashboard refreshes every 60 s while the tab is visible (intervals pause in background). */
-export const DASHBOARD_POLL_MS = 60_000;
 /** Each card shows at most 5 rows (spec 03 AD-02). */
 export const DASHBOARD_QUEUE_SIZE = 5;
 
-/** A queue's query: one page of `DASHBOARD_QUEUE_SIZE`, polled. `fetchPage` passes the limit to the API. */
+/**
+ * A queue's query: one page of `DASHBOARD_QUEUE_SIZE`. `fetchPage` passes the limit to the API. No timed polling
+ * (spec 03 §7.5, AD-Q-16): cards are read on every visit, on focus, and again on a live message where one exists.
+ */
 export function dashboardQueueOptions<T>(
   queryKey: QueryKey,
   fetchPage: (limit: number, signal: AbortSignal) => Promise<Page<T>>,
@@ -24,7 +25,6 @@ export function dashboardQueueOptions<T>(
   return queryOptions({
     queryKey,
     queryFn: ({ signal }) => fetchPage(DASHBOARD_QUEUE_SIZE, signal),
-    refetchInterval: DASHBOARD_POLL_MS,
   });
 }
 

@@ -8,6 +8,7 @@ import {
   fields,
   MAX_DELIVERY_ATTEMPTS,
   type AttemptFailureReason,
+  type ShipmentKind,
 } from '@nile/domain';
 import { useIdempotentMutation } from '@nile/query';
 import {
@@ -30,12 +31,22 @@ import { useShipmentUpdates } from '../hooks';
 /** Note: optional, 1..500 trimmed, omitted when empty (`FailedAttemptDto`). */
 const noteSchema = fields.nullableTrimmedString(1, 500);
 
-/** What happens after this attempt (spec 04 AG-05 A4, SPEC 00 §4.7): stated before the agent submits. */
-export function attemptConsequence(reason: AttemptFailureReason | null, attemptCount: number): string | null {
+/**
+ * What happens after this attempt (spec 04 AG-05 A4 and §7.3 R2, SPEC 00 §4.7): stated before the agent submits.
+ * A refusal or the third failure sends a delivery back to the seller and closes a return pickup.
+ */
+export function attemptConsequence(
+  reason: AttemptFailureReason | null,
+  attemptCount: number,
+  kind: ShipmentKind = 'delivery',
+): string | null {
   if (reason === null) return null;
-  if (reason === 'customer_refused') return COPY.refusedConsequence;
+  const isReturn = kind === 'return';
+  if (reason === 'customer_refused')
+    return isReturn ? COPY.pickupRefusedConsequence : COPY.refusedConsequence;
   const attempt = attemptCount + 1;
-  if (attempt >= MAX_DELIVERY_ATTEMPTS) return COPY.lastAttemptConsequence;
+  if (attempt >= MAX_DELIVERY_ATTEMPTS)
+    return isReturn ? COPY.pickupLastConsequence : COPY.lastAttemptConsequence;
   return COPY.retryConsequence(attempt, MAX_DELIVERY_ATTEMPTS);
 }
 
@@ -44,16 +55,24 @@ export interface FailedAttemptSheetProps {
   readonly onClose: () => void;
 }
 
-/** A4 Delivery failed: reason (radio, required), optional note, the consequence, one key per intent. */
+/**
+ * A4 Delivery failed, or R2 Pickup failed for a return pickup: reason (radio, required), optional note, the
+ * consequence, one key per intent (the same endpoint for both kinds).
+ */
 export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProps) {
   const id = useId();
   const failure = useSubmitFailure();
   const { settle, handleStale } = useShipmentUpdates(shipment.id);
-  const mutation = useIdempotentMutation({ mutationFn: reportFailedAttempt });
+  const mutation = useIdempotentMutation({
+    mutationFn: reportFailedAttempt,
+    intentScope: ['agent', 'failed-attempt', shipment.id],
+  });
   const [reason, setReason] = useState<AttemptFailureReason | null>(null);
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState<{ reason?: string; note?: string }>({});
-  const consequence = attemptConsequence(reason, shipment.attemptCount);
+  const isReturn = shipment.kind === 'return';
+  const reasonLabels = isReturn ? ATTEMPT_FAILURE_REASON_LABELS.pickup : ATTEMPT_FAILURE_REASON_LABELS.agent;
+  const consequence = attemptConsequence(reason, shipment.attemptCount, shipment.kind);
 
   const submit = async () => {
     failure.clear();
@@ -71,7 +90,7 @@ export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProp
           body: { reason, ...(parsedNote.data === null ? {} : { note: parsedNote.data }) },
         }),
       );
-      toast({ title: COPY.failedDone });
+      toast({ title: isReturn ? COPY.pickupFailedDone : COPY.failedDone });
       onClose();
     } catch (error) {
       if (handleStale(error)) {
@@ -91,7 +110,7 @@ export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProp
     >
       <DialogContent
         placement="bottom"
-        title={COPY.failedTitle}
+        title={isReturn ? COPY.pickupFailedTitle : COPY.failedTitle}
         footer={
           <>
             <DialogClose asChild>
@@ -105,7 +124,7 @@ export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProp
               loading={mutation.isPending}
               onClick={() => void submit()}
             >
-              {COPY.report}
+              {isReturn ? COPY.reportPickup : COPY.report}
             </Button>
           </>
         }
@@ -136,7 +155,7 @@ export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProp
                 }}
                 className="size-5 accent-primary"
               />
-              <span className="text-base">{ATTEMPT_FAILURE_REASON_LABELS.agent[value]}</span>
+              <span className="text-base">{reasonLabels[value]}</span>
             </label>
           ))}
           {errors.reason === undefined ? null : (

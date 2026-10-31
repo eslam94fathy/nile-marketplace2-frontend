@@ -3,14 +3,29 @@
 import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
+import { supportInvalidation } from '@nile/support-screens';
 import { usePathname } from 'next/navigation';
+import { dashboardKeys } from '@/features/dashboard';
+import { returnKeys } from '@/features/returns';
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
-/** Notifications from T-J6; returns and support arrive with phase m (design 02 §5.3). */
-const INVALIDATION_MAP: InvalidationMap = { ...notificationsInvalidation(APP.name) };
+const support = supportInvalidation(APP.name);
+
+/**
+ * Notifications from T-J6, the dashboard cards from T-M1, the support console from T-M5 (design 02 §5.3). One
+ * handler per message type: a message that several features own lists every key it touches. Returns from T-M7.
+ */
+const INVALIDATION_MAP: InvalidationMap = {
+  ...notificationsInvalidation(APP.name),
+  ...support,
+  // The figures count tickets too, so the whole dashboard is read again.
+  'support.ticket_updated': (data) => [...support['support.ticket_updated'](data), dashboardKeys.all()],
+  // The AD-02 card and figures, every return list and detail (design 02 §5.3).
+  'return.updated': () => [dashboardKeys.all(), returnKeys.all()],
+};
 
 const noSubscription = () => () => undefined;
 const fetchToken = async () => (await fetchRealtimeToken()).token;

@@ -6,9 +6,18 @@ import {
   countdown,
   formatDate,
   formatDateTime,
+  formatMonthYear,
   formatRelativeTime,
   isCalendarDay,
 } from './dates';
+
+describe('formatMonthYear', () => {
+  it('is the month and year in Cairo time', () => {
+    expect(formatMonthYear('2026-10-14T07:30:00.000Z')).toBe('October 2026');
+    // 31 Dec 22:30 UTC is already January in Cairo.
+    expect(formatMonthYear('2025-12-31T22:30:00Z')).toBe('January 2026');
+  });
+});
 
 describe('formatDateTime', () => {
   it('shows Cairo time as "14 Oct 2026, 10:30"', () => {

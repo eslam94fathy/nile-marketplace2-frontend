@@ -1,7 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { formatDateTime } from '@nile/domain';
+import { formatDate, formatDateTime } from '@nile/domain';
 import {
   buttonVariants,
   cn,
@@ -16,8 +16,15 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { orderPath, ROUTES } from '@/lib/routes';
-import { entriesListOptions, payoutsListOptions, type LedgerEntry, type Payout } from '../api';
+import { orderPath, returnPath, ROUTES } from '@/lib/routes';
+import {
+  entriesListOptions,
+  holdsListOptions,
+  payoutsListOptions,
+  type LedgerEntry,
+  type Payout,
+  type SellerHold,
+} from '../api';
 import { FINANCE_COPY as COPY } from '../copy';
 import {
   FINANCE_TAB_PARAM,
@@ -33,7 +40,7 @@ const tabHref = (tab: FinanceTab): Route =>
 
 const LINK = 'text-primary underline-offset-4 hover:underline';
 
-/** SE-16 Finance: balance, then the statement or the payouts (`?tab=`). */
+/** SE-16 Finance: balance, then the statement, the earnings on hold or the payouts (`?tab=`). */
 export function FinanceView({ tab: tabParam }: { readonly tab: string | null }) {
   const tab = financeTab(tabParam);
   return (
@@ -55,7 +62,7 @@ export function FinanceView({ tab: tabParam }: { readonly tab: string | null }) 
           ))}
         </ul>
       </nav>
-      {tab === 'statement' ? <Statement /> : <Payouts />}
+      {tab === 'statement' ? <Statement /> : tab === 'on-hold' ? <Holds /> : <Payouts />}
     </div>
   );
 }
@@ -70,7 +77,7 @@ function SignedAmount({ entry }: { readonly entry: LedgerEntry }) {
   );
 }
 
-/** Release 2 entries (spec 02 §8.6); their returns get links with the returns screens (T-L3). */
+/** Release 2 entries (spec 02 §8.6); the ones about a return link to it (SE-19). */
 const PLAIN_DESCRIPTIONS: Partial<Record<LedgerEntry['entryType'], string>> = {
   seller_net_released: COPY.earningsReleased,
   seller_net_reversed: COPY.returnedItems,
@@ -96,6 +103,13 @@ function Description({ entry }: { readonly entry: LedgerEntry }) {
     );
   }
   const text = PLAIN_DESCRIPTIONS[entry.entryType];
+  if (text !== undefined && entry.referenceType === 'return') {
+    return (
+      <Link href={returnPath(entry.referenceId)} className={LINK}>
+        {text}
+      </Link>
+    );
+  }
   if (text !== undefined) return <span>{text}</span>;
   // Never on a seller account [SPEC 12 §1.2]: shown as sent, and reported (below).
   return <span>{entry.entryType}</span>;
@@ -157,6 +171,63 @@ function Statement() {
       hasMore={entries.hasNextPage}
       loadingMore={entries.isFetchingNextPage}
       onLoadMore={() => void entries.fetchNextPage()}
+    />
+  );
+}
+
+const HOLD_COLUMNS: readonly DataTableColumn<SellerHold>[] = [
+  {
+    id: 'order',
+    header: COPY.holdColumns.order,
+    cell: (hold) => (
+      <Link href={orderPath(hold.sellerOrderId)} className={LINK}>
+        {hold.orderNumber}
+      </Link>
+    ),
+  },
+  {
+    id: 'amount',
+    header: COPY.holdColumns.amount,
+    align: 'end',
+    cell: (hold) => <Money value={hold.heldAmount} />,
+  },
+  {
+    id: 'release',
+    header: COPY.holdColumns.release,
+    cell: (hold) => (
+      <span className="space-y-1">
+        <span className="block">{COPY.releasedOn(formatDate(hold.releaseAfter))}</span>
+        {hold.blockedByReturn ? (
+          <span className="block text-muted-foreground">{COPY.waitingForReturn}</span>
+        ) : null}
+      </span>
+    ),
+  },
+];
+
+/** SE-16 On hold: earnings within the return period, or kept by an open return past it. */
+function Holds() {
+  const holds = useInfiniteQuery(holdsListOptions());
+  if (holds.isError) {
+    return (
+      <ErrorState
+        message={COPY.holdsFailed}
+        onRetry={() => void holds.refetch()}
+        correlationId={isApiError(holds.error) ? (holds.error.correlationId ?? undefined) : undefined}
+      />
+    );
+  }
+  return (
+    <DataTable
+      caption={COPY.holdsCaption}
+      columns={HOLD_COLUMNS}
+      rows={holds.data?.pages.flatMap((page) => page.data) ?? []}
+      getRowId={(hold) => hold.sellerOrderId}
+      loading={holds.isPending}
+      empty={<EmptyState title={COPY.holdsEmpty} />}
+      hasMore={holds.hasNextPage}
+      loadingMore={holds.isFetchingNextPage}
+      onLoadMore={() => void holds.fetchNextPage()}
     />
   );
 }

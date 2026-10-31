@@ -1,4 +1,10 @@
-import type { CouponDisplayStatus, CouponFunding, CouponScope, DiscountType } from '../enums';
+import type {
+  CouponDisplayStatus,
+  CouponFunding,
+  CouponScope,
+  DiscountType,
+  RedemptionStatus,
+} from '../enums';
 import type { Labels } from './types';
 
 /** Spec 02 §8.6 and spec 03 §7.6. */
@@ -26,3 +32,9 @@ export const COUPON_SCOPE_LABELS = {
   seller: { all: 'All products', seller: 'All your products', category: 'One category' },
   admin: { all: 'All products', seller: 'One seller', category: 'One category' },
 } as const satisfies Readonly<Record<'seller' | 'admin', Labels<CouponScope>>>;
+
+/** Spec 03 AD-37 redemptions (TM9-COPY): a redemption is released when its order closes undelivered [SPEC 19 R-18]. */
+export const REDEMPTION_STATUS_LABELS = {
+  active: 'Used',
+  released: 'Released',
+} as const satisfies Labels<RedemptionStatus>;

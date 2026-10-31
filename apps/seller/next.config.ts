@@ -33,9 +33,11 @@ const nextConfig: NextConfig = {
     '@nile/auth-screens',
     '@nile/domain',
     '@nile/logger',
+    '@nile/media',
     '@nile/query',
     '@nile/notifications',
     '@nile/realtime',
+    '@nile/support-screens',
     '@nile/ui',
   ],
 };

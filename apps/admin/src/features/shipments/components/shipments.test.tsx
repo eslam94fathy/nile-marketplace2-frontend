@@ -177,6 +177,38 @@ describe('shipments list (spec 03 AD-12)', { timeout: 15_000 }, () => {
     );
   });
 
+  it('type filter and column; a return row links its return and runs from the customer to the seller', async () => {
+    const delivery = adminShipmentFactory();
+    const returned = adminShipmentFactory({
+      kind: 'return',
+      returnId: OMAR.id,
+      dropoff: { ...delivery.dropoff, governorateName: 'Alexandria' },
+    });
+    const queries = serveList([returned]);
+    const view = renderWithProviders(<ShipmentsList params={{ status: 'all', kind: 'return' }} />);
+    const table = await screen.findByRole('table', { name: 'Shipments' });
+    expect(queries[0]).toEqual({ limit: '20', sort: '-createdAt', 'kind[eq]': 'return' });
+    expect(within(table).getByRole('cell', { name: 'Return' })).toBeDefined();
+    expect(
+      within(table)
+        .getByRole('link', { name: `Return ${OMAR.id.slice(0, 8)}` })
+        .getAttribute('href'),
+    ).toBe(`/returns/${OMAR.id}`);
+    const [, row] = within(table).getAllByRole('row');
+    if (row === undefined) throw new Error('no row');
+    const cells = within(row)
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent);
+    // Pickup (the customer's governorate) comes before drop-off (the seller).
+    expect(cells.indexOf('Alexandria')).toBeGreaterThan(-1);
+    expect(cells.indexOf('Alexandria')).toBeLessThan(
+      cells.findIndex((text) => text.startsWith(returned.pickup.businessName)),
+    );
+    await view.user.click(screen.getByRole('combobox', { name: 'Type' }));
+    await view.user.click(await screen.findByRole('option', { name: 'Delivery' }));
+    expect(router.push).toHaveBeenCalledWith('/delivery/shipments?status=all&kind=delivery');
+  });
+
   it('a failed list offers a retry', async () => {
     server.use(
       mockApi('get', '/admin/shipments', ({ reply }) => reply.error(500, 'INTERNAL_ERROR'), {
@@ -245,6 +277,23 @@ describe('shipment (spec 03 AD-13)', { timeout: 15_000 }, () => {
     expect(screen.getByText(/7 Victor Emmanuel, floor 3, Smouha, Alexandria, Alexandria/)).toBeDefined();
     // Picked up already: no (re)assignment [SPEC 11 S-18].
     expect(screen.queryByRole('button', { name: /assign/i })).toBeNull();
+  });
+
+  it('a return shipment: type and return link, customer first, pickup attempts, no money block', async () => {
+    const shipment = adminShipmentFactory({ kind: 'return', returnId: ME.id, status: 'pickup_failed' });
+    serveShipment(shipment);
+    renderDetail(shipment);
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Collect from (customer)' }, { timeout: 5000 }),
+    ).toBeDefined();
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
+    expect(headings.indexOf('Collect from (customer)')).toBeLessThan(headings.indexOf('Deliver to (seller)'));
+    expect(headings).not.toContain('Money');
+    expect(headings).toContain('Pickup attempts');
+    expect(screen.getByRole('link', { name: `Return ${ME.id.slice(0, 8)}` }).getAttribute('href')).toBe(
+      `/returns/${ME.id}`,
+    );
+    expect(screen.getByText('Pickup failed', { selector: 'span' })).toBeDefined();
   });
 
   it('says when the seller order was cancelled after pickup', async () => {

@@ -26,7 +26,10 @@ export function DeliveredSheet({ shipment, onDelivered, onClose }: DeliveredShee
   const id = useId();
   const failure = useSubmitFailure();
   const { settle, refetch, handleStale } = useShipmentUpdates(shipment.id);
-  const mutation = useIdempotentMutation({ mutationFn: markDelivered });
+  const mutation = useIdempotentMutation({
+    mutationFn: markDelivered,
+    intentScope: ['agent', 'delivered', shipment.id],
+  });
   const [collected, setCollected] = useState(false);
   const [showRequired, setShowRequired] = useState(false);
   const [amountChanged, setAmountChanged] = useState(false);

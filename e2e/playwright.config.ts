@@ -23,6 +23,8 @@ export default defineConfig({
   projects: [
     ...E2E_APP_NAMES.map((app) => ({ name: app, testDir: `./${app}`, use: { baseURL: appUrl(app) } })),
     { name: 'fixtures', testDir: './fixtures' },
+    // Cross-role flows (T-O4, TO-Q4): several apps in one test, so absolute URLs (`appUrl`) and no baseURL.
+    { name: 'flows', testDir: './flows' },
   ],
   webServer: E2E_APP_NAMES.map((app) => ({
     command: `npm run start -w @nile/${app}`,

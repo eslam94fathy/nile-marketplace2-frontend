@@ -41,6 +41,7 @@ import {
   useGovernorateName,
   type AdminAgent,
 } from '@/features/lookups';
+import { HistoryLink } from '@/features/audit';
 import { agentActiveShipmentsOptions, SHIPMENTS_COPY, ShipmentsTable } from '@/features/shipments';
 import { agentPayoutPath, agentRemittancePath, agentShipmentsPath, ROUTES } from '@/lib/routes';
 import {
@@ -137,6 +138,7 @@ function AgentContent({ agent }: { readonly agent: AdminAgent }) {
     <div className="space-y-8">
       <PageHeader
         title={agent.fullName}
+        actions={<HistoryLink targetType="delivery_agent" targetId={agent.id} />}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <StatusBadge value={agent.status} labels={AGENT_STATUS_LABELS} tones={AGENT_STATUS_TONES} />

@@ -14,13 +14,21 @@ export const FINANCE_COPY = {
   accountTabsLabel: 'Account type',
   accountTabs: {
     seller_payable: 'Sellers',
+    seller_pending: 'Seller pending',
     agent_fee_payable: 'Agent fees',
     agent_cod_cash: 'Agent COD cash',
+    customer_refund_payable: 'Customer refunds',
     platform: 'Platform',
+    platform_promotions: 'Promotions',
     all: 'All',
   },
   accountHelp: {
-    seller_payable: 'Nile owes the seller.',
+    seller_payable:
+      'Nile owes the seller. A negative balance is what the seller owes Nile (a return fee larger than their held earnings).',
+    seller_pending:
+      'Seller earnings held until the return window of the order closes; then they move to the seller balance.',
+    customer_refund_payable: 'Nile owes the customer a refund for a return.',
+    platform_promotions: 'Discounts funded by Nile. Always zero or below: it is a cost.',
     agent_fee_payable: 'Nile owes the agent.',
     agent_cod_cash: 'Cash the agent holds for Nile.',
     platform:
@@ -87,8 +95,6 @@ export const FINANCE_COPY = {
   amount: 'Amount (EGP)',
   note: 'Note (optional)',
   aboveCash: 'This is more than the agent holds; it will be refused.',
-  continue: 'Continue',
-  back: 'Back',
   cashConfirmTitle: 'Confirm cash received',
   cashConfirm: (amount: string, agent: string) =>
     `Record ${amount} received from ${agent}? Their COD cash goes down by this amount.`,

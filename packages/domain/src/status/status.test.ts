@@ -54,8 +54,32 @@ describe('agentShipmentActions (spec 04 AG-05)', () => {
     },
   );
 
+  it.each([
+    ['assigned', 'collected', 'pickup_failed'],
+    ['pickup_failed', 'collected', 'pickup_failed'],
+    ['picked_up', 'handed_to_seller', null],
+  ] as const)(
+    'a return pickup %s → primary %s, secondary %s (spec 04 §7.3)',
+    (status, primary, secondary) => {
+      expect(agentShipmentActions(shipment(status, [], 'return'))).toEqual({ primary, secondary });
+    },
+  );
+
   it('never offers delivery actions on a return pickup, whatever its status', () => {
+    const delivery = new Set([
+      'picked_up',
+      'start_delivery',
+      'start_next_attempt',
+      'delivered',
+      'delivery_failed',
+      'handed_back',
+    ]);
     for (const status of SHIPMENT_STATUSES) {
+      const { primary, secondary } = agentShipmentActions(shipment(status, [], 'return'));
+      expect(delivery.has(primary ?? '')).toBe(false);
+      expect(delivery.has(secondary ?? '')).toBe(false);
+    }
+    for (const status of ['delivered', 'cancelled'] as const) {
       expect(agentShipmentActions(shipment(status, [], 'return'))).toEqual({
         primary: null,
         secondary: null,

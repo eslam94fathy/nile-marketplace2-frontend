@@ -4,7 +4,7 @@ import { agentShipmentActions, type AgentShipmentAction } from '@nile/domain';
 import { errorMessage, useIdempotentMutation } from '@nile/query';
 import { Button, ConfirmDialog, toast } from '@nile/ui';
 import { useState } from 'react';
-import { markPickedUp, markReturned, startDelivery, type AgentShipment } from '../api';
+import { markDelivered, markPickedUp, markReturned, startDelivery, type AgentShipment } from '../api';
 import { SHIPMENTS_COPY as COPY } from '../copy';
 import { useShipmentUpdates } from '../hooks';
 import { DeliveredSheet } from './delivered-sheet';
@@ -17,6 +17,9 @@ const LABELS: Readonly<Record<AgentShipmentAction, string>> = {
   delivered: COPY.deliveredAction,
   delivery_failed: COPY.failedAction,
   handed_back: COPY.handBack,
+  collected: COPY.collectedAction,
+  pickup_failed: COPY.pickupFailedAction,
+  handed_to_seller: COPY.handToSellerAction,
 };
 
 export interface ShipmentActionsProps {
@@ -33,7 +36,15 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
   const [open, setOpen] = useState<AgentShipmentAction | null>(null);
   const [starting, setStarting] = useState(false);
   const { settle, handleStale } = useShipmentUpdates(shipment.id);
-  const returned = useIdempotentMutation({ mutationFn: markReturned });
+  const returned = useIdempotentMutation({
+    mutationFn: markReturned,
+    intentScope: ['agent', 'returned', shipment.id],
+  });
+  // The same operation as DeliveredSheet: one scope, so a key is never reused across the two screens' bodies.
+  const handedOver = useIdempotentMutation({
+    mutationFn: markDelivered,
+    intentScope: ['agent', 'delivered', shipment.id],
+  });
   const { primary, secondary } = agentShipmentActions(shipment);
   if (primary === null && secondary === null) return null;
   const close = () => {
@@ -53,10 +64,11 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
     }
   };
 
-  const pickedUp = async () => {
+  /** A1, and R1 for a return pickup (the same endpoint, from `assigned` or `pickup_failed`). */
+  const pickedUp = async (done: string) => {
     try {
       settle(await markPickedUp(shipment.id));
-      toast({ title: COPY.pickedUpDone, tone: 'success' });
+      toast({ title: done, tone: 'success' });
     } catch (error) {
       if (handleStale(error)) return;
       toast({ title: errorMessage(error), tone: 'destructive' });
@@ -71,6 +83,18 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
     } catch (error) {
       // Refused: this was a normal return after all (AG-Q-1), which the seller confirms.
       if (handleStale(error, COPY.returnNote(shipment.pickup.businessName))) return;
+      toast({ title: errorMessage(error), tone: 'destructive' });
+      throw error;
+    }
+  };
+
+  /** R3: handed to the seller, no amount (an empty body), one `Idempotency-Key` per intent. */
+  const handedToSeller = async () => {
+    try {
+      settle(await handedOver.mutateAsync({ shipmentId: shipment.id, codCollectedAmount: null }));
+      toast({ title: COPY.handedToSellerDone, tone: 'success' });
+    } catch (error) {
+      if (handleStale(error)) return;
       toast({ title: errorMessage(error), tone: 'destructive' });
       throw error;
     }
@@ -123,7 +147,27 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
         title={COPY.pickedUpTitle}
         description={COPY.pickedUpConfirm(shipment.pickup.businessName)}
         confirmLabel={COPY.pickedUpAction}
-        onConfirm={pickedUp}
+        onConfirm={() => pickedUp(COPY.pickedUpDone)}
+      />
+      <ConfirmDialog
+        open={open === 'collected'}
+        onOpenChange={(next) => {
+          if (!next) close();
+        }}
+        title={COPY.collectedTitle}
+        description={COPY.collectedConfirm(shipment.dropoff.recipientName)}
+        confirmLabel={COPY.collectedAction}
+        onConfirm={() => pickedUp(COPY.collectedDone)}
+      />
+      <ConfirmDialog
+        open={open === 'handed_to_seller'}
+        onOpenChange={(next) => {
+          if (!next) close();
+        }}
+        title={COPY.handToSellerTitle}
+        description={COPY.handToSellerConfirm(shipment.pickup.businessName)}
+        confirmLabel={COPY.handToSellerAction}
+        onConfirm={handedToSeller}
       />
       <ConfirmDialog
         open={open === 'handed_back'}
@@ -145,7 +189,9 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
           }}
         />
       ) : null}
-      {open === 'delivery_failed' ? <FailedAttemptSheet shipment={shipment} onClose={close} /> : null}
+      {open === 'delivery_failed' || open === 'pickup_failed' ? (
+        <FailedAttemptSheet shipment={shipment} onClose={close} />
+      ) : null}
     </>
   );
 }

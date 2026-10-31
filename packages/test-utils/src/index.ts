@@ -16,7 +16,12 @@ export {
 export { defineFactory, fixtureId, type Factory, type FactoryBuild } from './factory';
 export { AUTH_FIXTURE_NOW, authTokensFactory } from './factories/auth';
 export { addressFactory } from './factories/address';
-export { adminListItemFactory, adminSellerDetailFactory } from './factories/admin';
+export {
+  adminCustomerDetailFactory,
+  adminListItemFactory,
+  adminSellerDetailFactory,
+  adminUserFactory,
+} from './factories/admin';
 export { adminOrderDetailFactory, adminPaymentFactory, refundFactory } from './factories/admin-orders';
 export {
   adminAgentFactory,
@@ -31,13 +36,21 @@ export {
   remittanceFactory,
 } from './factories/finance';
 export { governorateFactory } from './factories/governorate';
-export { imageFactory, mediaFactory } from './factories/media';
+export { imageFactory, mediaFactory, productImageFactory } from './factories/media';
 export { notificationFactory } from './factories/notification';
 export { orderDetailFactory } from './factories/order';
 export { sellerProfileFactory } from './factories/seller';
 export {
+  adminProductFactory,
+  productListItemFactory,
   sellerProductFactory,
   sellerProductListItemFactory,
   sellerVariantFactory,
 } from './factories/seller-catalog';
+export { couponFactory } from './factories/coupons';
+export { dashboardFactory } from './factories/dashboard';
 export { sellerOrderFactory } from './factories/seller-order';
+export { auditEntryFactory } from './factories/audit';
+export { adminReturnFactory, sellerReturnFactory } from './factories/returns';
+export { adminReviewFactory, sellerReviewFactory } from './factories/reviews';
+export { adminTicketFactory, ticketFactory, ticketMessageFactory } from './factories/support';

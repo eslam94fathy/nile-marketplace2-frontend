@@ -8,6 +8,7 @@ import {
   parseMoney,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
+  SELLER_ORDER_CANCEL_REASON_LABELS,
   SELLER_ORDER_STATUS_LABELS,
 } from '@nile/domain';
 import { useRealtimeConnected } from '@nile/realtime';
@@ -16,24 +17,28 @@ import {
   Countdown,
   ErrorState,
   Money,
+  NileImage,
   NotFoundScreen,
   ORDER_STATUS_TONES,
   PageHeader,
   SELLER_ORDER_STATUS_TONES,
   Skeleton,
   StatusBadge,
+  usePassed,
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { addressLines } from '@/features/addresses';
 import { productHref } from '@/features/catalog';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, requestReturnPath } from '@/lib/routes';
 import { isOrderMissing, orderQuery, type Order } from '../api';
 import { ORDERS_COPY } from '../copy';
 import { PayNow } from '../payment/pay-now';
 import { BuyAgain } from './buy-again';
+import { WriteReviewLink } from '@/features/reviews';
 import { CancelSellerOrder } from './cancel-seller-order';
+import { ItemAmount, OrderTotals } from './order-amounts';
+import { returnWindowEnd } from '../lib/return-window';
 
 const COPY = ORDERS_COPY;
 
@@ -62,24 +67,6 @@ function totalNotes(order: Order): string[] {
   if (order.status === 'cancelled' && parseMoney(order.deliveryFee).isZero()) notes.push(COPY.notes.noFee);
   if (REFUNDABLE.has(order.paymentStatus) && (excluded || itemsCancelled)) notes.push(COPY.notes.refunds);
   return notes;
-}
-
-/** True from `atMs` on; re-renders the screen when that moment arrives. */
-function usePassed(atMs: number): boolean {
-  const [passed, setPassed] = useState(() => Date.now() >= atMs);
-  useEffect(() => {
-    if (Number.isNaN(atMs)) return undefined;
-    const timer = setTimeout(
-      () => {
-        setPassed(true);
-      },
-      Math.max(0, atMs - Date.now()),
-    );
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [atMs]);
-  return passed;
 }
 
 /** SF-18 Order detail: only data from `GET /orders/{orderId}`; someone else's order is "not found". */
@@ -176,26 +163,7 @@ export function OrderDetail({ orderId }: { readonly orderId: string }) {
       ))}
 
       <section aria-label={COPY.total} className="max-w-sm space-y-3">
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt>{COPY.itemsTotal}</dt>
-            <dd>
-              <Money value={data.itemsTotal} />
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt>{COPY.deliveryFee}</dt>
-            <dd>
-              <Money value={data.deliveryFee} />
-            </dd>
-          </div>
-          <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-            <dt>{COPY.total}</dt>
-            <dd>
-              <Money value={data.total} />
-            </dd>
-          </div>
-        </dl>
+        <OrderTotals order={data} />
         {notes.map((note) => (
           <p key={note} className="text-sm text-muted-foreground">
             {note}
@@ -204,6 +172,13 @@ export function OrderDetail({ orderId }: { readonly orderId: string }) {
       </section>
 
       {data.status === 'cancelled' ? <BuyAgain order={data} /> : null}
+
+      <Link
+        href={{ pathname: ROUTES.supportNew, query: { order: data.id } }}
+        className={buttonVariants({ variant: 'outline' })}
+      >
+        {COPY.getHelp}
+      </Link>
     </div>
   );
 }
@@ -237,6 +212,9 @@ interface SellerOrderBlockProps {
 }
 
 function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps) {
+  // SF-Q-18: delivered and inside the return window (no delivery time: SF-26 decides).
+  const windowClosed = usePassed(returnWindowEnd(sellerOrder)?.getTime() ?? Number.POSITIVE_INFINITY);
+  const offerReturn = sellerOrder.status === 'delivered' && !windowClosed;
   // Oldest first (spec 01 SF-18 §4), whatever order the API used.
   const timeline = [...sellerOrder.timeline].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   return (
@@ -253,12 +231,33 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
           {sellerOrder.canCancel ? (
             <CancelSellerOrder order={order} sellerOrder={sellerOrder} onStale={onStale} />
           ) : null}
+          {offerReturn ? (
+            <Link
+              href={requestReturnPath(order.id, sellerOrder.id)}
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              {COPY.returnItems}
+            </Link>
+          ) : null}
         </span>
       </div>
+      {/* Spec 01 §10.3: why a parcel was cancelled, "Cancelled by Nile" included (§10.6 labels). */}
+      {sellerOrder.status === 'cancelled' && sellerOrder.cancelReason !== null ? (
+        <p className="border-b border-border px-4 py-2 text-sm text-muted-foreground">
+          {SELLER_ORDER_CANCEL_REASON_LABELS.customer[sellerOrder.cancelReason]}
+        </p>
+      ) : null}
       <ul className="divide-y divide-border">
         {sellerOrder.items.map((item) => (
-          <li key={item.id} className="flex flex-wrap justify-between gap-4 px-4 py-3 text-sm">
-            <span className="space-y-0.5">
+          <li key={item.id} className="flex flex-wrap gap-3 px-4 py-3 text-sm">
+            <NileImage
+              image={item.image}
+              alt=""
+              sizes="64px"
+              placeholder="product"
+              className="size-16 shrink-0 rounded-md bg-muted"
+            />
+            <span className="flex-1 space-y-0.5">
               <Link href={productHref(item.productId)} className="block font-medium hover:underline">
                 {item.productName}
               </Link>
@@ -277,8 +276,18 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
                   {COPY.openQuantity(item.quantity - item.cancelledQuantity)}
                 </span>
               ) : null}
+              {item.returnedQuantity > 0 ? (
+                <span className="block text-muted-foreground">{COPY.returned(item.returnedQuantity)}</span>
+              ) : null}
             </span>
-            <Money value={item.lineTotal} />
+            <span className="flex flex-col items-end gap-2">
+              <ItemAmount item={item} />
+              <WriteReviewLink
+                orderItemId={item.id}
+                productName={item.productName}
+                enabled={sellerOrder.status === 'delivered'}
+              />
+            </span>
           </li>
         ))}
       </ul>
@@ -286,6 +295,12 @@ function SellerOrderBlock({ order, sellerOrder, onStale }: SellerOrderBlockProps
         <span>{COPY.subtotal}</span>
         <Money value={sellerOrder.subtotal} />
       </div>
+      {parseMoney(sellerOrder.discountAmount).isZero() ? null : (
+        <div className="flex justify-between px-4 pb-3 text-sm">
+          <span>{COPY.sellerShare}</span>
+          <Money value={sellerOrder.discountAmount} negative />
+        </div>
+      )}
       {timeline.length === 0 ? null : (
         <div className="border-t border-border px-4 py-3">
           <h3 className="mb-2 text-sm font-medium">{COPY.timelineHeading}</h3>

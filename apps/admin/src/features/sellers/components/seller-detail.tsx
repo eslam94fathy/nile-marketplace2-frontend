@@ -15,6 +15,7 @@ import {
   ErrorState,
   NotFoundScreen,
   PageHeader,
+  RatingStars,
   SELLER_STATUS_TONES,
   Skeleton,
   StatusBadge,
@@ -23,9 +24,17 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { useActorLabel, useGovernorateName } from '@/features/lookups';
+import { StoreProducts } from '@/features/products';
 import { publicEnv } from '@/lib/env/public';
-import { ownerAccountsPath, ROUTES, STOREFRONT_SELLER_SEARCH_PATH } from '@/lib/routes';
+import {
+  ownerAccountsPath,
+  ROUTES,
+  sellerCouponsPath,
+  sellerReviewsPath,
+  STOREFRONT_SELLER_SEARCH_PATH,
+} from '@/lib/routes';
 import { isSellerMissing, sellerQuery, type AdminSellerDetail } from '../api';
 import { SELLERS_COPY as COPY } from '../copy';
 import { CommissionForm } from './commission-form';
@@ -130,6 +139,7 @@ function SellerContent({
     <div className="space-y-8">
       <PageHeader
         title={seller.businessName}
+        actions={<HistoryLink targetType="seller" targetId={seller.id} />}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <StatusBadge value={seller.status} labels={SELLER_STATUS_LABELS} tones={SELLER_STATUS_TONES} />
@@ -158,6 +168,10 @@ function SellerContent({
                 ...(address.landmark === null ? [] : [address.landmark]),
               ].join(', ')}
             />
+            <Row
+              label={COPY.rating}
+              value={<RatingStars avg={seller.ratingAvg} count={seller.ratingCount} />}
+            />
             <Row label={COPY.commission} value={formatRatePercent(seller.commissionRate)} />
             <Row label={COPY.created} value={formatDate(seller.createdAt)} />
             <Row
@@ -181,7 +195,7 @@ function SellerContent({
                   href={`${publicEnv.NEXT_PUBLIC_STOREFRONT_URL}${STOREFRONT_SELLER_SEARCH_PATH(seller.id)}`}
                   className="text-primary underline-offset-4 hover:underline"
                 >
-                  {COPY.productsInStore}
+                  {COPY.viewInStore}
                 </a>
               </li>
               <li>
@@ -192,11 +206,28 @@ function SellerContent({
                   {COPY.financeAccount}
                 </Link>
               </li>
+              <li>
+                <Link
+                  href={sellerCouponsPath(seller.id)}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {COPY.coupons}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={sellerReviewsPath(seller.id)}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {COPY.reviews}
+                </Link>
+              </li>
               <li className="text-muted-foreground">{COPY.ordersNote}</li>
             </ul>
           </section>
         </div>
       </div>
+      <StoreProducts sellerId={seller.id} />
       <History title={COPY.statusHistory}>
         <DataTable
           caption={COPY.statusHistoryCaption}
@@ -237,7 +268,7 @@ function History({ title, children }: { readonly title: string; readonly childre
   );
 }
 
-function Row({ label, value }: { readonly label: string; readonly value: string }) {
+function Row({ label, value }: { readonly label: string; readonly value: ReactNode }) {
   return (
     <div className="grid grid-cols-[10rem_1fr] gap-2">
       <dt className="text-muted-foreground">{label}</dt>

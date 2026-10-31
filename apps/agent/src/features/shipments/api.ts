@@ -1,9 +1,9 @@
 import { inValues, isApiError, unwrap, type Schema } from '@nile/api';
-import { cairoDayBounds } from '@nile/domain';
+import { cairoDayBounds, type ShipmentKind } from '@nile/domain';
 import { infiniteListOptions, queryKey } from '@nile/query';
 import { queryOptions } from '@tanstack/react-query';
 import { browserApi } from '@/lib/browser-api';
-import { ACTIVE_TABS, HISTORY_STATUSES, type ActiveTab } from './lib/tabs';
+import { HISTORY_STATUSES, tabStreams, type ActiveTab } from './lib/tabs';
 
 // The agent's shipments (spec 04 AG-04…AG-06; design 02 §2.5 `shipments.*`, §3.4). The API scopes every read
 // to the signed-in agent.
@@ -15,28 +15,34 @@ const PAGE_SIZE = 20;
 /** Spec 04 §5 and api-inventory §10.4: the active lists poll every 30 s while the app is visible. */
 export const ACTIVE_POLL_MS = 30_000;
 
-export interface HistoryRange {
+export interface HistoryFilters {
   /** Cairo calendar days `YYYY-MM-DD`, inclusive. */
   readonly from: string | null;
   readonly to: string | null;
+  /** AG-06 kind chips (spec 04 §7.3); `null` = both. */
+  readonly kind: ShipmentKind | null;
 }
 
 export const shipmentKeys = {
   active: () => queryKey('agent', 'shipments', 'active'),
-  activeTab: (tab: ActiveTab) => queryKey('agent', 'shipments', 'active', { tab }),
+  activeTab: (tab: ActiveTab, stream: number) => queryKey('agent', 'shipments', 'active', { tab, stream }),
   detail: (shipmentId: string) => queryKey('agent', 'shipments', 'detail', { shipmentId }),
   history: () => queryKey('agent', 'shipments', 'history'),
-  historyRange: (range: HistoryRange) => queryKey('agent', 'shipments', 'history', range),
+  historyRange: (filters: HistoryFilters) => queryKey('agent', 'shipments', 'history', filters),
 };
 
 const cursorOf = (cursor: string | undefined) => (cursor === undefined ? {} : { cursor });
 
-/** AG-04: one tab, oldest first, polled while visible (TanStack pauses intervals in the background). */
-export function activeShipmentsOptions(tab: ActiveTab, live: boolean) {
+/**
+ * AG-04: one stream of a tab (most tabs have one), oldest first, polled while visible (TanStack pauses intervals
+ * in the background).
+ */
+export function activeShipmentsOptions(tab: ActiveTab, stream: number, live: boolean) {
   const refetchInterval: number | false = live ? false : ACTIVE_POLL_MS;
+  const spec = tabStreams(tab)[stream];
   return {
     ...infiniteListOptions({
-      queryKey: shipmentKeys.activeTab(tab),
+      queryKey: shipmentKeys.activeTab(tab, stream),
       fetchPage: (cursor, signal) =>
         unwrap(
           browserApi.GET('/api/v1/agent/shipments', {
@@ -44,7 +50,8 @@ export function activeShipmentsOptions(tab: ActiveTab, live: boolean) {
               query: {
                 limit: PAGE_SIZE,
                 sort: 'createdAt',
-                'status[in]': inValues(ACTIVE_TABS[tab]),
+                'status[in]': inValues(spec?.statuses ?? []),
+                ...(spec?.kind === undefined ? {} : { 'kind[eq]': spec.kind }),
                 ...cursorOf(cursor),
               },
             },
@@ -58,8 +65,8 @@ export function activeShipmentsOptions(tab: ActiveTab, live: boolean) {
   };
 }
 
-/** AG-06: finished shipments, newest first, with an optional Cairo-day range. */
-export function historyOptions(range: HistoryRange) {
+/** AG-06: finished shipments, newest first, with an optional Cairo-day range and kind. */
+export function historyOptions(range: HistoryFilters) {
   return infiniteListOptions({
     queryKey: shipmentKeys.historyRange(range),
     fetchPage: (cursor, signal) =>
@@ -72,6 +79,7 @@ export function historyOptions(range: HistoryRange) {
               'status[in]': inValues(HISTORY_STATUSES),
               ...(range.from === null ? {} : { 'createdAt[gte]': cairoDayBounds(range.from).start }),
               ...(range.to === null ? {} : { 'createdAt[lte]': cairoDayBounds(range.to).end }),
+              ...(range.kind === null ? {} : { 'kind[eq]': range.kind }),
               ...cursorOf(cursor),
             },
           },
@@ -109,7 +117,7 @@ export function isShipmentGone(error: unknown): boolean {
 
 const path = (shipmentId: string) => ({ path: { shipmentId } });
 
-/** A1: state-guarded, no idempotency key [SPEC 11]. */
+/** A1, and R1 for a return pickup (collected from the customer): state-guarded, no idempotency key [SPEC 11]. */
 export async function markPickedUp(shipmentId: string): Promise<AgentShipment> {
   return (
     await unwrap(
@@ -133,7 +141,7 @@ export interface DeliveredInput {
   readonly codCollectedAmount: string | null;
 }
 
-/** A3, with an `Idempotency-Key` per intent. */
+/** A3, and R3 for a return pickup (handed to the seller, no amount), with an `Idempotency-Key` per intent. */
 export async function markDelivered(input: DeliveredInput, idempotencyKey: string): Promise<AgentShipment> {
   return (
     await unwrap(
@@ -150,7 +158,7 @@ export interface FailedAttemptInput {
   readonly body: FailedAttemptBody;
 }
 
-/** A4, with an `Idempotency-Key` per intent. */
+/** A4, and R2 for a return pickup (a failed pickup), with an `Idempotency-Key` per intent. */
 export async function reportFailedAttempt(
   input: FailedAttemptInput,
   idempotencyKey: string,

@@ -23,7 +23,7 @@ import { createPayout, financeKeys, ownerAccountQuery, type CreatePayoutBody } f
 import { FINANCE_COPY as COPY } from '../copy';
 import { PAYEE_TYPES, type PayeeType } from '../lib/params';
 import { PayeePicker, type Payee } from './payee-picker';
-import { StepDialog, type Step } from './step-dialog';
+import { StepDialog, type Step } from '@/components/step-dialog';
 
 /** The balance a payout is checked against, per payee type [SPEC 12 FI-6]. */
 const OWED_ACCOUNT = { seller: 'seller_payable', agent: 'agent_fee_payable' } as const;
@@ -82,7 +82,7 @@ export function RecordPayoutDialog({ initialPayee, onClose }: RecordPayoutDialog
   const [chosen, setChosen] = useState<Payee | null>(null);
   // "Now" as the dialog opened: the default and the latest allowed paid-at (the schema re-checks on submit).
   const [openedAt] = useState(() => cairoLocalFromMs(Date.now()));
-  const mutation = useIdempotentMutation({ mutationFn: createPayout });
+  const mutation = useIdempotentMutation({ mutationFn: createPayout, intentScope: ['admin', 'payout'] });
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     mode: 'onBlur',

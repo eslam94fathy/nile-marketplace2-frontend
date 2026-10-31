@@ -6,6 +6,7 @@ import {
   formatDateTime,
   formatMoney,
   PAYMENT_METHOD_LABELS,
+  SHIPMENT_KIND_LABELS,
   SHIPMENT_STATUS_LABELS,
   SHIPMENT_STATUSES,
   type ShipmentStatus,
@@ -27,7 +28,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useActorLabel, useAgentNames, useGovernorateName } from '@/features/lookups';
-import { agentPath, orderPath, ROUTES } from '@/lib/routes';
+import { agentPath, orderPath, returnPath, ROUTES } from '@/lib/routes';
 import { isShipmentMissing, shipmentQuery, type AdminShipment } from '../api';
 import { SHIPMENTS_COPY as COPY } from '../copy';
 import { isAssignable } from '../lib/assign';
@@ -99,6 +100,39 @@ function ShipmentContent({
   const governorates = useGovernorateName();
   const agentName = useAgentNames([shipment.agentId]);
   const { pickup, dropoff } = shipment;
+  const isReturn = shipment.kind === 'return';
+  const pickupSection = (
+    <Section id="shipment-pickup" title={isReturn ? COPY.deliverToSeller : COPY.pickupHeading} list>
+      <Row label={COPY.business}>{pickup.businessName}</Row>
+      <Row label={COPY.phone}>{pickup.phone}</Row>
+      <Row label={COPY.address}>
+        {[
+          `${pickup.building} ${pickup.street}`,
+          pickup.area,
+          pickup.city,
+          governorates.name(pickup.governorateId),
+          ...(pickup.landmark === null ? [] : [pickup.landmark]),
+        ].join(', ')}
+      </Row>
+    </Section>
+  );
+  const dropoffSection = (
+    <Section id="shipment-dropoff" title={isReturn ? COPY.collectFromCustomer : COPY.dropoffHeading} list>
+      <Row label={COPY.recipient}>{dropoff.recipientName}</Row>
+      <Row label={COPY.phone}>{dropoff.recipientPhone}</Row>
+      <Row label={COPY.address}>
+        {[
+          `${dropoff.building} ${dropoff.street}`,
+          ...(dropoff.floor === null ? [] : [COPY.floor(dropoff.floor)]),
+          ...(dropoff.apartment === null ? [] : [COPY.apartment(dropoff.apartment)]),
+          dropoff.area,
+          dropoff.city,
+          dropoff.governorateName,
+          ...(dropoff.landmark === null ? [] : [dropoff.landmark]),
+        ].join(', ')}
+      </Row>
+    </Section>
+  );
   const dateOrNone = (iso: string | null) => (iso === null ? COPY.none : formatDateTime(iso));
 
   const attemptColumns: readonly DataTableColumn<Attempt>[] = [
@@ -157,6 +191,14 @@ function ShipmentContent({
             </Link>
           </Row>
           <Row label={COPY.sellerOrder}>{COPY.shortId(shipment.sellerOrderId)}</Row>
+          <Row label={COPY.kind}>{SHIPMENT_KIND_LABELS.admin[shipment.kind]}</Row>
+          {shipment.returnId === null ? null : (
+            <Row label={COPY.return}>
+              <Link href={returnPath(shipment.returnId)} className={linkClass}>
+                {COPY.returnLink(shipment.returnId)}
+              </Link>
+            </Row>
+          )}
           <Row label={COPY.paymentMethod}>{PAYMENT_METHOD_LABELS[shipment.paymentMethod]}</Row>
           <Row label={COPY.created}>{formatDateTime(shipment.createdAt)}</Row>
         </Section>
@@ -174,47 +216,32 @@ function ShipmentContent({
           <Row label={COPY.pickedUpAt}>{dateOrNone(shipment.pickedUpAt)}</Row>
           <Row label={COPY.deliveredAt}>{dateOrNone(shipment.deliveredAt)}</Row>
         </Section>
-        <Section id="shipment-pickup" title={COPY.pickupHeading} list>
-          <Row label={COPY.business}>{pickup.businessName}</Row>
-          <Row label={COPY.phone}>{pickup.phone}</Row>
-          <Row label={COPY.address}>
-            {[
-              `${pickup.building} ${pickup.street}`,
-              pickup.area,
-              pickup.city,
-              governorates.name(pickup.governorateId),
-              ...(pickup.landmark === null ? [] : [pickup.landmark]),
-            ].join(', ')}
-          </Row>
-        </Section>
-        <Section id="shipment-dropoff" title={COPY.dropoffHeading} list>
-          <Row label={COPY.recipient}>{dropoff.recipientName}</Row>
-          <Row label={COPY.phone}>{dropoff.recipientPhone}</Row>
-          <Row label={COPY.address}>
-            {[
-              `${dropoff.building} ${dropoff.street}`,
-              ...(dropoff.floor === null ? [] : [COPY.floor(dropoff.floor)]),
-              ...(dropoff.apartment === null ? [] : [COPY.apartment(dropoff.apartment)]),
-              dropoff.area,
-              dropoff.city,
-              dropoff.governorateName,
-              ...(dropoff.landmark === null ? [] : [dropoff.landmark]),
-            ].join(', ')}
-          </Row>
-        </Section>
-        <Section id="shipment-money" title={COPY.moneyHeading} list>
-          <Row label={COPY.codItems}>{formatMoney(shipment.codItemsAmount)}</Row>
-          <Row label={COPY.codFee}>{formatMoney(shipment.codFeeAmount)}</Row>
-          <Row label={COPY.toCollect}>{formatMoney(shipment.amountToCollect)}</Row>
-          <Row label={COPY.carriesFee}>{shipment.carriesDeliveryFee ? COPY.yes : COPY.no}</Row>
-          <Row label={COPY.codCollected}>
-            {shipment.codCollectedAmount === null ? COPY.none : formatMoney(shipment.codCollectedAmount)}
-          </Row>
-        </Section>
+        {/* The DTO keeps each address by party (SPEC 11 DE-26); a return runs customer → seller, so it lists the
+            customer first. */}
+        {isReturn ? (
+          <>
+            {dropoffSection}
+            {pickupSection}
+          </>
+        ) : (
+          <>
+            {pickupSection}
+            {dropoffSection}
+            <Section id="shipment-money" title={COPY.moneyHeading} list>
+              <Row label={COPY.codItems}>{formatMoney(shipment.codItemsAmount)}</Row>
+              <Row label={COPY.codFee}>{formatMoney(shipment.codFeeAmount)}</Row>
+              <Row label={COPY.toCollect}>{formatMoney(shipment.amountToCollect)}</Row>
+              <Row label={COPY.carriesFee}>{shipment.carriesDeliveryFee ? COPY.yes : COPY.no}</Row>
+              <Row label={COPY.codCollected}>
+                {shipment.codCollectedAmount === null ? COPY.none : formatMoney(shipment.codCollectedAmount)}
+              </Row>
+            </Section>
+          </>
+        )}
       </div>
-      <Section id="shipment-attempts" title={COPY.attemptsHeading}>
+      <Section id="shipment-attempts" title={isReturn ? COPY.pickupAttemptsHeading : COPY.attemptsHeading}>
         <DataTable
-          caption={COPY.attemptsCaption}
+          caption={isReturn ? COPY.pickupAttemptsHeading : COPY.attemptsCaption}
           columns={attemptColumns}
           rows={shipment.attempts}
           getRowId={(row) => String(row.attemptNumber)}

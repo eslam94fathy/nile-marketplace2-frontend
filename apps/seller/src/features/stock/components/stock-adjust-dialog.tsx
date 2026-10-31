@@ -101,7 +101,10 @@ function AdjustForm({
   const failure = useSubmitFailure();
   const handleNotApproved = useNotApprovedHandler();
   const [stale, setStale] = useState(false);
-  const adjust = useIdempotentMutation({ mutationFn: adjustStock });
+  const adjust = useIdempotentMutation({
+    mutationFn: adjustStock,
+    intentScope: ['seller', 'stock', variantId],
+  });
   const schema = useMemo(() => adjustSchema(stock, MESSAGES), [stock]);
   const form = useForm<AdjustValues, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),

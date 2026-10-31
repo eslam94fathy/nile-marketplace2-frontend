@@ -4,7 +4,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { browserApi } from '@/lib/browser-api';
 import { orderApiQuery, type OrderFilters } from './lib/list-params';
 
-// Orders (spec 03 AD-14, AD-15; design 02 §2.4 `orders.*`). Read-only: no admin cancellation in R1 (S-9).
+// Orders (spec 03 AD-14, AD-15; design 02 §2.4 `orders.*`, §5.4 admin cancel). R2 adds cancellation (T-M3).
 
 export type AdminOrderSummary = Schema<'AdminOrderSummaryDto'>;
 export type AdminOrder = Schema<'AdminOrderDetailDto'>;
@@ -77,4 +77,43 @@ export function orderShipmentsQuery(orderId: string) {
 /** No such order, or not an order id at all (the backend checks the id format first, as R-36). */
 export function isOrderMissing(error: unknown): boolean {
   return isApiError(error, 'ORDER_NOT_FOUND') || isApiError(error, 'VALIDATION_FAILED');
+}
+
+/** Seller-order statuses an admin can cancel (backend spec 09 §8.4, UC-OR-10). */
+export const ADMIN_CANCELLABLE_STATUSES: readonly AdminSellerOrder['status'][] = [
+  'placed',
+  'accepted',
+  'ready_for_pickup',
+];
+
+export const isAdminCancellable = (sellerOrder: Pick<AdminSellerOrder, 'status'>): boolean =>
+  ADMIN_CANCELLABLE_STATUSES.includes(sellerOrder.status);
+
+/** What a cancel targets: one seller order, or every open seller order of the order. */
+export type CancelTarget =
+  | { readonly kind: 'sellerOrder'; readonly sellerOrderId: string }
+  | { readonly kind: 'order'; readonly orderId: string };
+
+export interface CancelInput {
+  readonly target: CancelTarget;
+  /** 3..500, admins only (the customer sees "Cancelled by Nile"). */
+  readonly reason: string;
+}
+
+/** AD-15 A1 / A2: `200` is the whole admin order after the change (design 02 §5.4). */
+export async function cancelAsAdmin(input: CancelInput, idempotencyKey: string): Promise<AdminOrder> {
+  const header = { 'Idempotency-Key': idempotencyKey };
+  const body = { reason: input.reason };
+  const { target } = input;
+  const response =
+    target.kind === 'sellerOrder'
+      ? browserApi.POST('/api/v1/admin/seller-orders/{sellerOrderId}/cancel', {
+          params: { path: { sellerOrderId: target.sellerOrderId }, header },
+          body,
+        })
+      : browserApi.POST('/api/v1/admin/orders/{orderId}/cancel', {
+          params: { path: { orderId: target.orderId }, header },
+          body,
+        });
+  return (await unwrap(response)).data;
 }

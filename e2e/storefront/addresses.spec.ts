@@ -45,7 +45,8 @@ test('address book: add → edit → make default → delete', async ({ page, ac
 
   await page.getByRole('button', { name: 'Add address' }).click();
   await fillAddress(page, page.getByRole('dialog', { name: 'Add address' }), 'Work', zone.name);
-  const cards = page.getByRole('listitem');
+  // Address cards only (the account navigation is a list too since T-K6b).
+  const cards = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Delete / }) });
   await expect(cards).toHaveCount(2);
   await expect(cards.first()).toContainText('Home');
   await expect(cards.first()).toContainText('Default');

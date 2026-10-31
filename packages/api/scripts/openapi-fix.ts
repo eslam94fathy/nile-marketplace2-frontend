@@ -48,6 +48,8 @@ export interface FixReport {
   removedAttrParameter: boolean;
   /** OA-R2-10: free-form objects typed as string maps. */
   stringMapProperties: number;
+  /** OA-R2-11: free-form objects typed as maps of scalar values. */
+  scalarMapProperties: number;
 }
 
 /** Request fields the backend spec documents as `opt nullable` (or `nullable`), keyed by schema name. */
@@ -94,6 +96,15 @@ export const OPTIONAL_RESPONSE_FIELDS: Readonly<Record<string, readonly string[]
 export const STRING_MAP_FIELDS: Readonly<Record<string, readonly string[]>> = {
   UploadFormDto: ['fields'], // spec 14 §4: the presigned POST form fields, `Record<string, string>`
 };
+
+/**
+ * OA-R2-11: the same defect on objects whose values are scalars: the audit `changes.before` / `.after` hold the
+ * allow-listed fields of an action, each `string | number | boolean | null` (backend spec 20 §2.2 `AuditValue`).
+ */
+export const SCALAR_MAP_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  AuditChangesDto: ['before', 'after'], // spec 20 §2.5
+};
+const SCALAR_VALUE_SCHEMA: SchemaNode = { type: ['string', 'number', 'boolean', 'null'] };
 
 const PHANTOM_PROPERTY = '__atLeastOneField';
 const PRODUCT_DETAIL_PATH = '/api/v1/products/{idOrSlug}';
@@ -162,6 +173,27 @@ function objectSchema(
   return schema as SchemaNode & { properties: Record<string, SchemaNode> };
 }
 
+/** Gives each listed `{ type: object }` field without keys the value schema; returns how many it typed. */
+function typeFreeFormMaps(
+  schemas: Record<string, SchemaNode>,
+  fieldsBySchema: Readonly<Record<string, readonly string[]>>,
+  valueSchema: SchemaNode,
+): number {
+  let count = 0;
+  for (const [name, fields] of Object.entries(fieldsBySchema)) {
+    const schema = objectSchema(schemas, name);
+    for (const field of fields) {
+      const property = schema.properties[field];
+      if (property?.type !== 'object' || property.properties !== undefined) {
+        throw new OpenApiFixError(`${name}.${field} is no longer a free-form object`);
+      }
+      property.additionalProperties = structuredClone(valueSchema);
+      count += 1;
+    }
+  }
+  return count;
+}
+
 function findGetOperation(document: OpenApiDocument, path: string): OperationNode {
   const operation = document.paths?.[path]?.get;
   if (!operation) throw new OpenApiFixError(`GET ${path} is missing`);
@@ -179,6 +211,7 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     requiredRequestProperties: 0,
     removedAttrParameter: false,
     stringMapProperties: 0,
+    scalarMapProperties: 0,
   };
 
   // Which schemas are reachable from request bodies and from success responses.
@@ -258,18 +291,9 @@ export function applyFixes(input: OpenApiDocument): { document: OpenApiDocument;
     }
   }
 
-  // OA-R2-10: free-form string maps (required fields, so OA-1 above left them unwrapped).
-  for (const [name, fields] of Object.entries(STRING_MAP_FIELDS)) {
-    const schema = objectSchema(schemas, name);
-    for (const field of fields) {
-      const property = schema.properties[field];
-      if (property?.type !== 'object' || property.properties !== undefined) {
-        throw new OpenApiFixError(`${name}.${field} is no longer a free-form object`);
-      }
-      property.additionalProperties = { type: 'string' };
-      report.stringMapProperties += 1;
-    }
-  }
+  // OA-R2-10 / OA-R2-11: free-form maps (required fields, so OA-1 above left them unwrapped).
+  report.stringMapProperties = typeFreeFormMaps(schemas, STRING_MAP_FIELDS, { type: 'string' });
+  report.scalarMapProperties = typeFreeFormMaps(schemas, SCALAR_MAP_FIELDS, SCALAR_VALUE_SCHEMA);
 
   // OA-4: the product path accepts a slug as well as a uuid.
   const idOrSlug = findGetOperation(document, PRODUCT_DETAIL_PATH).parameters?.find(

@@ -37,6 +37,25 @@ export async function placeOrder(
   paymentMethod: 'cod' | 'kashier',
   chosenVariantId?: string,
 ): Promise<Schema<'OrderDetailDto'>> {
+  const { addressId, itemsTotal, deliveryFee } = await prepareCheckout(backend, token, chosenVariantId);
+  const placed = await backend.request('POST', '/api/v1/checkout', {
+    token,
+    idempotencyKey: randomUUID(),
+    body: { addressId, paymentMethod, expectedTotal: addMoney(itemsTotal, deliveryFee) },
+  });
+  expect(placed.status).toBe(201);
+  return (placed.body as { data: Schema<'CheckoutResultDto'> }).data.order;
+}
+
+/**
+ * Everything before "Place order", through the API: one in-stock item in the cart (`variantId`, or the first
+ * one found) and a deliverable default address.
+ */
+export async function prepareCheckout(
+  backend: Accounts['backend'],
+  token: string,
+  chosenVariantId?: string,
+): Promise<{ readonly addressId: string; readonly itemsTotal: string; readonly deliveryFee: string }> {
   const list = await backend.request('GET', '/api/v1/products?limit=40&inStock[eq]=true');
   let variantId = chosenVariantId;
   for (const item of chosenVariantId === undefined ? (list.body as { data: { slug: string }[] }).data : []) {
@@ -75,17 +94,7 @@ export async function placeOrder(
     })
   ).body as { data: Schema<'AddressDto'> };
   const itemsTotal = (cart.body as { data: Schema<'CartDto'> }).data.itemsTotal;
-  const placed = await backend.request('POST', '/api/v1/checkout', {
-    token,
-    idempotencyKey: randomUUID(),
-    body: {
-      addressId: address.data.id,
-      paymentMethod,
-      expectedTotal: addMoney(itemsTotal, fee),
-    },
-  });
-  expect(placed.status).toBe(201);
-  return (placed.body as { data: Schema<'CheckoutResultDto'> }).data.order;
+  return { addressId: address.data.id, itemsTotal, deliveryFee: fee };
 }
 
 /** The backend's worker creates the shipment shortly after "ready for pickup" (outbox, not in the request). */
@@ -112,4 +121,77 @@ export async function shipmentOfOrder(
     .toBe(true);
   if (shipment === undefined) throw new Error('No shipment after "ready for pickup"');
   return shipment;
+}
+
+/**
+ * A COD order taken all the way to `delivered` through the API (seller accepts and readies, the admin assigns
+ * the agent, the agent picks up, starts and delivers with the amount it is shown), for screens that need a
+ * delivered parcel (reviews T-K5, returns T-K6).
+ */
+export async function deliveredCodOrder(
+  backend: Accounts['backend'],
+  tokens: {
+    readonly customer: string;
+    readonly seller: string;
+    readonly admin: string;
+    readonly agent: string;
+  },
+  agentId: string,
+  variantId: string,
+): Promise<Schema<'OrderDetailDto'>> {
+  const order = await placeCodOrder(backend, tokens.customer, variantId);
+  const sellerOrderId = order.sellerOrders[0]?.id ?? '';
+  for (const step of ['accept', 'ready'] as const) {
+    expectData(
+      await backend.request('POST', `/api/v1/seller/orders/${sellerOrderId}/${step}`, {
+        token: tokens.seller,
+      }),
+      200,
+    );
+  }
+  const shipment = await shipmentOfOrder(backend, tokens.admin, order.id);
+  if (shipment.agentId !== agentId) {
+    expectData(
+      await backend.request('POST', `/api/v1/admin/shipments/${shipment.id}/assign`, {
+        token: tokens.admin,
+        body: { agentId },
+      }),
+      200,
+    );
+  }
+  for (const step of ['picked-up', 'out-for-delivery'] as const) {
+    expectData(
+      await backend.request('POST', `/api/v1/agent/shipments/${shipment.id}/${step}`, {
+        token: tokens.agent,
+      }),
+      200,
+    );
+  }
+  const { amountToCollect } = expectData(
+    await backend.request('GET', `/api/v1/agent/shipments/${shipment.id}`, { token: tokens.agent }),
+    200,
+  ) as Schema<'AgentShipmentDto'>;
+  expectData(
+    await backend.request('POST', `/api/v1/agent/shipments/${shipment.id}/delivered`, {
+      token: tokens.agent,
+      idempotencyKey: randomUUID(),
+      body: { codCollectedAmount: amountToCollect },
+    }),
+    200,
+  );
+  // The worker marks the seller order delivered after the shipment (outbox); reviews and returns need it.
+  let delivered = order;
+  await expect
+    .poll(
+      async () => {
+        delivered = expectData(
+          await backend.request('GET', `/api/v1/orders/${order.id}`, { token: tokens.customer }),
+          200,
+        ) as Schema<'OrderDetailDto'>;
+        return delivered.sellerOrders[0]?.status;
+      },
+      { message: 'Seller order not delivered after the shipment', timeout: SHIPMENT_WAIT_MS },
+    )
+    .toBe('delivered');
+  return delivered;
 }

@@ -32,7 +32,10 @@ import {
   agentPayoutPath,
   agentRemittancePath,
   orderPath,
+  refundPath,
+  returnPath,
   ROUTES,
+  sellerOrderHoldLedgerPath,
   sellerOrderLedgerPath,
   sellerPayoutPath,
 } from '@/lib/routes';
@@ -46,8 +49,8 @@ const linkClass = 'text-primary underline-offset-4 hover:underline';
 
 /**
  * Where an entry's reference is shown (spec 03 AD-19): a seller order in the reference lookup, an order on
- * AD-15, a remittance or payout on AD-20 / AD-21 filtered to this account's owner. Release 2 references
- * (returns, refunds, holds) have no screen yet (AD-33, AD-34 in phase m): `null`, shown without a link.
+ * AD-15, a remittance or payout on AD-20 / AD-21 filtered to this account's owner; Release 2 references: a return
+ * on AD-33, a refund on AD-34, a seller order's hold (keyed by the seller order) in the reference lookup (T-M8).
  */
 export function referenceHref(entry: Pick<LedgerEntry, 'referenceType' | 'referenceId'>, account: Account) {
   switch (entry.referenceType) {
@@ -63,9 +66,11 @@ export function referenceHref(entry: Pick<LedgerEntry, 'referenceType' | 'refere
         ? sellerPayoutPath(account.ownerId)
         : agentPayoutPath(account.ownerId);
     case 'return':
+      return returnPath(entry.referenceId);
     case 'refund':
+      return refundPath(entry.referenceId);
     case 'seller_order_hold':
-      return null;
+      return sellerOrderHoldLedgerPath(entry.referenceId);
   }
 }
 
@@ -148,11 +153,8 @@ function StatementContent({
       header: COPY.entryColumns.reference,
       cell: (row) => {
         const text = `${LEDGER_REFERENCE_TYPE_LABELS[row.referenceType]} ${COPY.shortId(row.referenceId)}`;
-        const href = referenceHref(row, account);
-        return href === null ? (
-          <span>{text}</span>
-        ) : (
-          <Link href={href} className={linkClass}>
+        return (
+          <Link href={referenceHref(row, account)} className={linkClass}>
             {text}
           </Link>
         );

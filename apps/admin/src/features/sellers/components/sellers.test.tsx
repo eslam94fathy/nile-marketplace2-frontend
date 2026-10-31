@@ -46,6 +46,15 @@ beforeEach(() => {
 function serveSeller(seller: Detail) {
   const state = { seller, calls: 0 };
   server.use(
+    // AD-05 "Products in the store" (T-M4): the public listing, covered in products.test.tsx.
+    mockApi(
+      'get',
+      '/products',
+      ({ reply }) => reply.ok([], { nextCursor: null, hasMore: false, limit: 12 }),
+      {
+        base: BFF_BASE,
+      },
+    ),
     mockApi(
       'get',
       '/admin/sellers/{sellerId}',
@@ -104,7 +113,7 @@ describe('sellers list (spec 03 AD-04)', { timeout: 15_000 }, () => {
         '/admin/sellers',
         ({ request, reply }) => {
           queries.push(new URL(request.url).searchParams);
-          return reply.ok([{ ...SELLER, commissionRate: '0.1250' }], {
+          return reply.ok([{ ...SELLER, commissionRate: '0.1250', ratingAvg: '4.30', ratingCount: 12 }], {
             nextCursor: null,
             hasMore: false,
             limit: 20,
@@ -119,6 +128,7 @@ describe('sellers list (spec 03 AD-04)', { timeout: 15_000 }, () => {
     expect(link.getAttribute('href')).toBe(`/sellers/${SELLER.id}`);
     expect(await within(table).findByText('Giza')).toBeDefined();
     expect(within(table).getByText('12.5%')).toBeDefined();
+    expect(within(table).getByText('Rated 4.3 out of 5 from 12 reviews')).toBeDefined();
     expect(Object.fromEntries(queries[0] ?? [])).toEqual({
       limit: '20',
       sort: 'createdAt',
@@ -205,12 +215,19 @@ describe('seller page (spec 03 AD-05)', { timeout: 20_000 }, () => {
     await heading();
     expect(screen.getByText('Email verified')).toBeDefined();
     expect(await screen.findByText('12 26th of July St, Zamalek, Cairo, Giza')).toBeDefined();
-    expect(screen.getByRole('link', { name: 'Products in the store' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'View in the store' }).getAttribute('href')).toBe(
       `http://store.test/search?seller=${SELLER.id}`,
     );
     expect(screen.getByRole('link', { name: 'Finance account' }).getAttribute('href')).toBe(
       `/finance/accounts?owner=${SELLER.id}&type=seller_payable`,
     );
+    expect(screen.getByRole('link', { name: 'Reviews' }).getAttribute('href')).toBe(
+      `/reviews?seller=${SELLER.id}`,
+    );
+    expect(screen.getByRole('link', { name: 'Coupons' }).getAttribute('href')).toBe(
+      `/coupons?seller=${SELLER.id}`,
+    );
+    expect(screen.getByText('No reviews yet')).toBeDefined();
     const status = screen.getByRole('table', { name: 'Status changes, newest first' });
     expect(within(status).getByText('Rejected → Waiting for approval')).toBeDefined();
     expect(within(status).getByText('Seller')).toBeDefined();
