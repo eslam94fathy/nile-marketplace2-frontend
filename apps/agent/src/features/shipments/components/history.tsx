@@ -1,9 +1,18 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { formatDateTime, formatMoney, isCalendarDay, SHIPMENT_STATUS_LABELS } from '@nile/domain';
 import {
+  formatDateTime,
+  formatMoney,
+  isCalendarDay,
+  SHIPMENT_KIND_LABELS,
+  SHIPMENT_KINDS,
+  type ShipmentKind,
+} from '@nile/domain';
+import {
+  Badge,
   buttonVariants,
+  cn,
   EmptyState,
   ErrorState,
   Input,
@@ -21,8 +30,10 @@ import { useRouter } from 'next/navigation';
 import { useId } from 'react';
 import { InactiveGate, useInactiveOnError } from '@/features/profile';
 import { ROUTES, shipmentPath } from '@/lib/routes';
-import { historyOptions, type AgentShipment, type HistoryRange } from '../api';
+import { historyOptions, type AgentShipment, type HistoryFilters } from '../api';
 import { SHIPMENTS_COPY as COPY } from '../copy';
+import { isReturnPickup, statusLabelsOf } from '../lib/kind';
+import { HISTORY_KIND_PARAM } from '../lib/tabs';
 
 export type RawHistoryParams = Readonly<Record<string, string | readonly string[] | undefined>>;
 
@@ -30,24 +41,42 @@ const single = (value: string | readonly string[] | undefined) =>
   typeof value === 'string' ? value : undefined;
 const day = (value: string | undefined) => (value !== undefined && isCalendarDay(value) ? value : null);
 
-/** `?from=&to=` (Cairo days); invalid values dropped, an end before the start dropped (R-28). */
-export function parseHistoryRange(params: RawHistoryParams): HistoryRange {
+/**
+ * `?from=&to=&kind=` (Cairo days, `delivery` | `return`); invalid values dropped, an end before the start
+ * dropped (R-28).
+ */
+export function parseHistoryFilters(params: RawHistoryParams): HistoryFilters {
   const from = day(single(params.from));
   const to = day(single(params.to));
-  return { from, to: from !== null && to !== null && to < from ? null : to };
+  const kind = single(params[HISTORY_KIND_PARAM]);
+  return {
+    from,
+    to: from !== null && to !== null && to < from ? null : to,
+    kind: SHIPMENT_KINDS.find((value) => value === kind) ?? null,
+  };
 }
 
-const historyHref = (range: HistoryRange): Route => {
+const historyHref = (range: HistoryFilters): Route => {
   const query = new URLSearchParams();
   if (range.from !== null) query.set('from', range.from);
   if (range.to !== null) query.set('to', range.to);
+  if (range.kind !== null) query.set(HISTORY_KIND_PARAM, range.kind);
   const text = query.toString();
   return text === '' ? ROUTES.history : `${ROUTES.history}?${text}`;
 };
 
-/** AG-06 History: delivered, returned and cancelled shipments, newest first; tap → AG-05 read-only. */
+const KIND_CHIPS: readonly { readonly kind: ShipmentKind | null; readonly label: string }[] = [
+  { kind: null, label: COPY.kinds.all },
+  { kind: 'delivery', label: COPY.kinds.delivery },
+  { kind: 'return', label: COPY.kinds.return },
+];
+
+/**
+ * AG-06 History: delivered, returned and cancelled shipments, newest first, deliveries and return pickups with kind
+ * chips (spec 04 §7.3); tap → AG-05 read-only.
+ */
 export function History({ params }: { readonly params: RawHistoryParams }) {
-  const range = parseHistoryRange(params);
+  const range = parseHistoryFilters(params);
   return (
     <div className="space-y-4">
       <PageHeader title={COPY.historyTitle} />
@@ -58,13 +87,13 @@ export function History({ params }: { readonly params: RawHistoryParams }) {
   );
 }
 
-function HistoryList({ range }: { readonly range: HistoryRange }) {
+function HistoryList({ range }: { readonly range: HistoryFilters }) {
   const id = useId();
   const router = useRouter();
   const history = useInfiniteQuery(historyOptions(range));
   useInactiveOnError(history.error);
   const rows = history.data?.pages.flatMap((page) => page.data) ?? [];
-  const narrowed = range.from !== null || range.to !== null;
+  const narrowedByDates = range.from !== null || range.to !== null;
 
   let body;
   if (history.isError) {
@@ -78,18 +107,25 @@ function HistoryList({ range }: { readonly range: HistoryRange }) {
   } else if (history.isPending) {
     body = <Skeleton className="h-40" />;
   } else if (rows.length === 0) {
-    body = narrowed ? (
-      <EmptyState
-        title={COPY.historyEmptyFiltered}
-        action={
-          <Link href={ROUTES.history} className={buttonVariants({ variant: 'outline' })}>
-            {COPY.clearDates}
-          </Link>
-        }
-      />
-    ) : (
-      <EmptyState title={COPY.historyEmpty} />
-    );
+    let empty = <EmptyState title={COPY.historyEmpty} />;
+    if (narrowedByDates) {
+      empty = (
+        <EmptyState
+          title={COPY.historyEmptyFiltered}
+          action={
+            <Link
+              href={historyHref({ ...range, from: null, to: null })}
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              {COPY.clearDates}
+            </Link>
+          }
+        />
+      );
+    } else if (range.kind !== null) {
+      empty = <EmptyState title={COPY.historyEmptyKind} />;
+    }
+    body = empty;
   } else {
     body = (
       <div className="space-y-3">
@@ -112,6 +148,24 @@ function HistoryList({ range }: { readonly range: HistoryRange }) {
 
   return (
     <div className="space-y-4">
+      <nav aria-label={COPY.kindFilter}>
+        <ul className="flex flex-wrap gap-2">
+          {KIND_CHIPS.map((chip) => {
+            const current = chip.kind === range.kind;
+            return (
+              <li key={chip.label}>
+                <Link
+                  href={historyHref({ ...range, kind: chip.kind })}
+                  aria-current={current ? 'page' : undefined}
+                  className={cn(buttonVariants({ variant: current ? 'primary' : 'outline' }), 'min-h-12')}
+                >
+                  {chip.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor={`${id}-from`}>{COPY.from}</Label>
@@ -150,19 +204,23 @@ function HistoryList({ range }: { readonly range: HistoryRange }) {
 }
 
 function HistoryRow({ shipment }: { readonly shipment: AgentShipment }) {
-  const collected =
-    shipment.paymentMethod === 'kashier'
-      ? COPY.prepaidShort
-      : shipment.status === 'delivered'
-        ? COPY.collected(formatMoney(shipment.amountToCollect))
-        : null;
+  const isReturn = isReturnPickup(shipment);
+  let collected: string | null = null;
+  // A return pickup never carries money (spec 04 §7.4).
+  if (!isReturn && shipment.paymentMethod === 'kashier') collected = COPY.prepaidShort;
+  else if (!isReturn && shipment.status === 'delivered') {
+    collected = COPY.collected(formatMoney(shipment.amountToCollect));
+  }
   return (
     <Link href={shipmentPath(shipment.id)} className="block space-y-1 p-4 hover:bg-muted">
       <span className="flex items-center justify-between gap-2">
-        <span className="font-semibold">{COPY.orderNumber(shipment.orderNumber)}</span>
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold">{COPY.orderNumber(shipment.orderNumber)}</span>
+          {isReturn ? <Badge tone="info">{SHIPMENT_KIND_LABELS.agent.return}</Badge> : null}
+        </span>
         <StatusBadge
           value={shipment.status}
-          labels={SHIPMENT_STATUS_LABELS.agent}
+          labels={statusLabelsOf(shipment)}
           tones={SHIPMENT_STATUS_TONES}
         />
       </span>
@@ -173,7 +231,7 @@ function HistoryRow({ shipment }: { readonly shipment: AgentShipment }) {
         {collected === null ? null : <span className="font-medium">{collected}</span>}
         {shipment.deliveredAt === null ? null : (
           <span className="text-muted-foreground">
-            {COPY.deliveredOn(formatDateTime(shipment.deliveredAt))}
+            {(isReturn ? COPY.handedOn : COPY.deliveredOn)(formatDateTime(shipment.deliveredAt))}
           </span>
         )}
       </span>

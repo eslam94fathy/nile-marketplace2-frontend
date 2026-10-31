@@ -7,7 +7,6 @@ import {
   formatDateTime,
   formatMoney,
   moneyGreaterThan,
-  SHIPMENT_STATUS_LABELS,
 } from '@nile/domain';
 import {
   buttonVariants,
@@ -27,6 +26,7 @@ import { ROUTES } from '@/lib/routes';
 import { isShipmentGone, shipmentQuery, type AgentShipment } from '../api';
 import { SHIPMENTS_COPY as COPY } from '../copy';
 import { dropoffAddress, mapsUrl, pickupAddress } from '../lib/address';
+import { isReturnPickup, statusLabelsOf } from '../lib/kind';
 import { ShipmentActions } from './shipment-actions';
 
 const ZERO = '0.00';
@@ -41,7 +41,10 @@ const backLink = (
   </Link>
 );
 
-/** AG-05 Shipment: everything to pick up and deliver one parcel, and its actions in a bottom bar. */
+/**
+ * AG-05 Shipment: everything to pick up and deliver one parcel, and its actions in a bottom bar. A return pickup
+ * (spec 04 §7.3) collects at the customer first, hands over at the seller, and never shows an amount.
+ */
 export function ShipmentView({ shipmentId }: { readonly shipmentId: string }) {
   return (
     <InactiveGate>
@@ -111,73 +114,52 @@ function ShipmentContent({
   const { pickup, dropoff } = shipment;
   const pickupLine = pickupAddress(pickup);
   const dropoffLine = dropoffAddress(dropoff);
-  const cod = shipment.paymentMethod === 'cod';
-  const amountPending = AMOUNT_PENDING_STATUSES.includes(shipment.status);
+  const isReturn = isReturnPickup(shipment);
   const showReturnNote = shipment.status === 'returning_to_seller';
+  const reasonLabels = isReturn ? ATTEMPT_FAILURE_REASON_LABELS.pickup : ATTEMPT_FAILURE_REASON_LABELS.agent;
 
   return (
     <div className="space-y-5 pb-20">
       <PageHeader
-        title={COPY.orderNumber(shipment.orderNumber)}
+        title={isReturn ? COPY.returnTitle : COPY.orderNumber(shipment.orderNumber)}
         description={
-          <StatusBadge
-            value={shipment.status}
-            labels={SHIPMENT_STATUS_LABELS.agent}
-            tones={SHIPMENT_STATUS_TONES}
-          />
+          <span className="flex flex-wrap items-center gap-2">
+            {isReturn ? <span>{COPY.orderNumber(shipment.orderNumber)}</span> : null}
+            <StatusBadge
+              value={shipment.status}
+              labels={statusLabelsOf(shipment)}
+              tones={SHIPMENT_STATUS_TONES}
+            />
+          </span>
         }
       />
-      <Card id="pickup" title={COPY.pickupHeading}>
-        <p className="text-lg font-semibold">{pickup.businessName}</p>
-        <a href={`tel:${pickup.phone}`} className={linkClass} aria-label={COPY.call(pickup.businessName)}>
-          <Phone aria-hidden="true" className="size-5" />
-          {pickup.phone}
-        </a>
-        <p className="text-base">{pickupLine}</p>
-        <MapsLink address={pickupLine} place={pickup.businessName} />
-      </Card>
-      <Card id="dropoff" title={COPY.dropoffHeading}>
-        <p className="text-lg font-semibold">{dropoff.recipientName}</p>
-        <a
-          href={`tel:${dropoff.recipientPhone}`}
-          className={linkClass}
-          aria-label={COPY.call(dropoff.recipientName)}
-        >
-          <Phone aria-hidden="true" className="size-5" />
-          {dropoff.recipientPhone}
-        </a>
-        <p className="text-base">{dropoffLine}</p>
-        <MapsLink address={dropoffLine} place={dropoff.recipientName} />
-      </Card>
-      <Card id="payment" title={COPY.paymentHeading}>
-        {cod ? (
-          <>
-            <p className="text-base">
-              {COPY.collectInCash}:{' '}
-              <span className={amountPending ? 'font-semibold' : 'text-2xl font-bold tabular-nums'}>
-                {formatMoney(shipment.amountToCollect)}
-              </span>
-            </p>
-            {moneyGreaterThan(shipment.codFeeAmount, ZERO) ? (
-              <p className="text-sm text-muted-foreground">
-                {COPY.breakdown(formatMoney(shipment.codItemsAmount), formatMoney(shipment.codFeeAmount))}
-              </p>
-            ) : null}
-            {amountPending ? (
-              <p className="text-sm text-muted-foreground">{COPY.amountConfirmedLater}</p>
-            ) : null}
-          </>
-        ) : (
-          <p className="text-base font-semibold">{COPY.prepaid}</p>
-        )}
-      </Card>
+      {isReturn ? (
+        <>
+          <CustomerCard
+            id="dropoff"
+            title={COPY.collectFromHeading}
+            dropoff={dropoff}
+            address={dropoffLine}
+          />
+          <SellerCard id="pickup" title={COPY.deliverToSellerHeading} pickup={pickup} address={pickupLine} />
+          <Card id="payment" title={COPY.paymentHeading}>
+            <p className="text-base font-semibold">{COPY.nothingToCollectSentence}</p>
+          </Card>
+        </>
+      ) : (
+        <>
+          <SellerCard id="pickup" title={COPY.pickupHeading} pickup={pickup} address={pickupLine} />
+          <CustomerCard id="dropoff" title={COPY.dropoffHeading} dropoff={dropoff} address={dropoffLine} />
+          <PaymentCard shipment={shipment} />
+        </>
+      )}
       {shipment.attempts.length === 0 ? null : (
-        <Card id="attempts" title={COPY.attemptsHeading}>
+        <Card id="attempts" title={isReturn ? COPY.pickupAttemptsHeading : COPY.attemptsHeading}>
           <ol className="space-y-2">
             {shipment.attempts.map((attempt) => (
               <li key={attempt.attemptNumber} className="text-sm">
                 <span className="font-medium">
-                  {COPY.attempt(attempt.attemptNumber)}: {ATTEMPT_FAILURE_REASON_LABELS.agent[attempt.reason]}
+                  {COPY.attempt(attempt.attemptNumber)}: {reasonLabels[attempt.reason]}
                 </span>
                 <span className="block text-muted-foreground">
                   {formatDateTime(attempt.createdAt)}
@@ -191,8 +173,8 @@ function ShipmentContent({
       <Card id="times" title={COPY.timesHeading}>
         <dl className="space-y-1 text-sm">
           <Time label={COPY.assigned} value={shipment.assignedAt} />
-          <Time label={COPY.pickedUp} value={shipment.pickedUpAt} />
-          <Time label={COPY.delivered} value={shipment.deliveredAt} />
+          <Time label={isReturn ? COPY.collectedTime : COPY.pickedUp} value={shipment.pickedUpAt} />
+          <Time label={isReturn ? COPY.handedTime : COPY.delivered} value={shipment.deliveredAt} />
         </dl>
       </Card>
       {/* A normal return is closed by the seller (AG-Q-1): no action here, only the note. */}
@@ -201,6 +183,87 @@ function ShipmentContent({
       ) : null}
       <ShipmentActions shipment={shipment} onDelivered={onDelivered} />
     </div>
+  );
+}
+
+function SellerCard({
+  id,
+  title,
+  pickup,
+  address,
+}: {
+  readonly id: string;
+  readonly title: string;
+  readonly pickup: AgentShipment['pickup'];
+  readonly address: string;
+}) {
+  return (
+    <Card id={id} title={title}>
+      <p className="text-lg font-semibold">{pickup.businessName}</p>
+      <a href={`tel:${pickup.phone}`} className={linkClass} aria-label={COPY.call(pickup.businessName)}>
+        <Phone aria-hidden="true" className="size-5" />
+        {pickup.phone}
+      </a>
+      <p className="text-base">{address}</p>
+      <MapsLink address={address} place={pickup.businessName} />
+    </Card>
+  );
+}
+
+function CustomerCard({
+  id,
+  title,
+  dropoff,
+  address,
+}: {
+  readonly id: string;
+  readonly title: string;
+  readonly dropoff: AgentShipment['dropoff'];
+  readonly address: string;
+}) {
+  return (
+    <Card id={id} title={title}>
+      <p className="text-lg font-semibold">{dropoff.recipientName}</p>
+      <a
+        href={`tel:${dropoff.recipientPhone}`}
+        className={linkClass}
+        aria-label={COPY.call(dropoff.recipientName)}
+      >
+        <Phone aria-hidden="true" className="size-5" />
+        {dropoff.recipientPhone}
+      </a>
+      <p className="text-base">{address}</p>
+      <MapsLink address={address} place={dropoff.recipientName} />
+    </Card>
+  );
+}
+
+/** A delivery's money: cash to collect (final once the delivery starts) or prepaid. */
+function PaymentCard({ shipment }: { readonly shipment: AgentShipment }) {
+  const amountPending = AMOUNT_PENDING_STATUSES.includes(shipment.status);
+  return (
+    <Card id="payment" title={COPY.paymentHeading}>
+      {shipment.paymentMethod === 'cod' ? (
+        <>
+          <p className="text-base">
+            {COPY.collectInCash}:{' '}
+            <span className={amountPending ? 'font-semibold' : 'text-2xl font-bold tabular-nums'}>
+              {formatMoney(shipment.amountToCollect)}
+            </span>
+          </p>
+          {moneyGreaterThan(shipment.codFeeAmount, ZERO) ? (
+            <p className="text-sm text-muted-foreground">
+              {COPY.breakdown(formatMoney(shipment.codItemsAmount), formatMoney(shipment.codFeeAmount))}
+            </p>
+          ) : null}
+          {amountPending ? (
+            <p className="text-sm text-muted-foreground">{COPY.amountConfirmedLater}</p>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-base font-semibold">{COPY.prepaid}</p>
+      )}
+    </Card>
   );
 }
 

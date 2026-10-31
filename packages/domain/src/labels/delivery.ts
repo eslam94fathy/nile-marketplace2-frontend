@@ -28,7 +28,20 @@ export const SHIPMENT_STATUS_LABELS = {
     cancelled: 'Cancelled before pickup',
     pickup_failed: 'Pickup failed — try again',
   },
-} as const satisfies Readonly<Record<'admin' | 'agent', Labels<ShipmentStatus>>>;
+  /** A return pickup in the agent app (spec 04 §7.5): the two statuses that read differently from a delivery. */
+  agentReturn: {
+    unassigned: 'Unassigned',
+    assigned: 'To pick up',
+    picked_up: 'Collected — take to the seller',
+    out_for_delivery: 'On the way',
+    delivery_failed: 'Attempt failed',
+    returning_to_seller: 'Return to seller',
+    returned_to_seller: 'Returned',
+    delivered: 'Handed to the seller',
+    cancelled: 'Cancelled',
+    pickup_failed: 'Pickup failed — try again',
+  },
+} as const satisfies Readonly<Record<'admin' | 'agent' | 'agentReturn', Labels<ShipmentStatus>>>;
 
 /** Admin view: spec 03 §7.6. Agent view: spec 04 §7.5. */
 export const SHIPMENT_KIND_LABELS = {
@@ -50,7 +63,14 @@ export const ATTEMPT_FAILURE_REASON_LABELS = {
     wrong_address: 'Wrong address',
     customer_rescheduled: 'Customer asked for another time',
   },
-} as const satisfies Readonly<Record<'admin' | 'agent', Labels<AttemptFailureReason>>>;
+  /** A failed return pickup at the customer (spec 04 §7.3 R2). */
+  pickup: {
+    customer_unreachable: 'Customer unreachable',
+    customer_refused: 'Customer refused',
+    wrong_address: 'Wrong address',
+    customer_rescheduled: 'Customer rescheduled',
+  },
+} as const satisfies Readonly<Record<'admin' | 'agent' | 'pickup', Labels<AttemptFailureReason>>>;
 
 /** Spec 03 AD-09 tab names. */
 export const AGENT_STATUS_LABELS = {

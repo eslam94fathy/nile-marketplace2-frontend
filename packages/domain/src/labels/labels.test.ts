@@ -120,6 +120,8 @@ const cases: [string, readonly string[], Readonly<Record<string, string>>][] = [
   ['ShipmentStatus agent', SHIPMENT_STATUSES, SHIPMENT_STATUS_LABELS.agent],
   ['AttemptFailureReason admin', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.admin],
   ['AttemptFailureReason agent', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.agent],
+  ['AttemptFailureReason pickup', ATTEMPT_FAILURE_REASONS, ATTEMPT_FAILURE_REASON_LABELS.pickup],
+  ['ShipmentStatus agent return', SHIPMENT_STATUSES, SHIPMENT_STATUS_LABELS.agentReturn],
   ['AgentStatus', AGENT_STATUSES, AGENT_STATUS_LABELS],
   ['AccountType', ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS],
   ['LedgerEntryType', LEDGER_ENTRY_TYPES, LEDGER_ENTRY_TYPE_LABELS],
@@ -166,6 +168,8 @@ describe('label maps', () => {
     expect(SELLER_ORDER_STATUS_LABELS.admin.placed).toBe('Placed (awaiting seller)');
     expect(SELLER_ORDER_STATUS_LABELS.seller.placed).toBe('New — confirm');
     expect(SHIPMENT_STATUS_LABELS.agent.out_for_delivery).toBe('On the way');
+    expect(SHIPMENT_STATUS_LABELS.agentReturn.picked_up).toBe('Collected — take to the seller');
+    expect(SHIPMENT_STATUS_LABELS.agentReturn.delivered).toBe('Handed to the seller');
     expect(USER_STATUS_LABELS.pending_email_verification).toBe('Email not verified');
     expect(ACTOR_ROLE_LABELS.delivery_agent).toBe('Agent');
     expect(PAYMENT_STATUS_LABELS.partially_refunded).toBe('Partly refunded');

@@ -4,7 +4,16 @@ import type { AttemptFailureReason, ShipmentKind, ShipmentStatus } from '../enum
 // The backend still decides; a stale status ends in `SHIPMENT_INVALID_STATUS_TRANSITION`.
 
 export type AgentShipmentAction =
-  'picked_up' | 'start_delivery' | 'start_next_attempt' | 'delivered' | 'delivery_failed' | 'handed_back';
+  | 'picked_up'
+  | 'start_delivery'
+  | 'start_next_attempt'
+  | 'delivered'
+  | 'delivery_failed'
+  | 'handed_back'
+  // Return pickups (spec 04 §7.3 R1…R3)
+  | 'collected'
+  | 'pickup_failed'
+  | 'handed_to_seller';
 
 export interface AgentShipmentActions {
   readonly primary: AgentShipmentAction | null;
@@ -38,11 +47,27 @@ export function canHandBackToSeller(shipment: AgentShipmentState): boolean {
 }
 
 /**
- * Exactly one primary action per status, plus "Delivery failed" while out for delivery. Return pickups
- * (`kind = return`, spec 04 §7.3) never get delivery actions; their own actions come with T-N1.
+ * A return pickup (spec 04 §7.3, backend spec 11 UC-DE-9): collect from the customer (also after a failed
+ * pickup) or report a failed pickup, then hand the items to the seller. Never a delivery action.
+ */
+function returnPickupActions(status: ShipmentStatus): AgentShipmentActions {
+  switch (status) {
+    case 'assigned':
+    case 'pickup_failed':
+      return { primary: 'collected', secondary: 'pickup_failed' };
+    case 'picked_up':
+      return { primary: 'handed_to_seller', secondary: null };
+    default:
+      return NO_ACTIONS;
+  }
+}
+
+/**
+ * Exactly one primary action per status, plus "Delivery failed" while out for delivery (and "Pickup failed"
+ * beside a return pickup's "Collected"). Return pickups never get delivery actions.
  */
 export function agentShipmentActions(shipment: AgentShipmentState): AgentShipmentActions {
-  if (shipment.kind === 'return') return NO_ACTIONS;
+  if (shipment.kind === 'return') return returnPickupActions(shipment.status);
   switch (shipment.status) {
     case 'assigned':
       return { primary: 'picked_up', secondary: null };
@@ -58,7 +83,7 @@ export function agentShipmentActions(shipment: AgentShipmentState): AgentShipmen
     case 'returned_to_seller':
     case 'delivered':
     case 'cancelled':
-    case 'pickup_failed': // return pickups only
+    case 'pickup_failed': // return pickups only, handled above
       return NO_ACTIONS;
   }
 }
