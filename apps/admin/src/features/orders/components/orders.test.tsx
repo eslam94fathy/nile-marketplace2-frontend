@@ -212,6 +212,24 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(within(seller).queryByRole('link', { name: 'Open the shipment' })).toBeNull();
   });
 
+  it('a coupon: the items row before it, the coupon row, and the funded discount on the seller order', async () => {
+    const [sellerOrder] = ORDER.sellerOrders;
+    if (sellerOrder === undefined) throw new Error('fixture');
+    const order: Order = {
+      ...ORDER,
+      itemsTotal: '230.00',
+      coupon: { code: 'NILE20', discountTotal: '20.00' },
+      sellerOrders: [{ ...sellerOrder, discountAmount: '20.00', discountFunding: 'platform' }],
+    };
+    serveOrder(order);
+    renderDetail(order);
+    const totals = await screen.findByRole('region', { name: 'Totals' }, { timeout: 5000 });
+    expect(within(totals).getByText(/^EGP\s?250\.00$/)).toBeDefined();
+    expect(within(totals).getByText('Coupon NILE20')).toBeDefined();
+    const seller = screen.getByRole('article', { name: 'Nile Crafts' });
+    expect(within(seller).getByText('Coupon discount · Funded by Nile')).toBeDefined();
+  });
+
   it('a cancelled seller order shows the neutral cancel reason (OQ-16)', async () => {
     const [first] = ORDER.sellerOrders;
     if (first === undefined) throw new Error('fixture');

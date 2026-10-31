@@ -78,6 +78,7 @@ export const ORDERS_COPY = {
   apartment: (apartment: string) => `apartment ${apartment}`,
   totalsHeading: 'Totals',
   itemsTotal: 'Items total',
+  couponLine: (code: string) => `Coupon ${code}`,
   deliveryFee: 'Delivery fee',
   total: 'Total',
   sellerOrdersHeading: 'Seller orders',
@@ -93,6 +94,8 @@ export const ORDERS_COPY = {
     lineTotal: 'Line total',
   },
   subtotal: 'Subtotal',
+  discountLine: (funding: 'platform' | 'seller') =>
+    funding === 'platform' ? 'Coupon discount · Funded by Nile' : 'Coupon discount · Funded by the seller',
   commission: 'Commission',
   commissionValue: (percent: string, amount: string) => `${percent} (${amount})`,
   sellerNet: 'Seller net',

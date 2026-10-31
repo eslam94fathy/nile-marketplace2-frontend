@@ -52,6 +52,7 @@ export const SELLERS_COPY = {
   linksHeading: 'Elsewhere',
   viewInStore: 'View in the store',
   financeAccount: 'Finance account',
+  coupons: 'Coupons',
   reviews: 'Reviews',
   ordersNote: 'Orders can’t be filtered by seller.',
   statusHistory: 'Status history',

@@ -2,6 +2,7 @@
 
 import { isApiError } from '@nile/api';
 import {
+  addMoney,
   formatDateTime,
   formatMoney,
   formatRatePercent,
@@ -20,6 +21,7 @@ import {
   DataTable,
   ErrorState,
   FormAlert,
+  Money,
   NileImage,
   NotFoundScreen,
   ORDER_STATUS_TONES,
@@ -218,7 +220,20 @@ function OrderContent({
           </Section>
           <Section id="order-totals" title={COPY.totalsHeading}>
             <dl className="space-y-2 text-sm">
-              <Row label={COPY.itemsTotal}>{formatMoney(order.itemsTotal)}</Row>
+              {/* The API's itemsTotal is after the coupon: the items row adds it back for display only, as the
+                  storefront does (conventions §12.9, T-K4); the total is always the API's. */}
+              <Row label={COPY.itemsTotal}>
+                {formatMoney(
+                  order.coupon === null
+                    ? order.itemsTotal
+                    : addMoney(order.itemsTotal, order.coupon.discountTotal),
+                )}
+              </Row>
+              {order.coupon === null ? null : (
+                <Row label={COPY.couponLine(order.coupon.code)}>
+                  <Money value={order.coupon.discountTotal} negative />
+                </Row>
+              )}
               <Row label={COPY.deliveryFee}>{formatMoney(order.deliveryFee)}</Row>
               <Row label={COPY.total}>
                 <span className="font-semibold">{formatMoney(order.total)}</span>
@@ -395,6 +410,13 @@ function SellerOrderCard({
             </Row>
           )}
           <Row label={COPY.subtotal}>{formatMoney(sellerOrder.subtotal)}</Row>
+          {/* The subtotal is before the coupon; commission and net after it [SPEC 09 §8.7]. */}
+          {sellerOrder.discountFunding === null ||
+          !moneyGreaterThan(sellerOrder.discountAmount, '0') ? null : (
+            <Row label={COPY.discountLine(sellerOrder.discountFunding)}>
+              <Money value={sellerOrder.discountAmount} negative />
+            </Row>
+          )}
           <Row label={COPY.commission}>
             {COPY.commissionValue(
               formatRatePercent(sellerOrder.commissionRate),

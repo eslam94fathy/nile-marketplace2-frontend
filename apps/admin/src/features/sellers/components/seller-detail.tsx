@@ -27,7 +27,13 @@ import type { ReactNode } from 'react';
 import { useActorLabel, useGovernorateName } from '@/features/lookups';
 import { StoreProducts } from '@/features/products';
 import { publicEnv } from '@/lib/env/public';
-import { ownerAccountsPath, ROUTES, sellerReviewsPath, STOREFRONT_SELLER_SEARCH_PATH } from '@/lib/routes';
+import {
+  ownerAccountsPath,
+  ROUTES,
+  sellerCouponsPath,
+  sellerReviewsPath,
+  STOREFRONT_SELLER_SEARCH_PATH,
+} from '@/lib/routes';
 import { isSellerMissing, sellerQuery, type AdminSellerDetail } from '../api';
 import { SELLERS_COPY as COPY } from '../copy';
 import { CommissionForm } from './commission-form';
@@ -196,6 +202,14 @@ function SellerContent({
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   {COPY.financeAccount}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={sellerCouponsPath(seller.id)}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {COPY.coupons}
                 </Link>
               </li>
               <li>

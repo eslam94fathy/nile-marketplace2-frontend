@@ -32,6 +32,7 @@ const NAV_GROUPS = [
       { href: ROUTES.orders, label: 'Orders' },
       { href: ROUTES.returns, label: 'Returns' },
       { href: ROUTES.refunds, label: 'Refunds' },
+      { href: ROUTES.coupons, label: 'Coupons' },
       { href: ROUTES.reviews, label: 'Reviews' },
     ],
   },

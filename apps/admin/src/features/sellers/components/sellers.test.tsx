@@ -224,6 +224,9 @@ describe('seller page (spec 03 AD-05)', { timeout: 20_000 }, () => {
     expect(screen.getByRole('link', { name: 'Reviews' }).getAttribute('href')).toBe(
       `/reviews?seller=${SELLER.id}`,
     );
+    expect(screen.getByRole('link', { name: 'Coupons' }).getAttribute('href')).toBe(
+      `/coupons?seller=${SELLER.id}`,
+    );
     expect(screen.getByText('No reviews yet')).toBeDefined();
     const status = screen.getByRole('table', { name: 'Status changes, newest first' });
     expect(within(status).getByText('Rejected → Waiting for approval')).toBeDefined();

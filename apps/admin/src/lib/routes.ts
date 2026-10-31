@@ -8,6 +8,8 @@ export const ROUTES = {
   returns: '/returns',
   /** AD-28 Tickets (T-M5). */
   support: '/support',
+  /** AD-35 Coupons (T-M9). */
+  coupons: '/coupons',
   /** AD-30 Reviews (T-M6). */
   reviews: '/reviews',
   /** AD-24 Users, AD-25 Customers (T-M2). */
@@ -104,6 +106,13 @@ export const customerOrdersPath = (customerId: string) =>
 /** AD-12 on the All tab filtered to one order (AD-15). */
 export const orderShipmentsPath = (orderId: string) =>
   `${ROUTES.shipments}?status=all&order=${orderId}` as const;
+
+/** AD-36 New coupon, AD-37 Coupon (T-M9). */
+export const NEW_COUPON_PATH = `${ROUTES.coupons}/new` as const;
+export const couponPath = (couponId: string) => `${ROUTES.coupons}/${couponId}` as const;
+
+/** AD-35 filtered to one seller (AD-05 "Coupons", T-M9). */
+export const sellerCouponsPath = (sellerId: string) => `${ROUTES.coupons}?seller=${sellerId}` as const;
 
 /** AD-34 Refund (T-M8). */
 export const refundPath = (refundId: string) => `${ROUTES.refunds}/${refundId}` as const;
