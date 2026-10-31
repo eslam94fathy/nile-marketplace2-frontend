@@ -8,7 +8,9 @@ export {
   parseMoney,
   percentToRate,
   ratePercentValue,
+  maxMoney,
   moneyGreaterThan,
+  moneyShare,
   rateToPercent,
 } from './money';
 export {

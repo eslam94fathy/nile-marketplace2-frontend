@@ -4,13 +4,22 @@ import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
 import { usePathname } from 'next/navigation';
+import { dashboardKeys } from '@/features/dashboard';
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
-/** Notifications from T-J6; returns and support arrive with phase m (design 02 §5.3). */
-const INVALIDATION_MAP: InvalidationMap = { ...notificationsInvalidation(APP.name) };
+/**
+ * Notifications from T-J6; the dashboard cards from T-M1 (design 02 §5.3). One handler per message type: T-M5 and
+ * T-M7 add their own keys to the support and return handlers.
+ */
+const INVALIDATION_MAP: InvalidationMap = {
+  ...notificationsInvalidation(APP.name),
+  // The figures count tickets too, so the whole dashboard is read again.
+  'support.ticket_updated': () => [dashboardKeys.all()],
+  'return.updated': () => [dashboardKeys.returnsToDecide()],
+};
 
 const noSubscription = () => () => undefined;
 const fetchToken = async () => (await fetchRealtimeToken()).token;

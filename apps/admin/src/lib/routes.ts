@@ -4,6 +4,10 @@ export const ROUTES = {
   sellers: '/sellers',
   orders: '/orders',
   refunds: '/refunds',
+  /** AD-32 Returns (T-M7). */
+  returns: '/returns',
+  /** AD-28 Tickets (T-M5). */
+  support: '/support',
   categories: '/catalog/categories',
   shipments: '/delivery/shipments',
   agents: '/delivery/agents',
@@ -24,7 +28,10 @@ export const ROUTES = {
 } as const;
 
 /** AD-29 Support ticket (T-M5). */
-export const supportTicketPath = (ticketId: string) => `/support/${ticketId}` as const;
+export const supportTicketPath = (ticketId: string) => `${ROUTES.support}/${ticketId}` as const;
+
+/** AD-33 Return (T-M7). */
+export const returnPath = (returnId: string) => `${ROUTES.returns}/${returnId}` as const;
 
 /** Sign-in screens: never a `returnTo` destination. */
 export const AUTH_PATHS = [ROUTES.login, ROUTES.forgotPassword, ROUTES.resetPassword] as const;
@@ -54,6 +61,9 @@ export const agentShipmentsPath = (agentId: string) =>
 
 /** AD-15 Order. */
 export const orderPath = (orderId: string) => `${ROUTES.orders}/${orderId}` as const;
+
+/** AD-14 on the Awaiting payment tab (spec 01 SF-17 group): AD-02 queue 5 and the open seller orders figure. */
+export const ORDERS_AWAITING_PAYMENT_PATH = `${ROUTES.orders}?status=awaiting-payment` as const;
 
 /** AD-14 on the All tab filtered to one customer (AD-15 "Other orders of this customer"). */
 export const customerOrdersPath = (customerId: string) =>

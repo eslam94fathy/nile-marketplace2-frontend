@@ -41,7 +41,8 @@ export {
   sellerVariantFactory,
 } from './factories/seller-catalog';
 export { couponFactory } from './factories/coupons';
+export { dashboardFactory } from './factories/dashboard';
 export { sellerOrderFactory } from './factories/seller-order';
-export { sellerReturnFactory } from './factories/returns';
+export { adminReturnFactory, sellerReturnFactory } from './factories/returns';
 export { sellerReviewFactory } from './factories/reviews';
-export { ticketFactory, ticketMessageFactory } from './factories/support';
+export { adminTicketFactory, ticketFactory, ticketMessageFactory } from './factories/support';

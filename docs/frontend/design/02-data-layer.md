@@ -334,7 +334,7 @@ Notation: key segments after the scope; `stale` = `staleTime`; `poll` = `refetch
 
 | Key | Endpoint | stale / poll | Used by |
 |---|---|---|---|
-| `dashboard.<queue>` (5 queues) | sellers / shipments / refunds / accounts / orders lists with `limit=5` (spec 03 AD-02) | poll 60 s | AD-02 |
+| `dashboard.<queue>` (5 queues) | sellers / shipments / refunds / accounts / orders lists with `limit=5` (spec 03 AD-02) | default; R1 polled 60 s, dropped in R2 (AD-Q-16, T-M1) | AD-02 |
 | `admins.list(status)` | `GET /admin/admins` | default, infinite | AD-03, actor lookup (all pages, 5 min) |
 | `sellers.list(filters)` / `sellers.detail(id)` | `GET /admin/sellers` / `{sellerId}` | default / 0 | AD-04, AD-05; `sellers.byId` lookups 5 min |
 | `settings.commission` | `GET /admin/settings/commission` | default | AD-06 |

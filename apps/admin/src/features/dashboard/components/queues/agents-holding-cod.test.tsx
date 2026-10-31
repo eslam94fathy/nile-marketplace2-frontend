@@ -10,8 +10,8 @@ import { AgentsHoldingCodQueue } from './agents-holding-cod';
 const server = setupMswServer();
 
 describe('dashboard: agents holding COD cash (spec 03 AD-02, T-H11)', () => {
-  it('the fourth of five queues', () => {
-    expect(DASHBOARD_QUEUES).toHaveLength(5);
+  it('the fourth of the R1 queues', () => {
+    expect(DASHBOARD_QUEUES).toHaveLength(7);
     expect(DASHBOARD_QUEUES[3]).toBe(AgentsHoldingCodQueue);
   });
 

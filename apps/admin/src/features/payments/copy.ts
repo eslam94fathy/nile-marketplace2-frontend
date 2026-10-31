@@ -76,7 +76,7 @@ export const PAYMENTS_COPY = {
   orderRefundsCaption: 'Refunds of this order',
 
   // Dashboard queue (AD-02)
-  queueTitle: 'Refunds to record',
-  queueSeeAll: 'See all refunds to record',
+  queueTitle: 'Refunds needing action',
+  queueSeeAll: 'See all refunds needing action',
   queueRow: (reason: string, date: string) => `${reason}, ${date}`,
 } as const;

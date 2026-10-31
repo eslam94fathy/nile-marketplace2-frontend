@@ -15,10 +15,9 @@ describe('dashboard: refunds and card payments (spec 03 AD-02, T-H10)', () => {
   it('queues 3 and 5 in spec order', () => {
     expect(DASHBOARD_QUEUES.indexOf(RefundsToRecordQueue)).toBe(2);
     expect(DASHBOARD_QUEUES.indexOf(AwaitingCardPaymentQueue)).toBe(4);
-    expect(DASHBOARD_QUEUES.at(-1)).toBe(AwaitingCardPaymentQueue);
   });
 
-  it('refunds to record: oldest first, linking to the order; "See all" to AD-16', async () => {
+  it('refunds needing action: oldest first, linking to the order; "See all" to AD-16', async () => {
     const queries: URLSearchParams[] = [];
     const refund = refundFactory();
     server.use(
@@ -33,14 +32,14 @@ describe('dashboard: refunds and card payments (spec 03 AD-02, T-H10)', () => {
       ),
     );
     renderWithProviders(<RefundsToRecordQueue />);
-    const card = await screen.findByRole('region', { name: 'Refunds to record' });
+    const card = await screen.findByRole('region', { name: 'Refunds needing action' });
     expect((await within(card).findByRole('link', { name: /100\.00/ })).getAttribute('href')).toBe(
       `/orders/${refund.orderId}`,
     );
     expect(within(card).getByText(/^Seller order cancelled, /)).toBeDefined();
-    expect(within(card).getByRole('link', { name: 'See all refunds to record' }).getAttribute('href')).toBe(
-      '/refunds',
-    );
+    expect(
+      within(card).getByRole('link', { name: 'See all refunds needing action' }).getAttribute('href'),
+    ).toBe('/refunds');
     expect(Object.fromEntries(queries[0] ?? [])).toEqual({
       limit: '5',
       sort: 'createdAt',
