@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { ReturnsList } from '@/features/returns';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Returns' };
 
-/** AD-32 Returns: the dashboard's "Returns to decide" links here since T-M1, built in T-M7. */
-export default async function ReturnsPage() {
+/** AD-32 Returns: tabs and filters from the URL; also reached filtered from AD-05 and AD-26. */
+export default async function ReturnsPage({ searchParams }: PageProps<'/returns'>) {
   await requireSession();
-  return <PlaceholderScreen title="Returns" task="T-M7" />;
+  return <ReturnsList params={await searchParams} />;
 }

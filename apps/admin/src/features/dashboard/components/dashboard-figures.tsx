@@ -17,7 +17,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ORDERS_AWAITING_PAYMENT_PATH, ROUTES, sellerPath } from '@/lib/routes';
+import { DEFAULT_RETURN_TAB, returnTabOf } from '@/features/returns';
+import { ORDERS_AWAITING_PAYMENT_PATH, ROUTES, sellerPath, SUPPORT_SLA_PATH } from '@/lib/routes';
 import { dashboardFiguresOptions, type DashboardFigures as Figures } from '../api';
 import { DASHBOARD_COPY as COPY } from '../copy';
 
@@ -31,6 +32,12 @@ const LINK_CLASS = 'font-medium text-primary underline-offset-4 hover:underline'
 const SELLER_ORDER_STATUS_LINKS: Partial<Record<SellerOrderStatus, Route>> = {
   pending_payment: ORDERS_AWAITING_PAYMENT_PATH,
 };
+
+/** An open return count links to the AD-32 tab that lists its status (TM7-Q6). */
+function returnStatusLink(status: ReturnStatus): Route {
+  const tab = returnTabOf(status);
+  return tab === DEFAULT_RETURN_TAB ? ROUTES.returns : `${ROUTES.returns}?tab=${tab}`;
+}
 
 interface Figure {
   readonly label: string;
@@ -207,8 +214,16 @@ function FiguresGrid({ figures }: { readonly figures: Figures }) {
         <FigureList
           figures={[
             { label: COPY.supportOpen, value: count(figures.support.open) },
-            { label: COPY.supportAwaitingAdmin, value: count(figures.support.awaitingAdmin) },
-            { label: COPY.supportSlaBreached, value: count(figures.support.slaBreached) },
+            {
+              label: COPY.supportAwaitingAdmin,
+              value: count(figures.support.awaitingAdmin),
+              href: ROUTES.support,
+            },
+            {
+              label: COPY.supportSlaBreached,
+              value: count(figures.support.slaBreached),
+              href: SUPPORT_SLA_PATH,
+            },
           ]}
         />
       </FigureCard>
@@ -230,6 +245,7 @@ function FiguresGrid({ figures }: { readonly figures: Figures }) {
           figures={returns.map(([status, value]) => ({
             label: RETURN_STATUS_LABELS.admin[status],
             value: count(value),
+            href: returnStatusLink(status),
           }))}
         />
       </FigureCard>

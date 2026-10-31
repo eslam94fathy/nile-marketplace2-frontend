@@ -32,6 +32,9 @@ export const ROUTES = {
   resetPassword: '/reset-password',
 } as const;
 
+/** AD-28 on the "Past 24 h target" view (AD-02 figure, T-M7). */
+export const SUPPORT_SLA_PATH = `${ROUTES.support}?view=sla` as const;
+
 /** AD-29 Support ticket (T-M5). */
 export const supportTicketPath = (ticketId: string) => `${ROUTES.support}/${ticketId}` as const;
 

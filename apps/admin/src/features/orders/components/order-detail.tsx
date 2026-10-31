@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatMoney,
   formatRatePercent,
+  moneyGreaterThan,
   ORDER_STATUS_LABELS,
   ORDER_STATUSES,
   PAYMENT_METHOD_LABELS,
@@ -36,6 +37,7 @@ import { useActorLabel } from '@/features/lookups';
 import { OrderPaymentSummary } from '@/features/payments';
 import {
   customerOrdersPath,
+  customerReturnsPath,
   orderShipmentsPath,
   productPath,
   ROUTES,
@@ -136,7 +138,10 @@ function OrderContent({
     { id: 'date', header: COPY.historyColumns.date, cell: (row) => formatDateTime(row.at) },
   ];
   const shipmentOf = (sellerOrderId: string) =>
-    shipments.data?.find((shipment) => shipment.sellerOrderId === sellerOrderId);
+    // A seller order can also have return shipments (T-M7); this row is its delivery.
+    shipments.data?.find(
+      (shipment) => shipment.sellerOrderId === sellerOrderId && shipment.kind === 'delivery',
+    );
 
   return (
     <div className="space-y-8">
@@ -184,6 +189,9 @@ function OrderContent({
                 <span>{COPY.shortId(order.customerId)}</span>
                 <Link href={customerOrdersPath(order.customerId)} className={linkClass}>
                   {COPY.otherOrders}
+                </Link>
+                <Link href={customerReturnsPath(order.customerId)} className={linkClass}>
+                  {COPY.customerReturns}
                 </Link>
               </span>
             </Row>
@@ -321,6 +329,12 @@ function SellerOrderCard({
       cell: (item) => item.cancelledQuantity,
     },
     {
+      id: 'returned',
+      header: COPY.itemColumns.returned,
+      align: 'end',
+      cell: (item) => item.returnedQuantity,
+    },
+    {
       id: 'lineTotal',
       header: COPY.itemColumns.lineTotal,
       align: 'end',
@@ -388,6 +402,13 @@ function SellerOrderCard({
             )}
           </Row>
           <Row label={COPY.sellerNet}>{formatMoney(sellerOrder.sellerNet)}</Row>
+          {moneyGreaterThan(sellerOrder.returnedPaid, '0') ? (
+            <>
+              <Row label={COPY.returnedPaid}>{formatMoney(sellerOrder.returnedPaid)}</Row>
+              <Row label={COPY.returnedCommission}>{formatMoney(sellerOrder.returnedCommission)}</Row>
+              <Row label={COPY.returnedSellerNet}>{formatMoney(sellerOrder.returnedSellerNet)}</Row>
+            </>
+          ) : null}
           <Row label={COPY.shipment}>{shipment}</Row>
           <Row label={COPY.ledger}>
             <Link href={sellerOrderLedgerPath(sellerOrder.id)} className={linkClass}>

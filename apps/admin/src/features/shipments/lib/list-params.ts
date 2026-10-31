@@ -1,12 +1,19 @@
 import { inValues } from '@nile/api';
-import { cairoDayBounds, isCalendarDay, type ShipmentStatus } from '@nile/domain';
+import {
+  cairoDayBounds,
+  isCalendarDay,
+  SHIPMENT_KINDS,
+  type ShipmentKind,
+  type ShipmentStatus,
+} from '@nile/domain';
 import * as z from 'zod';
 
-// AD-12 filters, URL ⇄ API: `?status=<tab>&agent=&order=&from=&to=`. Invalid values are dropped, never sent
+// AD-12 filters, URL ⇄ API: `?status=<tab>&kind=&agent=&order=&from=&to=` (`kind` from T-M7). Invalid values are dropped, never sent
 // (R-28). No tab is "Unassigned", the work queue, oldest first (spec 03 AD-12); the others newest first.
 
 export const SHIPMENT_LIST_PARAMS = {
   status: 'status',
+  kind: 'kind',
   agent: 'agent',
   order: 'order',
   from: 'from',
@@ -17,7 +24,8 @@ export const SHIPMENT_LIST_PARAMS = {
 export const SHIPMENT_TABS = {
   unassigned: ['unassigned'],
   assigned: ['assigned'],
-  'in-delivery': ['picked_up', 'out_for_delivery', 'delivery_failed'],
+  // A return shipment between pickup attempts sits with the failed deliveries (TM7-Q5).
+  'in-delivery': ['picked_up', 'out_for_delivery', 'delivery_failed', 'pickup_failed'],
   returning: ['returning_to_seller'],
   delivered: ['delivered'],
   returned: ['returned_to_seller'],
@@ -35,10 +43,12 @@ export const ACTIVE_SHIPMENT_STATUSES = [
   'out_for_delivery',
   'delivery_failed',
   'returning_to_seller',
+  'pickup_failed',
 ] as const satisfies readonly ShipmentStatus[];
 
 export interface ShipmentFilters {
   readonly tab: ShipmentTab;
+  readonly kind: ShipmentKind | null;
   readonly agentId: string | null;
   readonly orderId: string | null;
   /** Cairo calendar days `YYYY-MM-DD`, inclusive. */
@@ -61,6 +71,7 @@ export function parseShipmentFilters(params: RawShipmentParams): ShipmentFilters
   const to = day(single(params[SHIPMENT_LIST_PARAMS.to]));
   return {
     tab: isTab(tab) ? tab : DEFAULT_SHIPMENT_TAB,
+    kind: SHIPMENT_KINDS.find((kind) => kind === single(params[SHIPMENT_LIST_PARAMS.kind])) ?? null,
     agentId: uuid(single(params[SHIPMENT_LIST_PARAMS.agent])),
     orderId: uuid(single(params[SHIPMENT_LIST_PARAMS.order])),
     from,
@@ -73,6 +84,7 @@ export function parseShipmentFilters(params: RawShipmentParams): ShipmentFilters
 export function shipmentFiltersQuery(filters: ShipmentFilters): string {
   const query = new URLSearchParams();
   if (filters.tab !== DEFAULT_SHIPMENT_TAB) query.set(SHIPMENT_LIST_PARAMS.status, filters.tab);
+  if (filters.kind !== null) query.set(SHIPMENT_LIST_PARAMS.kind, filters.kind);
   if (filters.agentId !== null) query.set(SHIPMENT_LIST_PARAMS.agent, filters.agentId);
   if (filters.orderId !== null) query.set(SHIPMENT_LIST_PARAMS.order, filters.orderId);
   if (filters.from !== null) query.set(SHIPMENT_LIST_PARAMS.from, filters.from);
@@ -94,6 +106,7 @@ export function shipmentApiQuery(filters: ShipmentFilters) {
   return {
     sort: filters.tab === 'unassigned' ? ('createdAt' as const) : ('-createdAt' as const),
     ...statusQuery(SHIPMENT_TABS[filters.tab]),
+    ...(filters.kind === null ? {} : { 'kind[eq]': filters.kind }),
     ...(filters.agentId === null ? {} : { 'agentId[eq]': filters.agentId }),
     ...(filters.orderId === null ? {} : { 'orderId[eq]': filters.orderId }),
     ...(filters.from === null ? {} : { 'createdAt[gte]': cairoDayBounds(filters.from).start }),
@@ -102,4 +115,8 @@ export function shipmentApiQuery(filters: ShipmentFilters) {
 }
 
 export const hasNarrowingFilters = (filters: ShipmentFilters): boolean =>
-  filters.agentId !== null || filters.orderId !== null || filters.from !== null || filters.to !== null;
+  filters.kind !== null ||
+  filters.agentId !== null ||
+  filters.orderId !== null ||
+  filters.from !== null ||
+  filters.to !== null;

@@ -175,6 +175,43 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(await screen.findByText('No payment record')).toBeDefined();
   });
 
+  it('returns: returned quantity and sums, "Returns of this customer"; a return shipment is not the delivery', async () => {
+    const [sellerOrder] = ORDER.sellerOrders;
+    const [item] = sellerOrder?.items ?? [];
+    if (sellerOrder === undefined || item === undefined) throw new Error('fixture');
+    const order: Order = {
+      ...ORDER,
+      sellerOrders: [
+        {
+          ...sellerOrder,
+          items: [{ ...item, returnedQuantity: 1 }],
+          returnedPaid: '150.00',
+          returnedSubtotal: '150.00',
+          returnedCommission: '15.00',
+          returnedSellerNet: '135.00',
+        },
+      ],
+    };
+    const returnShipment = adminShipmentFactory({
+      orderId: order.id,
+      sellerOrderId: sellerOrder.id,
+      kind: 'return',
+      returnId: ME.id,
+    });
+    serveOrder(order, [returnShipment]);
+    renderDetail(order);
+    const seller = await screen.findByRole('article', { name: 'Nile Crafts' }, { timeout: 5000 });
+    expect(screen.getByRole('link', { name: 'Returns of this customer' }).getAttribute('href')).toBe(
+      `/returns?customer=${order.customerId}`,
+    );
+    const items = within(seller).getByRole('table', { name: 'Items from Nile Crafts' });
+    expect(within(items).getByRole('columnheader', { name: 'Returned' })).toBeDefined();
+    expect(within(seller).getByText('Paid for returned items')).toBeDefined();
+    expect(within(seller).getByText(/^EGP\s?135\.00$/)).toBeDefined();
+    expect(await within(seller).findByText('No shipment yet')).toBeDefined();
+    expect(within(seller).queryByRole('link', { name: 'Open the shipment' })).toBeNull();
+  });
+
   it('a cancelled seller order shows the neutral cancel reason (OQ-16)', async () => {
     const [first] = ORDER.sellerOrders;
     if (first === undefined) throw new Error('fixture');

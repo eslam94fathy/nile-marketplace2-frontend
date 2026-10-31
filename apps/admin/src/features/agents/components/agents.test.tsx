@@ -277,7 +277,7 @@ describe('agent (spec 03 AD-11)', { timeout: 15_000 }, () => {
       limit: '20',
       sort: '-createdAt',
       'agentId[eq]': SAM.id,
-      'status[in]': 'assigned,picked_up,out_for_delivery,delivery_failed,returning_to_seller',
+      'status[in]': 'assigned,picked_up,out_for_delivery,delivery_failed,returning_to_seller,pickup_failed',
     });
   });
 
