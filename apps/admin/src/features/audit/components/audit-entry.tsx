@@ -109,7 +109,13 @@ function Changes({ entry }: { readonly entry: AuditEntry }) {
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">{COPY.noChanges}</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
+        // Scrolls sideways on narrow screens: focusable and named for keyboard users, as DataTable does.
+        <div
+          role="region"
+          aria-label={COPY.changesCaption}
+          tabIndex={0}
+          className="overflow-x-auto rounded-lg border border-border"
+        >
           <table className="w-full text-left text-sm">
             <caption className="sr-only">{COPY.changesCaption}</caption>
             <thead className="bg-muted/50">

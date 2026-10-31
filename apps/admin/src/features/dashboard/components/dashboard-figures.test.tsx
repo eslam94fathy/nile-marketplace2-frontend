@@ -48,6 +48,10 @@ describe('dashboard figures (spec 03 §7.3 AD-02 "Today", T-M1)', () => {
     mockFigures(dashboardFactory());
     renderWithProviders(<DashboardFigures />);
     const table = await screen.findByRole('table', { name: /Sales per day/ });
+    // Regression (T-O4 E2E, axe scrollable-region-focusable): the scrolling box is reachable by keyboard.
+    const scroller = screen.getByRole('region', { name: 'Sales per day, last 30 days, most recent first' });
+    expect(scroller.getAttribute('tabindex')).toBe('0');
+    expect(scroller.contains(table)).toBe(true);
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(31);
     const [, latest, previous] = rows;

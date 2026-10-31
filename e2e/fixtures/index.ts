@@ -31,11 +31,16 @@ interface WorkerFixtures {
 
 export const test = base.extend<RoleFixtures, WorkerFixtures>({
   cspGuard: [
-    async ({ page }, provide) => {
+    async ({ page, context }, provide) => {
       const violations: string[] = [];
-      page.on('console', (message) => {
-        if (CSP_VIOLATION.test(message.text())) violations.push(`${page.url()}: ${message.text()}`);
-      });
+      const watch = (watched: Page) => {
+        watched.on('console', (message) => {
+          if (CSP_VIOLATION.test(message.text())) violations.push(`${watched.url()}: ${message.text()}`);
+        });
+      };
+      watch(page);
+      // Cross-role flows (T-O4) open more pages in the context: each is watched too.
+      context.on('page', watch);
       await provide(undefined);
       expect(violations, 'Content Security Policy violations').toEqual([]);
     },
@@ -104,6 +109,8 @@ const BLOCKING_IMPACTS = new Set(['serious', 'critical']);
 
 /** Runs axe (WCAG 2.2 AA rules) on the current page and fails on serious or critical violations. */
 export async function expectNoBlockingA11yViolations(page: Page): Promise<void> {
+  // After a client-side navigation Next.js streams the new <title> in a moment later: audit the settled page.
+  await expect(page).toHaveTitle(/\S/);
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();

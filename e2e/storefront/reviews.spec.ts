@@ -38,7 +38,12 @@ test('write a review with a photo from a delivered order', async ({
   await page.getByRole('link', { name: `Write a review of ${item.productName}` }).click();
 
   await expect(page.getByRole('heading', { level: 1, name: 'Write a review' })).toBeVisible();
-  await page.getByRole('radio', { name: '5 stars' }).check({ force: true });
+  // The radio is visually hidden; shoppers click its star (the label).
+  await page
+    .locator('label')
+    .filter({ hasText: /^5 stars$/ })
+    .click();
+  await expect(page.getByRole('radio', { name: '5 stars' })).toBeChecked();
   await page.getByRole('textbox', { name: 'Title' }).fill(`Great ${suffix}`);
   await page.getByRole('textbox', { name: /^Review/ }).fill('Arrived quickly and fits well.');
   await page
@@ -48,14 +53,14 @@ test('write a review with a photo from a delivered order', async ({
   await expectNoBlockingA11yViolations(page);
   await page.getByRole('button', { name: 'Publish review' }).click();
 
-  await expect(page.getByText('Thanks, your review is published.')).toBeVisible();
+  await expect(page.getByText('Thanks, your review is published.', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/account\/reviews\?tab=written$/);
   const written = page.getByRole('article').filter({ hasText: `Great ${suffix}` });
   await expect(written.getByText('Rated 5 out of 5')).toBeVisible();
   await expectNoBlockingA11yViolations(page);
 
   // On the product page the review shows with its photo.
-  await written.getByRole('link', { name: item.productName }).click();
+  await written.getByRole('link', { name: item.productName, exact: true }).click();
   const section = page.getByRole('region', { name: 'Reviews' });
   await expect(section.getByRole('heading', { name: `Great ${suffix}` })).toBeVisible();
   await expect(section.getByRole('button', { name: 'Show photo 1 of 1' })).toBeVisible();

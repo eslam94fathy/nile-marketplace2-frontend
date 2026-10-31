@@ -209,6 +209,10 @@ describe('audit entry (spec 03 AD-39, T-M10)', { timeout: 15_000 }, () => {
     expect(within(details).getByText('Selling counterfeit goods')).toBeDefined();
     expect(within(details).getByText('203.0.113.7')).toBeDefined();
     const changes = screen.getByRole('table', { name: 'Recorded fields before and after the change' });
+    // Regression (T-O4 E2E): the sideways-scrolling box is reachable by keyboard.
+    const scroller = screen.getByRole('region', { name: 'Recorded fields before and after the change' });
+    expect(scroller.getAttribute('tabindex')).toBe('0');
+    expect(scroller.contains(changes)).toBe(true);
     const row = within(changes).getByRole('row', { name: /Status/ });
     expect(within(row).getByText('Approved')).toBeDefined();
     expect(within(row).getByText('Suspended')).toBeDefined();

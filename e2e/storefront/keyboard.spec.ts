@@ -138,7 +138,7 @@ test('review with photos, its lightbox and the notification bell by keyboard onl
   await expect(page.getByText('Ready', { exact: true })).toHaveCount(2, { timeout: 30_000 });
   await expectNoBlockingA11yViolations(page);
   await press(page, page.getByRole('button', { name: 'Publish review' }));
-  await expect(page.getByText('Thanks, your review is published.')).toBeVisible();
+  await expect(page.getByText('Thanks, your review is published.', { exact: true })).toBeVisible();
 
   // Review photos open in the lightbox: arrows move, Escape closes, focus returns to the photo.
   await page.goto(`/p/${slug}`);

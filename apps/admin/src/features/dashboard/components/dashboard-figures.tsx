@@ -78,7 +78,9 @@ function FigureCard({
 }) {
   const headingId = `figures-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   return (
-    <section aria-labelledby={headingId} className="space-y-2 rounded-lg border border-border p-4">
+    // min-w-0: a grid item may shrink below its content, so the sales table scrolls inside its own box instead of
+    // widening the page on phones (T-O4 E2E, 360 px).
+    <section aria-labelledby={headingId} className="min-w-0 space-y-2 rounded-lg border border-border p-4">
       <h3 id={headingId} className="font-semibold">
         {title}
       </h3>
@@ -119,7 +121,9 @@ function SalesTable({ gmv }: { readonly gmv: Figures['gmv'] }) {
   const max = maxMoney(gmv.flatMap((day) => [day.placed, day.delivered]));
   const days = [...gmv].reverse();
   return (
-    <div className="max-h-96 overflow-y-auto">
+    // Scrolls past 96 rem: focusable and named so keyboard users can scroll it (axe scrollable-region-focusable,
+    // found by the T-O4 E2E run), as DataTable does.
+    <div role="region" aria-label={COPY.salesCaption} tabIndex={0} className="max-h-96 overflow-y-auto">
       <table className="w-full text-sm">
         <caption className="sr-only">{COPY.salesCaption}</caption>
         <thead className="sticky top-0 bg-background text-left text-muted-foreground">
@@ -178,7 +182,7 @@ function FiguresGrid({ figures }: { readonly figures: Figures }) {
           }))}
         />
       </FigureCard>
-      <div className="lg:col-span-2">
+      <div className="min-w-0 lg:col-span-2">
         <FigureCard title={COPY.salesTitle}>
           <SalesTable gmv={figures.gmv} />
         </FigureCard>

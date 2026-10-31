@@ -64,6 +64,8 @@ import { CancelDialog } from './cancel-dialog';
 type Item = AdminSellerOrder['items'][number];
 
 const linkClass = 'text-primary underline-offset-4 hover:underline';
+/** A link outside running text: at least 24 px tall (WCAG 2.2 target-size). */
+const TARGET_CLASS = 'inline-flex min-h-6 items-center';
 
 /** History statuses are plain strings in the API: known ones get their label, anything else shows as is. */
 function labelOf(labels: Readonly<Record<string, string>>, known: readonly string[]) {
@@ -191,12 +193,13 @@ function OrderContent({
               <Row label={COPY.paymentDeadline}>{formatDateTime(order.paymentExpiresAt)}</Row>
             ) : null}
             <Row label={COPY.customer}>
-              <span className="flex flex-wrap gap-x-3">
+              {/* Side by side or wrapped, each link keeps a 24 px target (WCAG 2.2 target-size, T-O4 E2E). */}
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>{COPY.shortId(order.customerId)}</span>
-                <Link href={customerOrdersPath(order.customerId)} className={linkClass}>
+                <Link href={customerOrdersPath(order.customerId)} className={`${TARGET_CLASS} ${linkClass}`}>
                   {COPY.otherOrders}
                 </Link>
-                <Link href={customerReturnsPath(order.customerId)} className={linkClass}>
+                <Link href={customerReturnsPath(order.customerId)} className={`${TARGET_CLASS} ${linkClass}`}>
                   {COPY.customerReturns}
                 </Link>
               </span>

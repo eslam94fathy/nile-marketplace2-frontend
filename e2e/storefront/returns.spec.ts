@@ -53,6 +53,6 @@ test('request a return for a delivered parcel, then cancel it', async ({
     .getByRole('dialog', { name: 'Cancel this return?' })
     .getByRole('button', { name: 'Cancel return' })
     .click();
-  await expect(page.getByText('Return cancelled.')).toBeVisible();
+  await expect(page.getByText('Return cancelled.', { exact: true })).toBeVisible();
   await expect(page.getByText('Cancelled').first()).toBeVisible();
 });

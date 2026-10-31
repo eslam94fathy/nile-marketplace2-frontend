@@ -204,6 +204,10 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(screen.getByRole('link', { name: 'Returns of this customer' }).getAttribute('href')).toBe(
       `/returns?customer=${order.customerId}`,
     );
+    // Regression (T-O4 E2E, axe target-size): the customer links keep a 24 px target when they wrap.
+    for (const name of ['Returns of this customer', 'Other orders of this customer']) {
+      expect(screen.getByRole('link', { name }).className).toContain('min-h-6');
+    }
     const items = within(seller).getByRole('table', { name: 'Items from Nile Crafts' });
     expect(within(items).getByRole('columnheader', { name: 'Returned' })).toBeDefined();
     expect(within(seller).getByText('Paid for returned items')).toBeDefined();
