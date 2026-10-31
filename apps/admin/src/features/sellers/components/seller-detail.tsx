@@ -15,6 +15,7 @@ import {
   ErrorState,
   NotFoundScreen,
   PageHeader,
+  RatingStars,
   SELLER_STATUS_TONES,
   Skeleton,
   StatusBadge,
@@ -26,7 +27,7 @@ import type { ReactNode } from 'react';
 import { useActorLabel, useGovernorateName } from '@/features/lookups';
 import { StoreProducts } from '@/features/products';
 import { publicEnv } from '@/lib/env/public';
-import { ownerAccountsPath, ROUTES, STOREFRONT_SELLER_SEARCH_PATH } from '@/lib/routes';
+import { ownerAccountsPath, ROUTES, sellerReviewsPath, STOREFRONT_SELLER_SEARCH_PATH } from '@/lib/routes';
 import { isSellerMissing, sellerQuery, type AdminSellerDetail } from '../api';
 import { SELLERS_COPY as COPY } from '../copy';
 import { CommissionForm } from './commission-form';
@@ -159,6 +160,10 @@ function SellerContent({
                 ...(address.landmark === null ? [] : [address.landmark]),
               ].join(', ')}
             />
+            <Row
+              label={COPY.rating}
+              value={<RatingStars avg={seller.ratingAvg} count={seller.ratingCount} />}
+            />
             <Row label={COPY.commission} value={formatRatePercent(seller.commissionRate)} />
             <Row label={COPY.created} value={formatDate(seller.createdAt)} />
             <Row
@@ -191,6 +196,14 @@ function SellerContent({
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   {COPY.financeAccount}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={sellerReviewsPath(seller.id)}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {COPY.reviews}
                 </Link>
               </li>
               <li className="text-muted-foreground">{COPY.ordersNote}</li>
@@ -239,7 +252,7 @@ function History({ title, children }: { readonly title: string; readonly childre
   );
 }
 
-function Row({ label, value }: { readonly label: string; readonly value: string }) {
+function Row({ label, value }: { readonly label: string; readonly value: ReactNode }) {
   return (
     <div className="grid grid-cols-[10rem_1fr] gap-2">
       <dt className="text-muted-foreground">{label}</dt>

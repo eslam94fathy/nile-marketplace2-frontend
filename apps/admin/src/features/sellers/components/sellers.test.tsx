@@ -113,7 +113,7 @@ describe('sellers list (spec 03 AD-04)', { timeout: 15_000 }, () => {
         '/admin/sellers',
         ({ request, reply }) => {
           queries.push(new URL(request.url).searchParams);
-          return reply.ok([{ ...SELLER, commissionRate: '0.1250' }], {
+          return reply.ok([{ ...SELLER, commissionRate: '0.1250', ratingAvg: '4.30', ratingCount: 12 }], {
             nextCursor: null,
             hasMore: false,
             limit: 20,
@@ -128,6 +128,7 @@ describe('sellers list (spec 03 AD-04)', { timeout: 15_000 }, () => {
     expect(link.getAttribute('href')).toBe(`/sellers/${SELLER.id}`);
     expect(await within(table).findByText('Giza')).toBeDefined();
     expect(within(table).getByText('12.5%')).toBeDefined();
+    expect(within(table).getByText('Rated 4.3 out of 5 from 12 reviews')).toBeDefined();
     expect(Object.fromEntries(queries[0] ?? [])).toEqual({
       limit: '20',
       sort: 'createdAt',
@@ -220,6 +221,10 @@ describe('seller page (spec 03 AD-05)', { timeout: 20_000 }, () => {
     expect(screen.getByRole('link', { name: 'Finance account' }).getAttribute('href')).toBe(
       `/finance/accounts?owner=${SELLER.id}&type=seller_payable`,
     );
+    expect(screen.getByRole('link', { name: 'Reviews' }).getAttribute('href')).toBe(
+      `/reviews?seller=${SELLER.id}`,
+    );
+    expect(screen.getByText('No reviews yet')).toBeDefined();
     const status = screen.getByRole('table', { name: 'Status changes, newest first' });
     expect(within(status).getByText('Rejected → Waiting for approval')).toBeDefined();
     expect(within(status).getByText('Seller')).toBeDefined();

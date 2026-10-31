@@ -51,5 +51,5 @@ export { couponFactory } from './factories/coupons';
 export { dashboardFactory } from './factories/dashboard';
 export { sellerOrderFactory } from './factories/seller-order';
 export { adminReturnFactory, sellerReturnFactory } from './factories/returns';
-export { sellerReviewFactory } from './factories/reviews';
+export { adminReviewFactory, sellerReviewFactory } from './factories/reviews';
 export { adminTicketFactory, ticketFactory, ticketMessageFactory } from './factories/support';

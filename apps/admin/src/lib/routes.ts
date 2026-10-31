@@ -53,6 +53,12 @@ export const productPath = (productId: string) => `/products/${productId}` as co
 /** AD-30 filtered to one product (AD-27 "Reviews"). The parameter name is fixed here and honoured by T-M6. */
 export const productReviewsPath = (productId: string) => `${ROUTES.reviews}?product=${productId}` as const;
 
+/** AD-30 filtered to one seller (AD-05 "Reviews", T-M6). */
+export const sellerReviewsPath = (sellerId: string) => `${ROUTES.reviews}?seller=${sellerId}` as const;
+
+/** AD-31 Review (T-M6). */
+export const reviewPath = (reviewId: string) => `${ROUTES.reviews}/${reviewId}` as const;
+
 /** AD-33 Return (T-M7). */
 export const returnPath = (returnId: string) => `${ROUTES.returns}/${returnId}` as const;
 
