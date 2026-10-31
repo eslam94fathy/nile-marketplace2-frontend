@@ -418,6 +418,9 @@ Phase n on `phase/n-agent-r2`, stacked on `phase/m-admin-r2` (not merged yet) ·
 ### 14.1by Decided (2026-10-31, T-N2)
 TN2-Q1: the spec 04 §7.3 announcements ("New pickup assigned.", "A shipment was reassigned.") only on AG-04 Shipments, as a polite screen-reader region (`AssignmentAnnouncer`), no visible toast, nothing while polling without a socket · TN2-Q2: T-N2 = the announcer and a test of `SHIPMENTS_INVALIDATION`; live refresh and the polling fallback came with T-J5, the push card, Home Screen hint and push click with T-J6, push `high` urgency is the backend's (NO-10) · phase n complete (design 01 R-88).
 
+### 14.1bz Decided (2026-10-31, phase o plan)
+Phase o on `phase/o-r2-hardening`, stacked on `phase/n-agent-r2` (not merged yet); "Phase o detail" in `release-2-plan.md` approved · TO-Q1: backend-free work first (reviews, fixes, unit / component tests, E2E specs written), then one lab session with the backend and the dev servers stopped for every run (CSP report-only + enforced, all E2E, keyboard, Lighthouse) · TO-Q2: security findings in `docs/frontend/security-review-r2.md`, decisions in design 01 R-89 · TO-Q3: performance acceptance = CLS < 0.1 with images, LCP image prioritised, budgeted pages' JavaScript not above R1's 341 KB; LCP / TBT recorded, not blocking · TO-Q4: cross-role flows in `e2e/flows/` (own Playwright project, absolute app URLs), each role's step through the UI, setup through the API.
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 
