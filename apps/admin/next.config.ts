@@ -37,6 +37,7 @@ const nextConfig: NextConfig = {
     '@nile/query',
     '@nile/notifications',
     '@nile/realtime',
+    '@nile/support-screens',
     '@nile/ui',
   ],
 };

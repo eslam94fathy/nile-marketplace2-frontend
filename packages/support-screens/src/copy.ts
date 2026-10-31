@@ -88,4 +88,6 @@ export const THREAD_COPY = {
   backToTickets: 'Back to your tickets',
   /** TK7-COPY */
   writeMessage: 'Write a message.',
+  /** TM5-COPY: an internal note's sender line (admins only, spec 03 §7.6 "Internal note"). */
+  internalNoteBy: (sender: string) => `Internal note · ${sender}`,
 } as const;

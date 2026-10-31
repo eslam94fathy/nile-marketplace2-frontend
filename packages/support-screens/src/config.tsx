@@ -48,7 +48,14 @@ export interface SupportScreensConfig {
     signal: AbortSignal,
   ) => Promise<readonly OrderChoice[]>;
   readonly linkKind?: SupportLinkKind;
+  /**
+   * Whose screens these are: `user` (customers, sellers: `/support/tickets…`) or `admin` (the support console:
+   * `/admin/support/tickets…`, internal notes shown and writable, the user's typing shown). Default `user`.
+   */
+  readonly audience?: SupportAudience;
 }
+
+export type SupportAudience = 'user' | 'admin';
 
 /**
  * What the order select holds: an order (customers, `orderId` + the URL's parcel) or a seller order (sellers,

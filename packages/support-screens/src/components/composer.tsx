@@ -9,7 +9,13 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, type KeyboardEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import { postMessage, supportKeys, type PostMessageBody, type TicketMessage } from '../api';
+import {
+  postMessage,
+  supportKeys,
+  type AdminPostMessageBody,
+  type PostMessageBody,
+  type TicketMessage,
+} from '../api';
 import { useSupportConfig } from '../config';
 import { THREAD_COPY as COPY } from '../copy';
 import { messageSchema, postMessageBody, type MessageValues } from '../schemas';
@@ -33,22 +39,32 @@ export interface ComposerProps {
   readonly onStale: () => void;
   /** After a sent message, so the thread scrolls to it. */
   readonly onSent: () => void;
+  /**
+   * Admin console only (AD-29, AD-Q-13): the message is an internal note (`internal: true`), never seen by the
+   * user, so no typing signal is sent while writing it.
+   */
+  readonly internal?: boolean;
+  /** Overrides for the admin console's two tabs; the user screens keep the defaults. */
+  readonly labels?: { readonly field?: string; readonly hint?: string; readonly submit?: string };
 }
 
 /**
  * Reply box (spec 00 §12.7): text 1..4000 and up to 3 photos; Enter adds a line, Ctrl+Enter / ⌘+Enter sends.
  * One idempotency key per message intent; a failed send keeps the text and offers "Retry".
  */
-export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
-  const { api, scope } = useSupportConfig();
+export function Composer({ ticketId, onStale, onSent, internal = false, labels = {} }: ComposerProps) {
+  const { api, scope, audience = 'user' } = useSupportConfig();
   const queryClient = useQueryClient();
   const { uploads, cooldownSeconds } = useSupportUploads();
   const notifyTyping = useTypingSignal(ticketId);
-  const [failed, setFailed] = useState<{ body: PostMessageBody; correlationId?: string } | null>(null);
+  const [failed, setFailed] = useState<{
+    body: PostMessageBody | AdminPostMessageBody;
+    correlationId?: string;
+  } | null>(null);
   const form = useForm<MessageValues>({ resolver: zodResolver(messageSchema), defaultValues: { body: '' } });
 
-  const send = useIdempotentMutation<TicketMessage, PostMessageBody>({
-    mutationFn: (body, key) => postMessage(api, ticketId, body, key),
+  const send = useIdempotentMutation<TicketMessage, PostMessageBody | AdminPostMessageBody>({
+    mutationFn: (body, key) => postMessage(api, ticketId, body, key, audience),
     onSuccess: async (message) => {
       setFailed(null);
       form.reset({ body: '' });
@@ -65,7 +81,7 @@ export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
     },
   });
 
-  const deliver = (body: PostMessageBody) => {
+  const deliver = (body: PostMessageBody | AdminPostMessageBody) => {
     setFailed(null);
     send.mutate(body, {
       onError: (error) => {
@@ -85,7 +101,9 @@ export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
   };
 
   const submit = form.handleSubmit((values) => {
-    deliver(postMessageBody(values.body.trim(), uploads.readyMediaIds));
+    const body = postMessageBody(values.body.trim(), uploads.readyMediaIds);
+    // Strict bodies (CLAUDE.md §3): `internal` is sent only for a note.
+    deliver(internal ? { ...body, internal: true } : body);
   });
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -119,8 +137,8 @@ export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
       <Field
         control={form.control}
         name="body"
-        label={COPY.messageLabel}
-        description={COPY.sendHint}
+        label={labels.field ?? COPY.messageLabel}
+        description={labels.hint ?? COPY.sendHint}
         required
         render={({ field, controlProps }) => (
           <Textarea
@@ -130,7 +148,7 @@ export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
             onKeyDown={onKeyDown}
             onChange={(event) => {
               field.onChange(event);
-              notifyTyping();
+              if (!internal) notifyTyping();
             }}
           />
         )}
@@ -138,7 +156,7 @@ export function Composer({ ticketId, onStale, onSent }: ComposerProps) {
       <PhotoPicker label={UI_COPY.addPhotos} uploads={uploads} cooldownSeconds={cooldownSeconds} />
       {uploads.busy ? <p className="text-sm text-muted-foreground">{UI_COPY.waitForUploads}</p> : null}
       <Button type="submit" disabled={busy}>
-        {COPY.send}
+        {labels.submit ?? COPY.send}
       </Button>
     </form>
   );

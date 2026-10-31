@@ -3,6 +3,7 @@
 import { fetchRealtimeToken } from '@nile/auth/client';
 import { notificationsInvalidation } from '@nile/notifications';
 import { type InvalidationMap, RealtimeProvider } from '@nile/realtime';
+import { supportInvalidation } from '@nile/support-screens';
 import { usePathname } from 'next/navigation';
 import { dashboardKeys } from '@/features/dashboard';
 import { type ReactNode, useSyncExternalStore } from 'react';
@@ -10,14 +11,18 @@ import { APP } from '@/lib/app';
 import { publicEnv } from '@/lib/env/public';
 import { sessionClient } from '@/lib/session-client';
 
+const support = supportInvalidation(APP.name);
+
 /**
- * Notifications from T-J6; the dashboard cards from T-M1 (design 02 §5.3). One handler per message type: T-M5 and
- * T-M7 add their own keys to the support and return handlers.
+ * Notifications from T-J6, the dashboard cards from T-M1, the support console from T-M5 (design 02 §5.3). One
+ * handler per message type: a message that several features own lists every key it touches; T-M7 adds the
+ * returns keys to the return handler.
  */
 const INVALIDATION_MAP: InvalidationMap = {
   ...notificationsInvalidation(APP.name),
+  ...support,
   // The figures count tickets too, so the whole dashboard is read again.
-  'support.ticket_updated': () => [dashboardKeys.all()],
+  'support.ticket_updated': (data) => [...support['support.ticket_updated'](data), dashboardKeys.all()],
   'return.updated': () => [dashboardKeys.returnsToDecide()],
 };
 

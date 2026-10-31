@@ -77,39 +77,39 @@ export function TicketThread({ ticketId }: { readonly ticketId: string }) {
   return <Thread ticket={ticket.data} onStale={() => void ticket.refetch()} />;
 }
 
-function Thread({ ticket, onStale }: { readonly ticket: Ticket; readonly onStale: () => void }) {
-  const { api, scope, routes, Link } = useSupportConfig();
-  const queryClient = useQueryClient();
+/**
+ * The thread's messages, oldest first, polled only while no socket is connected (design 02 §5.2). Users never
+ * get internal notes; this keeps that true on screen as well (SF-31 acceptance). Admins see them (AD-29).
+ */
+export function useThreadMessages(ticketId: string) {
+  const { api, scope, audience = 'user' } = useSupportConfig();
   const live = useRealtimeConnected();
   const messages = useInfiniteQuery({
-    ...messagesOptions(api, scope, ticket.id),
+    ...messagesOptions(api, scope, ticketId, audience),
     // Fallback only while no socket is connected; paused in background tabs (design 02 §5.2).
     refetchInterval: live ? false : MESSAGES_POLL_MS,
   });
-  // The API pages newest first; the thread shows oldest first. Users never get internal notes; this keeps
-  // that true on screen as well (SF-31 acceptance).
+  // The API pages newest first; the thread shows oldest first.
   const list: TicketMessage[] =
     messages.data?.pages
       .flatMap((page) => page.data)
-      .filter((message) => message.kind !== 'internal_note')
+      .filter((message) => audience === 'admin' || message.kind !== 'internal_note')
       .reverse() ?? [];
+  return { messages, list };
+}
 
-  useMarkRead(ticket.id, list.at(-1)?.id ?? null);
-  const typing = useOtherSideTyping(ticket.id);
-  const reconnecting = useReconnecting();
-  // Counts the user's own sends, so the view follows them even when scrolled up.
-  const [sent, setSent] = useState(0);
-
-  let content: ReactNode;
+/** Loading or error state for the message list, or null once messages are there. */
+export function messagesPlaceholder(messages: ReturnType<typeof useThreadMessages>['messages']): ReactNode {
   if (messages.isPending) {
-    content = (
+    return (
       <LoadingRegion className="space-y-3">
         <Skeleton className="h-16 w-2/3" />
         <Skeleton className="ms-auto h-16 w-2/3" />
       </LoadingRegion>
     );
-  } else if (messages.isError) {
-    content = (
+  }
+  if (messages.isError) {
+    return (
       <ErrorState
         message={COPY.messagesLoadFailed}
         onRetry={() => void messages.refetch()}
@@ -118,6 +118,21 @@ function Thread({ ticket, onStale }: { readonly ticket: Ticket; readonly onStale
       />
     );
   }
+  return null;
+}
+
+function Thread({ ticket, onStale }: { readonly ticket: Ticket; readonly onStale: () => void }) {
+  const { scope, routes, Link } = useSupportConfig();
+  const queryClient = useQueryClient();
+  const { messages, list } = useThreadMessages(ticket.id);
+
+  useMarkRead(ticket.id, list.at(-1)?.id ?? null);
+  const typing = useOtherSideTyping(ticket.id);
+  const reconnecting = useReconnecting();
+  // Counts the user's own sends, so the view follows them even when scrolled up.
+  const [sent, setSent] = useState(0);
+
+  const content = messagesPlaceholder(messages);
 
   return (
     <div className="space-y-6">
@@ -183,7 +198,7 @@ function Thread({ ticket, onStale }: { readonly ticket: Ticket; readonly onStale
   );
 }
 
-interface MessageViewportProps {
+export interface MessageViewportProps {
   /** Oldest first. */
   readonly list: readonly TicketMessage[];
   /** Loading or error state instead of the messages. */
@@ -202,7 +217,7 @@ interface MessageViewportProps {
  * is at the end (and always after their own send), otherwise offers "New messages ↓"; loading earlier messages
  * keeps the reader where they were. New messages from the other side are announced politely.
  */
-function MessageViewport({
+export function MessageViewport({
   list,
   placeholder,
   reconnecting,
@@ -319,8 +334,8 @@ function MessageViewport({
 }
 
 /** Marks the ticket read when it opens and whenever a newer message is on screen in a visible tab. */
-function useMarkRead(ticketId: string, newestId: string | null) {
-  const { api, scope } = useSupportConfig();
+export function useMarkRead(ticketId: string, newestId: string | null) {
+  const { api, scope, audience = 'user' } = useSupportConfig();
   const queryClient = useQueryClient();
   const marked = useRef<string | null>(null);
   useEffect(() => {
@@ -328,7 +343,7 @@ function useMarkRead(ticketId: string, newestId: string | null) {
     const mark = () => {
       if (document.visibilityState !== 'visible' || marked.current === newestId) return;
       marked.current = newestId;
-      markTicketRead(api, ticketId).then(
+      markTicketRead(api, ticketId, audience).then(
         () => queryClient.invalidateQueries({ queryKey: supportKeys(scope).lists() }),
         () => {
           // Not marked: try again with the next message or the next time the tab shows.
@@ -341,15 +356,20 @@ function useMarkRead(ticketId: string, newestId: string | null) {
     return () => {
       document.removeEventListener('visibilitychange', mark);
     };
-  }, [api, newestId, queryClient, scope, ticketId]);
+  }, [api, audience, newestId, queryClient, scope, ticketId]);
 }
 
-/** True for a few seconds after the other side's `support.typing` (never stored, backend realtime docs). */
-function useOtherSideTyping(ticketId: string): boolean {
+/**
+ * True for a few seconds after the other side's `support.typing` (never stored, backend realtime docs): an admin
+ * for users, the customer or seller for admins.
+ */
+export function useOtherSideTyping(ticketId: string): boolean {
+  const { audience = 'user' } = useSupportConfig();
   const [typing, setTyping] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useRealtimeMessage('support.typing', ({ data }) => {
-    if (data.ticketId !== ticketId || data.role !== 'admin') return;
+    const fromOtherSide = audience === 'admin' ? data.role !== 'admin' : data.role === 'admin';
+    if (data.ticketId !== ticketId || !fromOtherSide) return;
     setTyping(true);
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -370,7 +390,7 @@ function useOtherSideTyping(ticketId: string): boolean {
 }
 
 /** "Reconnecting…" only after the thread has been live once, not while the first connection opens. */
-function useReconnecting(): boolean {
+export function useReconnecting(): boolean {
   const status = useRealtimeStatus();
   const [wasLive, setWasLive] = useState(false);
   if (status === 'connected' && !wasLive) setWasLive(true);

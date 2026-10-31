@@ -7,7 +7,8 @@ import { THREAD_COPY as COPY } from '../copy';
 
 /**
  * One line of a support thread (spec 00 §12.7): own messages at the end with "You", the other side named as
- * the API gives it, system lines centred and muted. Bodies are plain text, never HTML.
+ * the API gives it, system lines centred and muted, internal notes (admins only, AD-29) labelled on a warning
+ * background. Bodies are plain text, never HTML.
  */
 export function MessageItem({
   message,
@@ -30,14 +31,21 @@ export function MessageItem({
     );
   }
   const own = message.sender.isMe;
+  const note = message.kind === 'internal_note';
   const sender = own ? COPY.you : message.sender.displayName;
   return (
     <div className={cn('flex flex-col gap-1', own ? 'items-end' : 'items-start')}>
-      <p className="text-xs font-medium text-muted-foreground">{sender}</p>
+      <p className="text-xs font-medium text-muted-foreground">
+        {note ? COPY.internalNoteBy(sender) : sender}
+      </p>
       <div
         className={cn(
           'max-w-[85%] space-y-2 rounded-lg px-3 py-2 text-sm',
-          own ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+          note
+            ? 'border border-warning bg-warning-muted text-foreground'
+            : own
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-foreground',
         )}
       >
         <p className="whitespace-pre-wrap break-words">{message.body}</p>

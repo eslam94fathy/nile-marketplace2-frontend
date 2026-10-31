@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { PlaceholderScreen } from '@nile/ui';
+import { TicketsList } from '@/features/support';
 import { requireSession } from '@/lib/dal';
 
 export const metadata: Metadata = { title: 'Tickets' };
 
-/** AD-28 Tickets: the dashboard's "Tickets waiting longest" links here since T-M1, built in T-M5. */
-export default async function SupportPage() {
-  await requireSession();
-  return <PlaceholderScreen title="Tickets" task="T-M5" />;
+/** AD-28 Tickets: views and filters come from the URL; the signed-in admin's id serves the "Mine" view. */
+export default async function SupportPage({ searchParams }: PageProps<'/support'>) {
+  const { user } = await requireSession();
+  return <TicketsList params={await searchParams} currentUserId={user.id} />;
 }

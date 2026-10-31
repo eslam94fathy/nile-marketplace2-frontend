@@ -3,14 +3,17 @@ import type { TicketStatus } from '@nile/domain';
 import { infiniteListOptions, queryKey, type QueryScope } from '@nile/query';
 import type { InvalidationMap } from '@nile/realtime';
 import { queryOptions } from '@tanstack/react-query';
+import type { SupportAudience } from './config';
 
 // Support tickets for customers and sellers (design 02 §5.2 "Shared"): the list, one ticket and its messages.
-// Keys live under the app's scope, so sign-out clears them.
+// Keys live under the app's scope, so sign-out clears them. The admin console (T-M5) reads messages, posts and
+// marks read through the admin endpoints under the same keys, so one invalidation map serves every app.
 
 export type Ticket = Schema<'TicketSummaryDto'>;
 export type TicketMessage = Schema<'TicketMessageDto'>;
 export type OpenTicketBody = Schema<'CustomerOpenTicketDto'>;
 export type PostMessageBody = Schema<'PostMessageDto'>;
+export type AdminPostMessageBody = Schema<'AdminPostMessageDto'>;
 export type AppScope = Exclude<QueryScope, 'public'>;
 
 /** List tabs (spec 01 SF-29): "Open" holds everything not yet closed, a solved ticket included. */
@@ -86,20 +89,29 @@ export function ticketQuery(api: ApiClient, scope: AppScope, ticketId: string) {
   });
 }
 
-/** Newest first, as the API pages them; the thread reverses them (spec 00 §12.7). */
-export function messagesOptions(api: ApiClient, scope: AppScope, ticketId: string) {
+/**
+ * Newest first, as the API pages them; the thread reverses them (spec 00 §12.7). Admins also get internal
+ * notes [SPEC 16].
+ */
+export function messagesOptions(
+  api: ApiClient,
+  scope: AppScope,
+  ticketId: string,
+  audience: SupportAudience = 'user',
+) {
   return infiniteListOptions({
     queryKey: supportKeys(scope).messages(ticketId),
-    fetchPage: (cursor, signal) =>
-      unwrap(
-        api.GET('/api/v1/support/tickets/{ticketId}/messages', {
-          params: {
-            path: { ticketId },
-            query: { limit: MESSAGES_PAGE_SIZE, ...(cursor === undefined ? {} : { cursor }) },
-          },
-          signal,
-        }),
-      ),
+    fetchPage: (cursor, signal) => {
+      const params = {
+        path: { ticketId },
+        query: { limit: MESSAGES_PAGE_SIZE, ...(cursor === undefined ? {} : { cursor }) },
+      };
+      return unwrap(
+        audience === 'admin'
+          ? api.GET('/api/v1/admin/support/tickets/{ticketId}/messages', { params, signal })
+          : api.GET('/api/v1/support/tickets/{ticketId}/messages', { params, signal }),
+      );
+    },
     staleTime: 0,
   });
 }
@@ -119,22 +131,33 @@ export async function openTicket(
   ).data;
 }
 
+/** A user's message, or an admin's reply or internal note (`internal: true`, sent only for a note). */
 export async function postMessage(
   api: ApiClient,
   ticketId: string,
-  body: PostMessageBody,
+  body: PostMessageBody | AdminPostMessageBody,
   idempotencyKey: string,
+  audience: SupportAudience = 'user',
 ): Promise<TicketMessage> {
+  const params = { path: { ticketId }, header: { 'Idempotency-Key': idempotencyKey } };
   return (
     await unwrap(
-      api.POST('/api/v1/support/tickets/{ticketId}/messages', {
-        body,
-        params: { path: { ticketId }, header: { 'Idempotency-Key': idempotencyKey } },
-      }),
+      audience === 'admin'
+        ? api.POST('/api/v1/admin/support/tickets/{ticketId}/messages', { body, params })
+        : api.POST('/api/v1/support/tickets/{ticketId}/messages', { body, params }),
     )
   ).data;
 }
 
-export async function markTicketRead(api: ApiClient, ticketId: string): Promise<void> {
-  await unwrap(api.POST('/api/v1/support/tickets/{ticketId}/read', { params: { path: { ticketId } } }));
+export async function markTicketRead(
+  api: ApiClient,
+  ticketId: string,
+  audience: SupportAudience = 'user',
+): Promise<void> {
+  const params = { path: { ticketId } };
+  await unwrap(
+    audience === 'admin'
+      ? api.POST('/api/v1/admin/support/tickets/{ticketId}/read', { params })
+      : api.POST('/api/v1/support/tickets/{ticketId}/read', { params }),
+  );
 }

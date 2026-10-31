@@ -40,6 +40,7 @@ const NAV_GROUPS = [
       { href: ROUTES.customers, label: 'Customers' },
     ],
   },
+  { label: 'Support', items: [{ href: ROUTES.support, label: 'Tickets' }] },
   { label: 'Catalog', items: [{ href: ROUTES.categories, label: 'Categories' }] },
   {
     label: 'Delivery',
