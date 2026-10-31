@@ -415,6 +415,9 @@ New `features/audit`: AD-38 `/audit?actor=&action=&target=&targetId=&from=&to=` 
 ### 14.1bx Decided (2026-10-31, T-N1)
 Phase n on `phase/n-agent-r2`, stacked on `phase/m-admin-r2` (not merged yet) · TN1-Q1: AG-04 "To the seller" as two sections ("Failed deliveries", "Collected returns"), each oldest first with its own "Load more", because `AgentShipmentDto` has no `createdAt` to merge on; one merged list once the backend adds it (OQ-25) · TN1-Q2: `?tab=seller` replaces `?tab=returns`; an old link falls back to "To pick up" · TN1-Q3: return card with a "Return pickup" badge, collect from the customer, deliver to the seller, "Nothing to collect", "Pickup attempt {n} of 3"; AG-05 "Return pickup" with the customer card first, the seller card, "Nothing to collect.", pickup attempts with `ATTEMPT_FAILURE_REASON_LABELS.pickup`, times Collected / Handed to the seller; `SHIPMENT_STATUS_LABELS.agentReturn` (a cancelled return reads "Cancelled") · TN1-Q4: R1 / R3 confirmed in a dialog then toasted, the screen shows the new status (no done screen); R2 toasted; R3 reuses its key on a retry; AG-06 kind chips in the URL (`?kind=`), return rows "Handed to the seller {date}" without money · TN1-COPY approved as in `features/shipments/copy.ts` (design 01 R-87).
 
+### 14.1by Decided (2026-10-31, T-N2)
+TN2-Q1: the spec 04 §7.3 announcements ("New pickup assigned.", "A shipment was reassigned.") only on AG-04 Shipments, as a polite screen-reader region (`AssignmentAnnouncer`), no visible toast, nothing while polling without a socket · TN2-Q2: T-N2 = the announcer and a test of `SHIPMENTS_INVALIDATION`; live refresh and the polling fallback came with T-J5, the push card, Home Screen hint and push click with T-J6, push `high` urgency is the backend's (NO-10) · phase n complete (design 01 R-88).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

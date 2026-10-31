@@ -6,6 +6,9 @@ export const SHIPMENTS_COPY = {
   title: 'Shipments',
   /** The push card on this screen (spec 04 AG-09, AG-Q-8). */
   pushCard: 'Get notified when a new shipment is assigned to you.',
+  /** Spec 04 §7.3 live announcements. */
+  assignedAnnouncement: 'New pickup assigned.',
+  unassignedAnnouncement: 'A shipment was reassigned.',
   tabsLabel: 'Shipment lists',
   tabs: { pickup: 'To pick up', deliver: 'To deliver', seller: 'To the seller' },
   empty: { pickup: 'Nothing to pick up.', deliver: 'Nothing to deliver.' },

@@ -19,6 +19,7 @@ import {
   tabStreams,
   type ActiveTab,
 } from '../lib/tabs';
+import { AssignmentAnnouncer } from './assignment-announcer';
 import { ShipmentCard } from './shipment-card';
 
 const TABS = Object.keys(ACTIVE_TABS) as ActiveTab[];
@@ -28,13 +29,15 @@ const tabHref = (tab: ActiveTab): Route =>
 
 /**
  * AG-04 Active shipments: three tabs by what the agent does next (deliveries and return pickups together,
- * AG-Q-7), oldest first, polled every 30 s while visible and no socket is connected.
+ * AG-Q-7), oldest first, polled every 30 s while visible and no socket is connected; assignments and
+ * reassignments announced politely (T-N2).
  */
 export function ActiveShipments({ tab: tabParam }: { readonly tab: string | null }) {
   const tab = activeTab(tabParam);
   return (
     <div className="space-y-4">
       <PageHeader title={COPY.title} />
+      <AssignmentAnnouncer />
       {/* Until dismissed or accepted: assignments are the agent's main trigger (AG-Q-8). */}
       <PushPromptCard text={COPY.pushCard} />
       <InactiveGate>
