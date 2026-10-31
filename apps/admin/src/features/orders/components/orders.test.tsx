@@ -130,7 +130,7 @@ describe('orders list (spec 03 AD-14)', { timeout: 15_000 }, () => {
 });
 
 describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
-  it('overview, address, totals, seller order with money, history and links; no actions', async () => {
+  it('overview, address, totals, seller order with money, history and links; cancel actions', async () => {
     const shipment = adminShipmentFactory({
       orderId: ORDER.id,
       sellerOrderId: ORDER.sellerOrders[0]?.id ?? '',
@@ -140,8 +140,9 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: `Order ${ORDER.orderNumber}` }, { timeout: 5000 }),
     ).toBeDefined();
-    expect(screen.getByText('To cancel, ask the seller or the customer.')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
+    expect(screen.queryByText('To cancel, ask the seller or the customer.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel order' })).toBeDefined();
+    expect(screen.getByRole('button', { name: "Cancel Nile Crafts's part" })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Other orders of this customer' }).getAttribute('href')).toBe(
       `/orders?status=all&customer=${ORDER.customerId}`,
     );

@@ -14,10 +14,11 @@ import {
   SELLER_ORDER_STATUSES,
 } from '@nile/domain';
 import {
+  Button,
   buttonVariants,
   DataTable,
   ErrorState,
-  Notice,
+  FormAlert,
   NotFoundScreen,
   ORDER_STATUS_TONES,
   PageHeader,
@@ -29,7 +30,7 @@ import {
 } from '@nile/ui';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useActorLabel } from '@/features/lookups';
 import { OrderPaymentSummary } from '@/features/payments';
 import {
@@ -41,14 +42,17 @@ import {
   shipmentPath,
 } from '@/lib/routes';
 import {
+  isAdminCancellable,
   isOrderMissing,
   orderQuery,
   orderShipmentsQuery,
   type AdminOrder,
   type AdminSellerOrder,
+  type CancelTarget,
   type HistoryEntry,
 } from '../api';
 import { ORDERS_COPY as COPY } from '../copy';
+import { CancelDialog } from './cancel-dialog';
 
 type Item = AdminSellerOrder['items'][number];
 
@@ -66,7 +70,7 @@ export interface OrderDetailProps {
   readonly currentUserId: string;
 }
 
-/** AD-15 Order: read-only (no admin cancellation in R1, SPEC 09 S-9). */
+/** AD-15 Order: everything about one order; R2 adds admin cancellation of a part or the whole order (T-M3). */
 export function OrderDetail({ orderId, currentUserId }: OrderDetailProps) {
   const order = useQuery(orderQuery(orderId));
   if (order.isError) {
@@ -113,6 +117,9 @@ function OrderContent({
 }) {
   const actor = useActorLabel(currentUserId);
   const shipments = useQuery(orderShipmentsQuery(order.id));
+  const [cancelling, setCancelling] = useState<CancelTarget | null>(null);
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const anyCancellable = order.sellerOrders.some(isAdminCancellable);
   const address = order.shippingAddress;
   const dateOrNone = (iso: string | null) => (iso === null ? COPY.none : formatDateTime(iso));
   const historyColumns = (label: (status: string) => string): readonly DataTableColumn<HistoryEntry>[] => [
@@ -143,8 +150,21 @@ function OrderContent({
             />
           </span>
         }
+        actions={
+          anyCancellable ? (
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setBlocked(null);
+                setCancelling({ kind: 'order', orderId: order.id });
+              }}
+            >
+              {COPY.cancelOrder}
+            </Button>
+          ) : null
+        }
       />
-      <Notice>{COPY.noCancel}</Notice>
+      {blocked === null ? null : <FormAlert>{blocked}</FormAlert>}
       <div className="grid gap-8 lg:grid-cols-2">
         <Section id="order-overview" title={COPY.overviewHeading}>
           <dl className="space-y-2 text-sm">
@@ -206,6 +226,10 @@ function OrderContent({
               shipmentId={shipmentOf(sellerOrder.id)?.id ?? null}
               shipmentsLoading={shipments.isPending}
               historyColumns={historyColumns(sellerOrderStatusLabel)}
+              onCancel={() => {
+                setBlocked(null);
+                setCancelling({ kind: 'sellerOrder', sellerOrderId: sellerOrder.id });
+              }}
             />
           ))}
         </div>
@@ -223,6 +247,16 @@ function OrderContent({
         />
       </Section>
       <OrderPaymentSummary orderId={order.id} currentUserId={currentUserId} />
+      {cancelling === null ? null : (
+        <CancelDialog
+          order={order}
+          target={cancelling}
+          onClose={() => {
+            setCancelling(null);
+          }}
+          onBlocked={setBlocked}
+        />
+      )}
     </div>
   );
 }
@@ -232,6 +266,8 @@ interface SellerOrderCardProps {
   readonly shipmentId: string | null;
   readonly shipmentsLoading: boolean;
   readonly historyColumns: readonly DataTableColumn<HistoryEntry>[];
+  /** Offered only while the seller order can be cancelled (placed, accepted, ready for pickup). */
+  readonly onCancel: () => void;
 }
 
 /** AD-15 item 4: one seller order with items, money, timeline, history, shipment and ledger link. */
@@ -240,6 +276,7 @@ function SellerOrderCard({
   shipmentId,
   shipmentsLoading,
   historyColumns,
+  onCancel,
 }: SellerOrderCardProps) {
   const headingId = `seller-order-${sellerOrder.id}`;
   const itemColumns: readonly DataTableColumn<Item>[] = [
@@ -300,6 +337,17 @@ function SellerOrderCard({
           labels={SELLER_ORDER_STATUS_LABELS.admin}
           tones={SELLER_ORDER_STATUS_TONES}
         />
+        {isAdminCancellable(sellerOrder) ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ms-auto"
+            aria-label={COPY.cancelPartAction(sellerOrder.businessName)}
+            onClick={onCancel}
+          >
+            {COPY.cancelPart}
+          </Button>
+        ) : null}
       </header>
       <DataTable
         caption={COPY.itemsCaption(sellerOrder.businessName)}

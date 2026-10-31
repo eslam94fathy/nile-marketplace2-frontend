@@ -40,7 +40,26 @@ export const ORDERS_COPY = {
   loadFailed: "This order couldn't be loaded.",
   notFound: "This order doesn't exist.",
   backToOrders: 'Back to orders',
-  noCancel: 'To cancel, ask the seller or the customer.',
+  // AD-15 A1 / A2 cancellation (spec 03 §7.3; TM3-COPY for the wording the spec doesn't give)
+  cancelPart: 'Cancel this part',
+  cancelPartAction: (business: string) => `Cancel ${business}'s part`,
+  cancelOrder: 'Cancel order',
+  cancelPartTitle: (business: string) => `Cancel ${business}'s part`,
+  cancelOrderTitle: (orderNumber: string) => `Cancel order ${orderNumber}`,
+  cancelConfirmTitle: 'Confirm cancellation',
+  cancelPartConsequence: (business: string, orderNumber: string) =>
+    `Cancel ${business}'s part of order ${orderNumber}? Stock is released, the shipment is cancelled and a card payment is refunded automatically.`,
+  cancelOrderConsequence: (orderNumber: string) =>
+    `Cancel every open part of order ${orderNumber}? Stock is released, the shipments are cancelled and a card payment is refunded automatically.`,
+  cancelReasonLabel: 'Reason',
+  cancelReasonHint: "Only admins see this reason. The customer sees 'Cancelled by Nile'.",
+  cancelSummary: (consequence: string, reason: string) => `${consequence} Reason: ${reason}`,
+  partCancelled: (business: string) => `${business}'s part was cancelled.`,
+  orderCancelled: (orderNumber: string) => `Order ${orderNumber} was cancelled.`,
+  partNotCancellable: "This part has been picked up already, so it can't be cancelled.",
+  orderBlocked: (businesses: string) =>
+    `Nothing was cancelled because these parts can't be cancelled any more: ${businesses}. Cancel the others one by one.`,
+  nothingCancellable: 'Nothing was cancelled because no part of this order can be cancelled any more.',
   overviewHeading: 'Overview',
   paymentMethod: 'Payment method',
   paymentStatus: 'Payment status',

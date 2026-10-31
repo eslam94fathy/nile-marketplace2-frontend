@@ -14,7 +14,7 @@ import * as z from 'zod';
 import { agentKeys, agentPickerQuery } from '@/features/lookups';
 import { createRemittance, financeKeys, ownerAccountQuery, type CreateRemittanceBody } from '../api';
 import { FINANCE_COPY as COPY } from '../copy';
-import { StepDialog, type Step } from './step-dialog';
+import { StepDialog, type Step } from '@/components/step-dialog';
 
 /** `CreateRemittanceDto` [VERIFIED]: amount > 0, note optional 1..500 (omitted when empty). */
 const schema = z.object({

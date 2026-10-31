@@ -388,6 +388,9 @@ Phase m on `phase/m-admin-r2`, stacked on `phase/l-seller-r2` (not merged yet) �
 ### 14.1bo Decided (2026-10-31, T-M2)
 New `features/users` (AD-24 and the account actions shared with AD-03 and AD-26) and `features/customers` (AD-25, AD-26); sidebar group "People" · TM2-Q1: AD-24 rows don't link to AD-26 (user id ≠ customer id, no filter to map them); Suspend / Reactivate on the row; backend asked (OQ-22) · TM2-Q2: one status at a time (`status[eq]`) · TM2-Q3: the AD-25 phone field searches only a whole Egyptian mobile ("Type the whole number.") · AD-26 Returns / Reviews links use `?customer=` for T-M7 / T-M6 · TM2-COPY approved as in `features/users/copy.ts` and `features/customers/copy.ts` ("Users", "Every account on Nile. Admins are managed on Admins, agents on Agents.", "Email starts with", "Suspend customer", "Customers", "Type the whole number.", "Saved addresses", "Activity", "This customer doesn't exist.", "People", …) (design 01 R-78).
 
+### 14.1bp Decided (2026-10-31, T-M3)
+AD-15 "Cancel order" (while any part is placed / accepted / ready for pickup) and "Cancel this part" · TM3-Q1: two steps like payouts (reason, then "Confirm cancellation" repeating the sentence with "Reason: {reason}"), one idempotency key per target + reason · TM3-Q2: a refused whole-order cancel is explained in an alert at the top of AD-15 naming the blocking businesses ("Nothing was cancelled because no part of this order can be cancelled any more." when none is named) · TM3-Q3: the other AD-15 R2 changes come with their targets: product links and item images T-M4, returned quantities / sums and "Returns of this customer" T-M7, refunds block T-M8, coupon and discount lines T-M9 · `StepDialog` shared from `apps/admin/src/components` · TM3-COPY approved as in `features/orders/copy.ts` (design 01 R-79).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

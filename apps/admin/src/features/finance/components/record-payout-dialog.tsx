@@ -23,7 +23,7 @@ import { createPayout, financeKeys, ownerAccountQuery, type CreatePayoutBody } f
 import { FINANCE_COPY as COPY } from '../copy';
 import { PAYEE_TYPES, type PayeeType } from '../lib/params';
 import { PayeePicker, type Payee } from './payee-picker';
-import { StepDialog, type Step } from './step-dialog';
+import { StepDialog, type Step } from '@/components/step-dialog';
 
 /** The balance a payout is checked against, per payee type [SPEC 12 FI-6]. */
 const OWED_ACCOUNT = { seller: 'seller_payable', agent: 'agent_fee_payable' } as const;

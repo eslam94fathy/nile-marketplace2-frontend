@@ -87,8 +87,6 @@ export const FINANCE_COPY = {
   amount: 'Amount (EGP)',
   note: 'Note (optional)',
   aboveCash: 'This is more than the agent holds; it will be refused.',
-  continue: 'Continue',
-  back: 'Back',
   cashConfirmTitle: 'Confirm cash received',
   cashConfirm: (amount: string, agent: string) =>
     `Record ${amount} received from ${agent}? Their COD cash goes down by this amount.`,
