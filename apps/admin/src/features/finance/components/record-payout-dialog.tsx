@@ -82,7 +82,7 @@ export function RecordPayoutDialog({ initialPayee, onClose }: RecordPayoutDialog
   const [chosen, setChosen] = useState<Payee | null>(null);
   // "Now" as the dialog opened: the default and the latest allowed paid-at (the schema re-checks on submit).
   const [openedAt] = useState(() => cairoLocalFromMs(Date.now()));
-  const mutation = useIdempotentMutation({ mutationFn: createPayout });
+  const mutation = useIdempotentMutation({ mutationFn: createPayout, intentScope: ['admin', 'payout'] });
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     mode: 'onBlur',

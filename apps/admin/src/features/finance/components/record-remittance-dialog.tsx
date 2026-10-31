@@ -49,7 +49,10 @@ export function RecordRemittanceDialog({ initialAgentId, onClose }: RecordRemitt
   const [notice, setNotice] = useState<string | null>(null);
   const [step, setStep] = useState<Step>('form');
   const [body, setBody] = useState<CreateRemittanceBody | null>(null);
-  const mutation = useIdempotentMutation({ mutationFn: createRemittance });
+  const mutation = useIdempotentMutation({
+    mutationFn: createRemittance,
+    intentScope: ['admin', 'remittance'],
+  });
   const agents = useQuery(agentPickerQuery());
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),

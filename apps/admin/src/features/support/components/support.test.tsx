@@ -236,6 +236,43 @@ describe('ticket (spec 03 AD-29, T-M5)', { timeout: 20_000 }, () => {
     expect(bodies).toEqual([{ body: 'On its way' }, { body: 'Refund if lost', internal: true }]);
   });
 
+  it('a failed reply, then the note tab and back: sending the same reply reuses the key (T-O1 F-1, F-3)', async () => {
+    serveTicket(TICKET);
+    const sent: { body: unknown; key: string | null }[] = [];
+    server.use(
+      mockApi(
+        'post',
+        '/admin/support/tickets/{ticketId}/messages',
+        async ({ request, reply }) => {
+          const body = (await request.json()) as { body: string };
+          sent.push({ body, key: request.headers.get('Idempotency-Key') });
+          if (sent.length === 1) return reply.error(503, 'SERVICE_UNAVAILABLE');
+          return reply.created(
+            ticketMessageFactory({
+              sender: { role: 'admin', isMe: true, displayName: 'me@example.test' },
+              body: body.body,
+            }),
+          );
+        },
+        { base: BFF_BASE },
+      ),
+    );
+    const view = renderDetail();
+    await view.user.type(await screen.findByRole('textbox', { name: /^Reply to the user/ }), 'On its way');
+    await view.user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText("Your message wasn't sent.")).toBeDefined();
+    await view.user.click(screen.getByRole('tab', { name: 'Internal note' }));
+    await view.user.click(screen.getByRole('tab', { name: 'Reply' }));
+    const box = screen.getByRole('textbox', { name: /^Reply to the user/ });
+    if ((box as HTMLTextAreaElement).value === '') await view.user.type(box, 'On its way');
+    const again =
+      screen.queryByRole('button', { name: 'Retry' }) ?? screen.getByRole('button', { name: 'Send' });
+    await view.user.click(again);
+    expect(await screen.findByText('On its way', { selector: 'p' })).toBeDefined();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
+  });
+
   it('assign to me, then unassign; the answer replaces the ticket', async () => {
     const state = serveTicket(TICKET);
     const sent: unknown[] = [];

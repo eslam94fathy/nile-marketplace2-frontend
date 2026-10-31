@@ -63,7 +63,10 @@ export function FailedAttemptSheet({ shipment, onClose }: FailedAttemptSheetProp
   const id = useId();
   const failure = useSubmitFailure();
   const { settle, handleStale } = useShipmentUpdates(shipment.id);
-  const mutation = useIdempotentMutation({ mutationFn: reportFailedAttempt });
+  const mutation = useIdempotentMutation({
+    mutationFn: reportFailedAttempt,
+    intentScope: ['agent', 'failed-attempt', shipment.id],
+  });
   const [reason, setReason] = useState<AttemptFailureReason | null>(null);
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState<{ reason?: string; note?: string }>({});

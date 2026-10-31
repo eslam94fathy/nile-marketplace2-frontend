@@ -61,10 +61,16 @@ describe('createLogger', () => {
       accessToken: 'eyJ.secret.jwt',
       nested: { RefreshToken: 'r'.repeat(43), headers: { Authorization: 'Bearer abc', cookie: 'a=b' } },
       body: [{ password: 'hunter2', street: '1 Nile St', phone: '+201001234567' }],
+      refundPayout: {
+        method: 'mobile_wallet',
+        walletNumber: '+201112223334',
+        instapayAddress: 'mona@instapay',
+      },
       userId: 'u-1',
     });
     const line = lines[0] ?? '';
-    for (const secret of ['eyJ.secret.jwt', 'rrrr', 'Bearer abc', 'a=b', 'hunter2', 'Nile St', '+2010']) {
+    const secrets = ['eyJ.secret.jwt', 'rrrr', 'Bearer abc', 'a=b', 'hunter2', 'Nile St', '+2010', '+2011'];
+    for (const secret of [...secrets, 'mona@instapay']) {
       expect(line).not.toContain(secret);
     }
     expect(line).toContain(REDACTED);

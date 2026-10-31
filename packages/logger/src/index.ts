@@ -24,6 +24,9 @@ export const REDACTED_KEYS = [
   'floor',
   'apartment',
   'landmark',
+  // COD refund payout details (returns, refunds; R2): where a customer's money goes.
+  'walletNumber',
+  'instapayAddress',
 ] as const;
 
 export const REDACTED = '[REDACTED]';

@@ -65,6 +65,8 @@ export function Composer({ ticketId, onStale, onSent, internal = false, labels =
 
   const send = useIdempotentMutation<TicketMessage, PostMessageBody | AdminPostMessageBody>({
     mutationFn: (body, key) => postMessage(api, ticketId, body, key, audience),
+    // Reply and internal note keep separate drafts (TM5-Q4), so separate intents.
+    intentScope: ['support', 'message', ticketId, internal ? 'note' : 'reply'],
     onSuccess: async (message) => {
       setFailed(null);
       form.reset({ body: '' });

@@ -61,6 +61,7 @@ export function CancelSellerOrder({ order, sellerOrder, onStale }: CancelSellerO
   });
   const cancel = useIdempotentMutation({
     mutationFn: cancelSellerOrder,
+    intentScope: ['storefront', 'cancel', sellerOrder.id],
     onSuccess: (updated) => {
       // The API answers with the whole order (design 02 §3.1: set `orders.detail`, invalidate the lists).
       queryClient.setQueryData(orderKeys.detail(updated.id), updated);

@@ -5,14 +5,27 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IN_PROGRESS_RETRY_DELAY_MS, stableJson, useIdempotentMutation } from './idempotent-mutation';
+import { clearIdempotencyIntents } from './intent-store';
+import { clearPrivateQueries } from './keys';
 
-function setup(mutationFn: (vars: { total: string }, key: string) => Promise<string>) {
+type Fn = (vars: { total: string }, key: string) => Promise<string>;
+
+function mount(mutationFn: Fn, scope: readonly string[] = ['payment', 'p-1']) {
   const client = new QueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useIdempotentMutation({ mutationFn }), { wrapper }).result;
+  return {
+    client,
+    ...renderHook(() => useIdempotentMutation({ mutationFn, intentScope: scope }), { wrapper }),
+  };
 }
+
+const setup = (mutationFn: Fn) => mount(mutationFn).result;
+
+afterEach(() => {
+  clearIdempotencyIntents();
+});
 
 const inProgress = () => new ApiError(409, 'IDEMPOTENCY_REQUEST_IN_PROGRESS', 'busy');
 const serverError = () => new ApiError(500, 'INTERNAL_ERROR', 'boom');
@@ -59,6 +72,47 @@ describe('useIdempotentMutation (design 01 §6.1)', () => {
     });
     await send('12.00');
     expect(new Set(keys).size).toBe(3);
+  });
+
+  describe('the key lives for the tab, per scope (T-O1 F-1)', () => {
+    const failing =
+      (keys: string[]): Fn =>
+      (_vars, key) => {
+        keys.push(key);
+        return Promise.reject(serverError());
+      };
+    const send = async (result: ReturnType<typeof mount>['result'], total = '10.00') => {
+      await act(async () => {
+        await result.current.mutateAsync({ total }).catch(() => undefined);
+      });
+    };
+
+    it('survives the component being unmounted and mounted again (a dialog closed and reopened)', async () => {
+      const keys: string[] = [];
+      const first = mount(failing(keys));
+      await send(first.result);
+      first.unmount();
+      await send(mount(failing(keys)).result);
+      expect(keys).toHaveLength(2);
+      expect(keys[1]).toBe(keys[0]);
+    });
+
+    it('another scope (action or target) has its own key', async () => {
+      const keys: string[] = [];
+      await send(mount(failing(keys), ['payment', 'p-1']).result);
+      await send(mount(failing(keys), ['payment', 'p-2']).result);
+      await send(mount(failing(keys), ['refund', 'p-1']).result);
+      expect(new Set(keys).size).toBe(3);
+    });
+
+    it('sign-out (clearPrivateQueries) forgets every intent', async () => {
+      const keys: string[] = [];
+      const first = mount(failing(keys));
+      await send(first.result);
+      clearPrivateQueries(first.client);
+      await send(first.result);
+      expect(keys[1]).not.toBe(keys[0]);
+    });
   });
 
   it('clears the key after success', async () => {

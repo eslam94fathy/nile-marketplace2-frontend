@@ -69,7 +69,10 @@ export function RecordRefundDialog({
   const refresh = useRefundRefresh();
   const [step, setStep] = useState<Step>('form');
   const [reference, setReference] = useState<string | null>(null);
-  const mutation = useIdempotentMutation({ mutationFn: recordRefund });
+  const mutation = useIdempotentMutation({
+    mutationFn: recordRefund,
+    intentScope: ['admin', 'refund-record', refund.id],
+  });
   const amount = formatMoney(refund.amount);
   const form = useForm<{ providerRefundRef: string }, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),

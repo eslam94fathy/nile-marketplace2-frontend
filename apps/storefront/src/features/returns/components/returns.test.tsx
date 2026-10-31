@@ -154,11 +154,17 @@ function aReturn(overrides: Partial<Return> = {}): Return {
   };
 }
 
-function servePost() {
+function servePost({ failFirst = false } = {}) {
   const sent: { body: unknown; key: string | null }[] = [];
   server.use(
     http.post(`${BFF_BASE}/returns`, async ({ request }) => {
       sent.push({ body: await request.json(), key: request.headers.get('Idempotency-Key') });
+      if (failFirst && sent.length === 1) {
+        return HttpResponse.json(
+          { success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'mocked' }, correlationId: 'c' },
+          { status: 503 },
+        );
+      }
       return HttpResponse.json({ success: true, data: aReturn() }, { status: 201 });
     }),
   );
@@ -198,6 +204,25 @@ describe('request a return (spec 01 SF-26)', { timeout: 20_000 }, () => {
     });
     expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
     expect(push).toHaveBeenCalledWith(`/account/returns/${RETURN_ID}`);
+  });
+
+  it('a failed request sent again reuses the key (T-O1 F-3)', async () => {
+    serveOrder(order({ paymentMethod: 'kashier' }));
+    serveReturnable('ok');
+    const sent = servePost({ failFirst: true });
+    const view = renderRequest();
+    await view.user.click(await screen.findByRole('button', { name: 'Increase quantity, Linen shirt' }));
+    await view.user.click(screen.getByRole('radio', { name: 'Changed my mind' }));
+    await view.user.click(screen.getByRole('button', { name: 'Request return' }));
+    await vi.waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    await view.user.click(await screen.findByRole('button', { name: 'Request return' }));
+    await vi.waitFor(() => {
+      expect(push).toHaveBeenCalledWith(`/account/returns/${RETURN_ID}`);
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
   });
 
   it('nothing chosen: "Choose at least one item"; a seller-fault reason needs a photo', async () => {

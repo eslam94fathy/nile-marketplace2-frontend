@@ -306,7 +306,10 @@ function ConfirmReceiptDialog({
 }) {
   const { settle, refresh, handleShared } = useReturnUpdates(item);
   const failure = useSubmitFailure();
-  const mutation = useIdempotentMutation({ mutationFn: confirmReceipt });
+  const mutation = useIdempotentMutation({
+    mutationFn: confirmReceipt,
+    intentScope: ['seller', 'confirm-receipt', item.id],
+  });
   const [restock, setRestock] = useState<Readonly<Record<string, boolean>>>({});
   const [mismatch, setMismatch] = useState(false);
   const chosen = (returnItemId: string) => restock[returnItemId] ?? true;

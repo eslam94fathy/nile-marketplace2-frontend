@@ -1,11 +1,14 @@
 // Component-test setup (Vitest `setupFiles`): checks every test's final screen with axe, unmounts after each
 // test and stubs browser APIs Radix uses that jsdom lacks. Safe in node test files too: everything is guarded.
+import { clearIdempotencyIntents } from '@nile/query';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import { axeViolations } from './axe';
 
 afterEach(() => {
   if (typeof document !== 'undefined') cleanup();
+  // Idempotency intents live for the tab (T-O1 F-1); each test is a new tab.
+  clearIdempotencyIntents();
 });
 
 // Registered after the cleanup: Vitest runs `afterEach` hooks last-registered first, so axe sees the screen

@@ -189,7 +189,10 @@ function ReturnForm({
   // A record field: its own message (the items check), not one per item.
   const [itemsError, setItemsError] = useState<string | null>(null);
 
-  const place = useIdempotentMutation({ mutationFn: requestReturn });
+  const place = useIdempotentMutation({
+    mutationFn: requestReturn,
+    intentScope: ['storefront', 'return', sellerOrder.id],
+  });
 
   const itemsById = new Map(sellerOrder.items.map((item) => [item.id, item]));
   const lines = returnable.items

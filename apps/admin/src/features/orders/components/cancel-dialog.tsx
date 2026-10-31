@@ -44,7 +44,15 @@ export function CancelDialog({ order, target, onClose, onBlocked }: CancelDialog
   const failure = useSubmitFailure();
   const [step, setStep] = useState<Step>('form');
   const [reason, setReason] = useState<string | null>(null);
-  const mutation = useIdempotentMutation({ mutationFn: cancelAsAdmin });
+  const mutation = useIdempotentMutation({
+    mutationFn: cancelAsAdmin,
+    intentScope: [
+      'admin',
+      'cancel',
+      target.kind,
+      target.kind === 'sellerOrder' ? target.sellerOrderId : order.id,
+    ],
+  });
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     mode: 'onBlur',

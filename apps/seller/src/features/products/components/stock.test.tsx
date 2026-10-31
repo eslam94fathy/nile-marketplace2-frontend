@@ -177,6 +177,28 @@ describe('stock adjustment (spec 02 SE-12)', { timeout: 20_000 }, () => {
     expect(sent[1]?.key).toBe(sent[0]?.key);
   });
 
+  it('closed after a network failure and opened again: the same change reuses the key (T-O1 F-1)', async () => {
+    serveProduct(PRODUCT);
+    const sent = serveAdjust('network', { variantId: VARIANT.id, onHand: 15, reserved: 2, sellable: 13 });
+    const view = renderPage();
+    const first = await openAdjust(view);
+    await view.user.type(within(first).getByRole('textbox', { name: /^Quantity/ }), '5');
+    await view.user.click(within(first).getByRole('button', { name: 'Adjust stock' }));
+    expect(await within(first).findByRole('alert')).toBeDefined();
+    await view.user.keyboard('{Escape}');
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    const second = await openAdjust(view);
+    await view.user.type(within(second).getByRole('textbox', { name: /^Quantity/ }), '5');
+    await view.user.click(within(second).getByRole('button', { name: 'Adjust stock' }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
+  });
+
   it('STOCK_ADJUSTMENT_INVALID: re-reads, explains; the next try is a new key from fresh numbers', async () => {
     // Opening reads 10 on hand / 2 reserved; meanwhile 7 more units get reserved.
     const fresh = { ...PRODUCT, variants: [{ ...VARIANT, stock: { onHand: 10, reserved: 9, sellable: 1 } }] };

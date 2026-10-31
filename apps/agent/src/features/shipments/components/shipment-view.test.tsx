@@ -476,6 +476,36 @@ describe('return pickup (spec 04 §7.3, T-N1)', { timeout: 20_000 }, () => {
     expect(calls[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it('R2 closed after a failure and opened again: the same report reuses the key (T-O1 F-1)', async () => {
+    const user = userEvent.setup();
+    const shipment = returnPickup({ attemptCount: 0 });
+    serveShipment(shipment);
+    const calls = serveAction('/agent/shipments/{shipmentId}/failed-attempt', [
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      { ...shipment, status: 'pickup_failed', attemptCount: 1 },
+    ]);
+    render(shipment);
+    const report = async () => {
+      await user.click(within(await actions()).getByRole('button', { name: 'Pickup failed' }));
+      const sheet = await screen.findByRole('dialog', { name: 'Pickup failed' });
+      await user.click(within(sheet).getByRole('radio', { name: 'Customer rescheduled' }));
+      await user.click(within(sheet).getByRole('button', { name: 'Report failed pickup' }));
+    };
+    await report();
+    await waitFor(() => {
+      expect(calls).toHaveLength(1);
+    });
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    await report();
+    await waitFor(() => {
+      expect(calls).toHaveLength(2);
+    });
+    expect(calls[1]?.key).toBe(calls[0]?.key);
+  });
+
   it('the return consequence rule: refused or the third failure closes the return', () => {
     expect(attemptConsequence('customer_refused', 0, 'return')).toBe(
       'The return is closed. No more attempts.',

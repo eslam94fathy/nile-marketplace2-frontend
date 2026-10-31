@@ -40,7 +40,7 @@ const CHOICES = orderChoicesFrom([
   { id: 'o-2', orderNumber: '2026-000124' },
 ]);
 
-function captureOpen(answer: 'ok' | 'limit' | 'order' | 'category' | 'media' = 'ok') {
+function captureOpen(answer: 'ok' | 'limit' | 'order' | 'category' | 'media' | 'fail-once' = 'ok') {
   const sent: { body: OpenTicketBody; key: string | null }[] = [];
   server.use(
     mockApi('post', '/support/tickets', async ({ request, reply }) => {
@@ -48,6 +48,7 @@ function captureOpen(answer: 'ok' | 'limit' | 'order' | 'category' | 'media' = '
         body: (await request.json()) as OpenTicketBody,
         key: request.headers.get('Idempotency-Key'),
       });
+      if (answer === 'fail-once' && sent.length === 1) return reply.error(503, 'SERVICE_UNAVAILABLE');
       if (answer === 'limit') return reply.error(422, 'SUPPORT_OPEN_TICKET_LIMIT_REACHED');
       if (answer === 'order') return reply.error(422, 'ORDER_NOT_FOUND');
       if (answer === 'category') return reply.error(422, 'SUPPORT_CATEGORY_NOT_ALLOWED');
@@ -100,6 +101,36 @@ describe('NewTicketForm (spec 01 SF-30)', () => {
       attachmentMediaIds: ['m1'],
     });
     uploads.readyMediaIds = [];
+  });
+
+  it('a failed send, then the page left and opened again: the same ticket reuses the key (T-O1 F-1, F-3)', async () => {
+    const sent = captureOpen('fail-once');
+    const config = makeConfig({ orderChoices: CHOICES });
+    const first = renderSupport(
+      <NewTicketForm initial={{ category: 'return', orderId: null, sellerOrderId: null }} />,
+      config,
+    );
+    await screen.findByRole('textbox', { name: /^Subject/ }, FIRST_RENDER);
+    await fill(first);
+    await first.user.click(screen.getByRole('button', { name: 'Send ticket' }));
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(await screen.findByRole('alert')).toBeDefined();
+    first.unmount();
+
+    const second = renderSupport(
+      <NewTicketForm initial={{ category: 'return', orderId: null, sellerOrderId: null }} />,
+      config,
+    );
+    await screen.findByRole('textbox', { name: /^Subject/ }, FIRST_RENDER);
+    await fill(second);
+    await second.user.click(screen.getByRole('button', { name: 'Send ticket' }));
+    await waitFor(() => {
+      expect(config.navigate).toHaveBeenCalledWith('/support/t-new');
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
   });
 
   it('choosing another order drops the URL parcel', async () => {

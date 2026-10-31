@@ -36,8 +36,15 @@ export function ShipmentActions({ shipment, onDelivered }: ShipmentActionsProps)
   const [open, setOpen] = useState<AgentShipmentAction | null>(null);
   const [starting, setStarting] = useState(false);
   const { settle, handleStale } = useShipmentUpdates(shipment.id);
-  const returned = useIdempotentMutation({ mutationFn: markReturned });
-  const handedOver = useIdempotentMutation({ mutationFn: markDelivered });
+  const returned = useIdempotentMutation({
+    mutationFn: markReturned,
+    intentScope: ['agent', 'returned', shipment.id],
+  });
+  // The same operation as DeliveredSheet: one scope, so a key is never reused across the two screens' bodies.
+  const handedOver = useIdempotentMutation({
+    mutationFn: markDelivered,
+    intentScope: ['agent', 'delivered', shipment.id],
+  });
   const { primary, secondary } = agentShipmentActions(shipment);
   if (primary === null && secondary === null) return null;
   const close = () => {

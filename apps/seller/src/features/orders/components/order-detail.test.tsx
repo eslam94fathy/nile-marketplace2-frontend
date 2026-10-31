@@ -343,14 +343,14 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Confirm return received: asked first, idempotent', async () => {
+  it('Confirm return received: asked first, idempotent; a retry reuses the key', async () => {
     const returning = { ...ORDER, status: 'returning_to_seller' as const, acceptDeadlineAt: null };
     serveOrder(returning);
-    const sent = serveAction('/seller/orders/{sellerOrderId}/return-received', {
-      ...returning,
-      status: 'returned_to_seller',
-      returnedAt: '2026-10-17T09:00:00.000Z',
-    });
+    const sent = serveAction(
+      '/seller/orders/{sellerOrderId}/return-received',
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      { ...returning, status: 'returned_to_seller', returnedAt: '2026-10-17T09:00:00.000Z' },
+    );
     const view = renderPage(returning);
     await heading();
     await view.user.click(screen.getByRole('button', { name: 'Confirm return received' }));
@@ -361,8 +361,11 @@ describe('seller order (spec 02 SE-15)', { timeout: 20_000 }, () => {
       ),
     ).toBeDefined();
     await view.user.click(within(dialog).getByRole('button', { name: 'Confirm return received' }));
+    expect(await within(dialog).findByRole('alert')).toBeDefined();
+    await view.user.click(within(dialog).getByRole('button', { name: 'Confirm return received' }));
     expect(await screen.findByText('Return confirmed.')).toBeDefined();
     expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
     expect(screen.getByText('Returned')).toBeDefined();
   });
 
@@ -437,9 +440,13 @@ describe('cancel items (spec 02 SE-15 A4)', { timeout: 20_000 }, () => {
     expect(sent).toHaveLength(0);
   });
 
-  it('"Other" needs a note; the body carries quantity, reason and the trimmed note; idempotent', async () => {
+  it('"Other" needs a note; the body carries quantity, reason and the trimmed note; a retry reuses the key', async () => {
     serveOrder(twoLines);
-    const sent = serveAction('/seller/orders/{sellerOrderId}/items/{itemId}/cancel', twoLines);
+    const sent = serveAction(
+      '/seller/orders/{sellerOrderId}/items/{itemId}/cancel',
+      { status: 503, code: 'SERVICE_UNAVAILABLE' },
+      twoLines,
+    );
     const view = renderPage(twoLines);
     const dialog = await open(view, 'Mug');
     await view.user.type(within(dialog).getByRole('textbox', { name: /^Quantity to cancel/ }), '1');
@@ -448,9 +455,12 @@ describe('cancel items (spec 02 SE-15 A4)', { timeout: 20_000 }, () => {
     expect(await within(dialog).findByText('Add a note when the reason is Other.')).toBeDefined();
     await view.user.type(within(dialog).getByRole('textbox', { name: /^Note/ }), ' damaged ');
     await view.user.click(within(dialog).getByRole('button', { name: 'Cancel items' }));
+    expect(await within(dialog).findByRole('alert')).toBeDefined();
+    await view.user.click(within(dialog).getByRole('button', { name: 'Cancel items' }));
     expect(await screen.findByText('1 item cancelled.')).toBeDefined();
     expect(sent[0]?.body).toEqual({ quantity: 1, reason: 'other', note: 'damaged' });
     expect(sent[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(sent[1]?.key).toBe(sent[0]?.key);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 

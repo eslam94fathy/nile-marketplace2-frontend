@@ -82,7 +82,10 @@ export function DecisionDialog({ item, action, onClose }: DecisionDialogProps) {
   const [step, setStep] = useState<Step>('form');
   const [note, setNote] = useState<string | null>(null);
   const decide = useMutation({ mutationFn: decideReturn, retry: false });
-  const resolve = useIdempotentMutation({ mutationFn: resolveDispute });
+  const resolve = useIdempotentMutation({
+    mutationFn: resolveDispute,
+    intentScope: ['admin', 'resolve-dispute', item.id],
+  });
   const form = useForm<Values, unknown, z.output<typeof schema>>({
     resolver: zodResolver(schema),
     mode: 'onBlur',

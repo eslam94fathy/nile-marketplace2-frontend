@@ -179,7 +179,10 @@ interface DialogProps {
 function ConfirmReturnDialog({ order, open, onOpenChange }: DialogProps) {
   const { settle, handleShared } = useOrderUpdates(order.id);
   const failure = useSubmitFailure();
-  const mutation = useIdempotentMutation({ mutationFn: confirmReturn });
+  const mutation = useIdempotentMutation({
+    mutationFn: confirmReturn,
+    intentScope: ['seller', 'return-received', order.id],
+  });
 
   const confirm = async () => {
     failure.clear();
@@ -219,7 +222,10 @@ type CancelValues = z.input<typeof cancelSchema>;
 function CancelOrderDialog({ order, open, onOpenChange }: DialogProps) {
   const { settle, handleShared } = useOrderUpdates(order.id);
   const failure = useSubmitFailure();
-  const mutation = useIdempotentMutation({ mutationFn: cancelOrder });
+  const mutation = useIdempotentMutation({
+    mutationFn: cancelOrder,
+    intentScope: ['seller', 'cancel', order.id],
+  });
   const form = useForm<CancelValues, unknown, z.output<typeof cancelSchema>>({
     resolver: zodResolver(cancelSchema),
     mode: 'onBlur',

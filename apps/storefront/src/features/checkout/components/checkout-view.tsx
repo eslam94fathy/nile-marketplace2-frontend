@@ -104,6 +104,7 @@ export function CheckoutView() {
 
   const place = useIdempotentMutation({
     mutationFn: placeOrder,
+    intentScope: ['storefront', 'checkout'],
     onSuccess: async ({ order, kashier }) => {
       setPlacedOrderId(order.id);
       queryClient.setQueryData(orderKeys.detail(order.id), order);

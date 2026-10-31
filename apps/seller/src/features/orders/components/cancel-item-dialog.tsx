@@ -66,7 +66,10 @@ function CancelItemForm({
 }) {
   const { settle, refresh, handleShared } = useOrderUpdates(order.id);
   const failure = useSubmitFailure();
-  const mutation = useIdempotentMutation({ mutationFn: cancelItem });
+  const mutation = useIdempotentMutation({
+    mutationFn: cancelItem,
+    intentScope: ['seller', 'cancel-item', order.id, item.id],
+  });
   const open = openQuantity(item);
   const schema = useMemo(() => cancelItemSchema(open), [open]);
   const form = useForm<CancelItemValues, unknown, z.output<CancelItemSchema>>({

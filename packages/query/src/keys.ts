@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { clearIdempotencyIntents } from './intent-store';
 
 /**
  * First key segment (design 01 §6): `public` for data that is the same for every visitor, or the app name
@@ -45,4 +46,6 @@ export const publicKeys = {
 /** Drops every user-specific query (sign-out, session ended); public data stays cached. */
 export function clearPrivateQueries(client: QueryClient): void {
   client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'public' });
+  // Unresolved intents belong to the user who signed out (T-O1 F-1).
+  clearIdempotencyIntents();
 }

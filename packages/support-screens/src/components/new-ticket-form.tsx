@@ -121,6 +121,7 @@ function TicketForm({ initial, choices, choicesFailed }: TicketFormProps) {
 
   const open = useIdempotentMutation<Ticket, OpenTicketBody>({
     mutationFn: (body, key) => openTicket(api, body, key),
+    intentScope: ['support', 'ticket'],
     onSuccess: async (ticket) => {
       uploads.clear();
       await queryClient.invalidateQueries({ queryKey: supportKeys(scope).lists() });
