@@ -8,6 +8,11 @@ export const ROUTES = {
   returns: '/returns',
   /** AD-28 Tickets (T-M5). */
   support: '/support',
+  /** AD-30 Reviews (T-M6). */
+  reviews: '/reviews',
+  /** AD-24 Users, AD-25 Customers (T-M2). */
+  users: '/users',
+  customers: '/customers',
   categories: '/catalog/categories',
   shipments: '/delivery/shipments',
   agents: '/delivery/agents',
@@ -29,6 +34,18 @@ export const ROUTES = {
 
 /** AD-29 Support ticket (T-M5). */
 export const supportTicketPath = (ticketId: string) => `${ROUTES.support}/${ticketId}` as const;
+
+/** AD-26 Customer. */
+export const customerPath = (customerId: string) => `${ROUTES.customers}/${customerId}` as const;
+
+/**
+ * AD-32 and AD-30 filtered to one customer (AD-26 "Returns", "Reviews"). The parameter name is fixed here and
+ * honoured by T-M7 and T-M6 (design 01 R-78).
+ */
+export const customerReturnsPath = (customerId: string) =>
+  `${ROUTES.returns}?customer=${customerId}` as const;
+export const customerReviewsPath = (customerId: string) =>
+  `${ROUTES.reviews}?customer=${customerId}` as const;
 
 /** AD-33 Return (T-M7). */
 export const returnPath = (returnId: string) => `${ROUTES.returns}/${returnId}` as const;

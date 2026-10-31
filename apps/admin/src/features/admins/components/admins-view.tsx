@@ -5,7 +5,7 @@ import { isApiError } from '@nile/api';
 // useSubmitFailure only: FailureAlert needs the sign-in screens' provider, which portal pages don't have.
 import { useSubmitFailure } from '@nile/auth-screens';
 import { fields, formatDateTime, USER_STATUS_LABELS } from '@nile/domain';
-import { applyServerErrors, errorMessage } from '@nile/query';
+import { applyServerErrors } from '@nile/query';
 import {
   Button,
   buttonVariants,
@@ -19,7 +19,6 @@ import {
   Input,
   PageHeader,
   StatusBadge,
-  Textarea,
   toast,
   USER_STATUS_TONES,
   type DataTableColumn,
@@ -31,16 +30,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { ROUTES } from '@/lib/routes';
-import {
-  adminKeys,
-  adminsListOptions,
-  inviteAdmin,
-  reactivateUser,
-  resendInvite,
-  suspendUser,
-  type AdminListItem,
-  type AdminStatus,
-} from '../api';
+import { ACCOUNT_COPY, ResendInviteDialog, SuspendUserDialog, useReactivate } from '@/features/users';
+import { adminKeys, adminsListOptions, inviteAdmin, type AdminListItem, type AdminStatus } from '../api';
 import { ADMINS_COPY as COPY } from '../copy';
 
 /** Status tabs in the URL (`?status=`); no or unknown value is "All". */
@@ -77,38 +68,10 @@ export function AdminsView({ status: statusParam, currentUserId }: AdminsViewPro
   const queryClient = useQueryClient();
   const admins = useInfiniteQuery(adminsListOptions(status));
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [reactivating, setReactivating] = useState<string | null>(null);
+  const { pendingId: reactivating, reactivate } = useReactivate();
   const refresh = () => queryClient.invalidateQueries({ queryKey: adminKeys.lists() });
   const close = () => {
     setDialog(null);
-  };
-
-  /** Failures shared by the status actions: the account changed meanwhile → refetch and explain. */
-  const handleStale = (error: unknown): boolean => {
-    if (isApiError(error, 'USER_INVALID_STATUS_TRANSITION') || isApiError(error, 'USER_NOT_FOUND')) {
-      void refresh();
-      toast({ title: COPY.statusChanged, tone: 'destructive' });
-      return true;
-    }
-    if (isApiError(error, 'CANNOT_SUSPEND_SELF')) {
-      void refresh();
-      toast({ title: COPY.cannotSuspendSelf, tone: 'destructive' });
-      return true;
-    }
-    return false;
-  };
-
-  const reactivate = async (admin: AdminListItem) => {
-    setReactivating(admin.id);
-    try {
-      await reactivateUser(admin.id);
-      toast({ title: COPY.reactivated(admin.email), tone: 'success' });
-      void refresh();
-    } catch (error) {
-      if (!handleStale(error)) toast({ title: errorMessage(error), tone: 'destructive' });
-    } finally {
-      setReactivating(null);
-    }
   };
 
   const actions = (admin: AdminListItem) => (
@@ -117,35 +80,35 @@ export function AdminsView({ status: statusParam, currentUserId }: AdminsViewPro
         <Button
           variant="outline"
           size="sm"
-          aria-label={COPY.resendAction(admin.email)}
+          aria-label={ACCOUNT_COPY.resendAction(admin.email)}
           onClick={() => {
             setDialog({ kind: 'resend', admin });
           }}
         >
-          {COPY.resend}
+          {ACCOUNT_COPY.resend}
         </Button>
       ) : null}
       {admin.status === 'active' && admin.id !== currentUserId ? (
         <Button
           variant="outline"
           size="sm"
-          aria-label={COPY.suspendAction(admin.email)}
+          aria-label={ACCOUNT_COPY.suspendAction(admin.email)}
           onClick={() => {
             setDialog({ kind: 'suspend', admin });
           }}
         >
-          {COPY.suspend}
+          {ACCOUNT_COPY.suspend}
         </Button>
       ) : null}
       {admin.status === 'suspended' ? (
         <Button
           variant="outline"
           size="sm"
-          aria-label={COPY.reactivateAction(admin.email)}
+          aria-label={ACCOUNT_COPY.reactivateAction(admin.email)}
           loading={reactivating === admin.id}
-          onClick={() => void reactivate(admin)}
+          onClick={() => void reactivate(admin.id, admin.email)}
         >
-          {COPY.reactivate}
+          {ACCOUNT_COPY.reactivate}
         </Button>
       ) : null}
     </span>
@@ -228,35 +191,15 @@ export function AdminsView({ status: statusParam, currentUserId }: AdminsViewPro
       )}
       {dialog?.kind === 'invite' ? <InviteDialog onClose={close} onInvited={() => void refresh()} /> : null}
       {dialog?.kind === 'resend' ? (
-        <ConfirmDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) close();
-          }}
-          title={COPY.resendTitle}
-          description={COPY.resendConfirm(dialog.admin.email)}
-          confirmLabel={COPY.resend}
-          onConfirm={async () => {
-            try {
-              await resendInvite(dialog.admin.id);
-              toast({ title: COPY.resent(dialog.admin.email), tone: 'success' });
-            } catch (error) {
-              if (isApiError(error, 'USER_NOT_INVITED')) {
-                void refresh();
-                toast({ title: COPY.notInvited, tone: 'destructive' });
-                return;
-              }
-              if (!handleStale(error)) toast({ title: errorMessage(error), tone: 'destructive' });
-            }
-          }}
-        />
+        <ResendInviteDialog userId={dialog.admin.id} email={dialog.admin.email} onClose={close} />
       ) : null}
       {dialog?.kind === 'suspend' ? (
-        <SuspendDialog
-          admin={dialog.admin}
+        <SuspendUserDialog
+          userId={dialog.admin.id}
+          email={dialog.admin.email}
+          title={COPY.suspendTitle}
+          description={COPY.suspendConfirm(dialog.admin.email)}
           onClose={close}
-          onDone={() => void refresh()}
-          handleStale={handleStale}
         />
       ) : null}
     </div>
@@ -335,80 +278,6 @@ function InviteDialog({
           render={({ field, controlProps }) => (
             <Input {...field} {...controlProps} type="email" autoComplete="off" inputMode="email" />
           )}
-        />
-      </form>
-    </ConfirmDialog>
-  );
-}
-
-const suspendSchema = z.object({ reason: fields.trimmedString(3, 500) });
-type SuspendValues = z.input<typeof suspendSchema>;
-
-function SuspendDialog({
-  admin,
-  onClose,
-  onDone,
-  handleStale,
-}: {
-  readonly admin: AdminListItem;
-  readonly onClose: () => void;
-  readonly onDone: () => void;
-  readonly handleStale: (error: unknown) => boolean;
-}) {
-  const failure = useSubmitFailure();
-  const form = useForm<SuspendValues, unknown, z.output<typeof suspendSchema>>({
-    resolver: zodResolver(suspendSchema),
-    mode: 'onBlur',
-    defaultValues: { reason: '' },
-  });
-
-  const confirm = async () => {
-    failure.clear();
-    let values: z.output<typeof suspendSchema> | undefined;
-    await form.handleSubmit((parsed) => {
-      values = parsed;
-    })();
-    if (values === undefined) throw new Error('invalid');
-    try {
-      await suspendUser(admin.id, values.reason);
-      toast({ title: COPY.suspended(admin.email) });
-      onDone();
-    } catch (error) {
-      if (handleStale(error)) return;
-      failure.fail(error);
-      throw error;
-    }
-  };
-
-  return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      title={COPY.suspendTitle}
-      description={COPY.suspendConfirm(admin.email)}
-      confirmLabel={COPY.suspend}
-      destructive
-      onConfirm={confirm}
-    >
-      <form
-        noValidate
-        className="space-y-3"
-        onSubmit={(event) => {
-          // Enter in the reason must not submit: the dialog's button confirms.
-          event.preventDefault();
-        }}
-      >
-        {failure.message === null ? null : (
-          <FormAlert correlationId={failure.correlationId}>{failure.message}</FormAlert>
-        )}
-        <Field
-          control={form.control}
-          name="reason"
-          label={COPY.reason}
-          required
-          render={({ field, controlProps }) => <Textarea {...field} {...controlProps} rows={3} />}
         />
       </form>
     </ConfirmDialog>

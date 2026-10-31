@@ -1,4 +1,5 @@
-// AD-03 Admins copy (spec 03). Status labels: @nile/domain USER_STATUS_LABELS (CLAUDE.md §14.1c).
+// AD-03 Admins copy (spec 03). Status labels: @nile/domain USER_STATUS_LABELS (CLAUDE.md §14.1c). The account
+// actions' copy is shared: features/users ACCOUNT_COPY.
 
 export const ADMINS_COPY = {
   title: 'Admins',
@@ -27,24 +28,6 @@ export const ADMINS_COPY = {
   invited: (email: string) => `Invitation sent to ${email}. It's valid for 72 hours.`,
   emailTaken: 'This email already has an account.',
 
-  resend: 'Resend invite',
-  resendAction: (email: string) => `Resend invite to ${email}`,
-  resendTitle: 'Resend invite',
-  resendConfirm: (email: string) => `Send a new invitation to ${email}? The previous link stops working.`,
-  resent: (email: string) => `A new invitation was sent to ${email}.`,
-  notInvited: 'This account has already accepted its invitation.',
-
-  suspend: 'Suspend',
-  suspendAction: (email: string) => `Suspend ${email}`,
   suspendTitle: 'Suspend admin',
   suspendConfirm: (email: string) => `${email} will be signed out everywhere and can't sign in.`,
-  reason: 'Reason',
-  suspended: (email: string) => `${email} was suspended.`,
-  cannotSuspendSelf: "You can't suspend your own account.",
-
-  reactivate: 'Reactivate',
-  reactivateAction: (email: string) => `Reactivate ${email}`,
-  reactivated: (email: string) => `${email} can sign in again.`,
-
-  statusChanged: 'This account changed meanwhile. Here is its current state.',
 } as const;

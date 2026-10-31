@@ -16,7 +16,12 @@ export {
 export { defineFactory, fixtureId, type Factory, type FactoryBuild } from './factory';
 export { AUTH_FIXTURE_NOW, authTokensFactory } from './factories/auth';
 export { addressFactory } from './factories/address';
-export { adminListItemFactory, adminSellerDetailFactory } from './factories/admin';
+export {
+  adminCustomerDetailFactory,
+  adminListItemFactory,
+  adminSellerDetailFactory,
+  adminUserFactory,
+} from './factories/admin';
 export { adminOrderDetailFactory, adminPaymentFactory, refundFactory } from './factories/admin-orders';
 export {
   adminAgentFactory,

@@ -44,3 +44,27 @@ export const adminSellerDetailFactory = defineFactory<'AdminSellerDetailDto'>((s
   ],
   commissionHistory: [],
 }));
+
+/** `AdminUserListItemDto` (ids from 23000): an active customer who has signed in. */
+export const adminUserFactory = defineFactory<'AdminUserListItemDto'>((sequence) => ({
+  id: fixtureId(23000 + sequence),
+  email: `user${sequence}@example.test`,
+  role: 'customer',
+  status: 'active',
+  emailVerifiedAt: '2026-10-20T09:00:00.000Z',
+  lastLoginAt: '2026-10-30T09:00:00.000Z',
+  createdAt: '2026-10-20T08:00:00.000Z',
+}));
+
+/** `AdminCustomerDetailDto` (ids from 23500, user ids from 23700): an active customer with two addresses. */
+export const adminCustomerDetailFactory = defineFactory<'AdminCustomerDetailDto'>((sequence) => ({
+  id: fixtureId(23500 + sequence),
+  userId: fixtureId(23700 + sequence),
+  email: `customer${sequence}@example.test`,
+  firstName: 'Mona',
+  lastName: `Ali ${sequence}`,
+  phone: '+201012345678',
+  userStatus: 'active',
+  addressCount: 2,
+  createdAt: '2026-10-20T08:00:00.000Z',
+}));

@@ -40,22 +40,3 @@ export function adminsListOptions(status: AdminStatus | null) {
 export async function inviteAdmin(email: string) {
   return (await unwrap(browserApi.POST('/api/v1/admin/admins', { body: { email } }))).data;
 }
-
-const userPath = (userId: string) => ({ params: { path: { userId } } });
-
-/** A new link; the previous one stops working (spec 03 AD-03). */
-export async function resendInvite(userId: string): Promise<void> {
-  await unwrap(browserApi.POST('/api/v1/admin/users/{userId}/resend-invite', userPath(userId)));
-}
-
-export async function suspendUser(userId: string, reason: string) {
-  return (
-    await unwrap(
-      browserApi.POST('/api/v1/admin/users/{userId}/suspend', { ...userPath(userId), body: { reason } }),
-    )
-  ).data;
-}
-
-export async function reactivateUser(userId: string) {
-  return (await unwrap(browserApi.POST('/api/v1/admin/users/{userId}/reactivate', userPath(userId)))).data;
-}
