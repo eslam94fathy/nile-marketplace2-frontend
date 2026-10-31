@@ -391,6 +391,9 @@ New `features/users` (AD-24 and the account actions shared with AD-03 and AD-26)
 ### 14.1bp Decided (2026-10-31, T-M3)
 AD-15 "Cancel order" (while any part is placed / accepted / ready for pickup) and "Cancel this part" · TM3-Q1: two steps like payouts (reason, then "Confirm cancellation" repeating the sentence with "Reason: {reason}"), one idempotency key per target + reason · TM3-Q2: a refused whole-order cancel is explained in an alert at the top of AD-15 naming the blocking businesses ("Nothing was cancelled because no part of this order can be cancelled any more." when none is named) · TM3-Q3: the other AD-15 R2 changes come with their targets: product links and item images T-M4, returned quantities / sums and "Returns of this customer" T-M7, refunds block T-M8, coupon and discount lines T-M9 · `StepDialog` shared from `apps/admin/src/components` · TM3-COPY approved as in `features/orders/copy.ts` (design 01 R-79).
 
+### 14.1bq Decided (2026-10-31, T-M4)
+New `features/products`: AD-27 `/products/[productId]` with Block (reason) / Unblock and AD-05 "Products in the store"; AD-15 items show their image and link to AD-27; AD-07 category image (upload, description, remove); admin depends on `@nile/media` · TM4-Q1: public `GET /products` added to the admin allow-list (design 02 §1) · TM4-Q2: the R1 storefront link on AD-05 is renamed "View in the store" · TM4-Q3: variants show "Available" (`sellable`) and "On hand", description as plain text, category as its path, "not found" back to the dashboard · TM4-Q4: an upload replaces the current category image at once ("Replace image"), the old description isn't carried over · TM4-Q5: seller rating on AD-04 / AD-05 with T-M6, AD-05 "Coupons" link with T-M9 · AD-30 link parameter `?product=` for T-M6 · TM4-COPY approved as in `features/products/copy.ts` and `features/catalog/copy.ts` (design 01 R-80).
+
 ### 14.2 Deferred
 FQ-3 hosting · FQ-8 domains (both block only deployment, T-I5).
 

@@ -46,6 +46,15 @@ beforeEach(() => {
 function serveSeller(seller: Detail) {
   const state = { seller, calls: 0 };
   server.use(
+    // AD-05 "Products in the store" (T-M4): the public listing, covered in products.test.tsx.
+    mockApi(
+      'get',
+      '/products',
+      ({ reply }) => reply.ok([], { nextCursor: null, hasMore: false, limit: 12 }),
+      {
+        base: BFF_BASE,
+      },
+    ),
     mockApi(
       'get',
       '/admin/sellers/{sellerId}',
@@ -205,7 +214,7 @@ describe('seller page (spec 03 AD-05)', { timeout: 20_000 }, () => {
     await heading();
     expect(screen.getByText('Email verified')).toBeDefined();
     expect(await screen.findByText('12 26th of July St, Zamalek, Cairo, Giza')).toBeDefined();
-    expect(screen.getByRole('link', { name: 'Products in the store' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'View in the store' }).getAttribute('href')).toBe(
       `http://store.test/search?seller=${SELLER.id}`,
     );
     expect(screen.getByRole('link', { name: 'Finance account' }).getAttribute('href')).toBe(

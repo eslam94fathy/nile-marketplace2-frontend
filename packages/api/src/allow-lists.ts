@@ -274,6 +274,8 @@ export const BFF_ALLOW_LISTS: Readonly<Record<BffApp, readonly AllowedOperation[
     op('POST', '/media/uploads', 'bearer'),
     op('POST', '/media/uploads/{mediaId}/complete', 'bearer'),
     op('GET', '/media/{mediaId}', 'bearer'),
+    // AD-05 "Products in the store" (spec 03 §7.3, AD-Q-11; TM4-Q1): the public listing, sent without a token.
+    op('GET', '/products', 'public'),
     op('GET', '/push/config', 'bearer'),
   ],
   agent: [

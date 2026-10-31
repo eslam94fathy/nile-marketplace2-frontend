@@ -19,6 +19,7 @@ import {
   DataTable,
   ErrorState,
   FormAlert,
+  NileImage,
   NotFoundScreen,
   ORDER_STATUS_TONES,
   PageHeader,
@@ -36,6 +37,7 @@ import { OrderPaymentSummary } from '@/features/payments';
 import {
   customerOrdersPath,
   orderShipmentsPath,
+  productPath,
   ROUTES,
   sellerOrderLedgerPath,
   sellerPath,
@@ -284,10 +286,22 @@ function SellerOrderCard({
       id: 'product',
       header: COPY.itemColumns.product,
       cell: (item) => (
-        <span className="flex flex-col">
-          <span>{item.productName}</span>
-          <span className="text-muted-foreground">
-            {item.attributes.map((attribute) => `${attribute.attribute}: ${attribute.value}`).join(', ')}
+        <span className="flex items-start gap-3">
+          <NileImage
+            image={item.image}
+            // Decorative: the product name follows as the link text.
+            alt=""
+            sizes="40px"
+            placeholder="product"
+            className="size-10 shrink-0 rounded bg-muted object-cover"
+          />
+          <span className="flex flex-col">
+            <Link href={productPath(item.productId)} className={linkClass}>
+              {item.productName}
+            </Link>
+            <span className="text-muted-foreground">
+              {item.attributes.map((attribute) => `${attribute.attribute}: ${attribute.value}`).join(', ')}
+            </span>
           </span>
         </span>
       ),

@@ -155,6 +155,13 @@ describe('order (spec 03 AD-15)', { timeout: 15_000 }, () => {
     expect(within(seller).getAllByText('Placed (awaiting seller)')).toHaveLength(2);
     expect(within(seller).getByText(/^10% \(EGP\s?25\.00\)$/)).toBeDefined();
     expect(within(seller).getByText('Size: Large')).toBeDefined();
+    const [item] = ORDER.sellerOrders[0]?.items ?? [];
+    // Items link to AD-27 (T-M4).
+    expect(
+      within(seller)
+        .getByRole('link', { name: item?.productName ?? '' })
+        .getAttribute('href'),
+    ).toBe(`/products/${item?.productId ?? ''}`);
     expect(
       (await within(seller).findByRole('link', { name: 'Open the shipment' })).getAttribute('href'),
     ).toBe(`/delivery/shipments/${shipment.id}`);

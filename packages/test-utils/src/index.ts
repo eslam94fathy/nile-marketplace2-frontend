@@ -41,6 +41,8 @@ export { notificationFactory } from './factories/notification';
 export { orderDetailFactory } from './factories/order';
 export { sellerProfileFactory } from './factories/seller';
 export {
+  adminProductFactory,
+  productListItemFactory,
   sellerProductFactory,
   sellerProductListItemFactory,
   sellerVariantFactory,

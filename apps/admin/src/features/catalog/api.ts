@@ -97,3 +97,20 @@ export async function updateOption(
 export async function deleteOption(optionId: string): Promise<void> {
   await unwrap(browserApi.DELETE('/api/v1/admin/options/{optionId}', { params: { path: { optionId } } }));
 }
+
+/** AD-07 image: set from a `ready` `category_image` upload, or a new description for the current one. */
+export async function setCategoryImage(
+  categoryId: string,
+  body: Schema<'SetCategoryImageDto'>,
+): Promise<void> {
+  await unwrap(
+    browserApi.PUT('/api/v1/admin/categories/{categoryId}/image', { params: { path: { categoryId } }, body }),
+  );
+}
+
+/** Nothing to remove is fine (`204` either way). */
+export async function removeCategoryImage(categoryId: string): Promise<void> {
+  await unwrap(
+    browserApi.DELETE('/api/v1/admin/categories/{categoryId}/image', { params: { path: { categoryId } } }),
+  );
+}

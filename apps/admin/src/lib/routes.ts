@@ -47,6 +47,12 @@ export const customerReturnsPath = (customerId: string) =>
 export const customerReviewsPath = (customerId: string) =>
   `${ROUTES.reviews}?customer=${customerId}` as const;
 
+/** AD-27 Product (T-M4). */
+export const productPath = (productId: string) => `/products/${productId}` as const;
+
+/** AD-30 filtered to one product (AD-27 "Reviews"). The parameter name is fixed here and honoured by T-M6. */
+export const productReviewsPath = (productId: string) => `${ROUTES.reviews}?product=${productId}` as const;
+
 /** AD-33 Return (T-M7). */
 export const returnPath = (returnId: string) => `${ROUTES.returns}/${returnId}` as const;
 
@@ -112,6 +118,9 @@ export const sellerPayoutPath = (sellerId: string) =>
 
 /** AD-19 Account statement. */
 export const accountPath = (accountId: string) => `${ROUTES.financeAccounts}/${accountId}` as const;
+
+/** The storefront's product page (spec 01 SF-05: id or slug), for AD-27 "View in store". */
+export const STOREFRONT_PRODUCT_PATH = (slug: string) => `/p/${slug}` as const;
 
 /** The storefront's search filtered to one seller (spec 01: `/search?seller=`), for AD-05. */
 export const STOREFRONT_SELLER_SEARCH_PATH = (sellerId: string) => `/search?seller=${sellerId}` as const;

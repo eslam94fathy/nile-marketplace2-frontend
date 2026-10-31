@@ -14,6 +14,7 @@ import { CATALOG_COPY as COPY } from '../copy';
 import { canHaveChildren, pathTo } from '../lib/tree';
 import { categoryPatch, categorySchema, categoryValues, type CategoryValues } from '../schemas';
 import { AttributesSection } from './attributes-section';
+import { CategoryImage } from './category-image';
 import { CreateCategoryDialog } from './dialogs';
 import { useCatalogRefresh, useGoneHandler } from './form-dialog';
 
@@ -45,6 +46,7 @@ export function CategoryPanel({ tree, node, onSelect }: CategoryPanelProps) {
       </dl>
       {/* Keyed by the API's values: a refetched tree resets the form to them. */}
       <DetailsForm key={`${node.id}:${node.name}:${node.slug}:${String(node.sortOrder)}`} node={node} />
+      <CategoryImage key={node.id} node={node} />
       <ActiveSwitch node={node} parentInactive={parentInactive} />
       {canHaveChildren(node) ? (
         <div className="space-y-1">

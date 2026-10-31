@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useActorLabel, useGovernorateName } from '@/features/lookups';
+import { StoreProducts } from '@/features/products';
 import { publicEnv } from '@/lib/env/public';
 import { ownerAccountsPath, ROUTES, STOREFRONT_SELLER_SEARCH_PATH } from '@/lib/routes';
 import { isSellerMissing, sellerQuery, type AdminSellerDetail } from '../api';
@@ -181,7 +182,7 @@ function SellerContent({
                   href={`${publicEnv.NEXT_PUBLIC_STOREFRONT_URL}${STOREFRONT_SELLER_SEARCH_PATH(seller.id)}`}
                   className="text-primary underline-offset-4 hover:underline"
                 >
-                  {COPY.productsInStore}
+                  {COPY.viewInStore}
                 </a>
               </li>
               <li>
@@ -197,6 +198,7 @@ function SellerContent({
           </section>
         </div>
       </div>
+      <StoreProducts sellerId={seller.id} />
       <History title={COPY.statusHistory}>
         <DataTable
           caption={COPY.statusHistoryCaption}

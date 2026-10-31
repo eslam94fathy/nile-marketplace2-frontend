@@ -150,7 +150,7 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/support/tickets/{ticketId}/messages` | Bearer from session | required, from client |
 | POST | `/support/tickets/{ticketId}/read` | Bearer from session | – |
 
-#### admin (103 operations)
+#### admin (104 operations)
 
 | Method | Path | Session | Idempotency-Key |
 |---|---|---|---|
@@ -256,6 +256,7 @@ Not reachable through any proxy, by design: `POST /auth/login`, `/auth/refresh`,
 | POST | `/media/uploads` | Bearer from session | – |
 | POST | `/media/uploads/{mediaId}/complete` | Bearer from session | – |
 | GET | `/media/{mediaId}` | Bearer from session | – |
+| GET | `/products` | none (public) | – |
 | GET | `/push/config` | Bearer from session | – |
 
 #### agent (24 operations)

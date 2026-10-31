@@ -48,7 +48,7 @@ export const SELLERS_COPY = {
   approved: 'Approved',
   rejectionReason: 'Rejection reason',
   linksHeading: 'Elsewhere',
-  productsInStore: 'Products in the store',
+  viewInStore: 'View in the store',
   financeAccount: 'Finance account',
   ordersNote: 'Orders can’t be filtered by seller.',
   statusHistory: 'Status history',
