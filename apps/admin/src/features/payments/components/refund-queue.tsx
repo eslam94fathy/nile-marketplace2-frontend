@@ -1,7 +1,7 @@
 'use client';
 
 import { isApiError } from '@nile/api';
-import { REFUND_REASON_LABELS, REFUND_REASONS, type RefundStatus } from '@nile/domain';
+import { REFUND_REASON_LABELS, REFUND_REASONS } from '@nile/domain';
 import { buttonVariants, Checkbox, cn, EmptyState, ErrorState, Input, Label, PageHeader } from '@nile/ui';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Route } from 'next';
@@ -12,16 +12,15 @@ import { ROUTES } from '@/lib/routes';
 import { refundsListOptions } from '../api';
 import { PAYMENTS_COPY as COPY } from '../copy';
 import {
+  DEFAULT_REFUND_TAB,
   hasNarrowingFilters,
   parseRefundFilters,
+  REFUND_TABS,
   refundFiltersQuery,
   type RawRefundParams,
   type RefundFilters,
 } from '../lib/list-params';
 import { RefundsTable } from './refunds-table';
-
-/** The manual queue only until the full refund list (spec 03 §7.3 AD-16, T-M8). */
-const TABS = ['pending_manual', 'recorded'] as const satisfies readonly RefundStatus[];
 
 const listHref = (filters: RefundFilters): Route => {
   const query = refundFiltersQuery(filters);
@@ -33,7 +32,10 @@ export interface RefundQueueProps {
   readonly currentUserId: string;
 }
 
-/** AD-16 Refund queue: To record (oldest first) / Recorded, reasons and created dates in the URL. */
+/**
+ * AD-16 Refunds over every status (T-M8): Needs action first (oldest first, AD-Q-14), reasons and created dates in
+ * the URL; each row opens AD-34.
+ */
 export function RefundQueue({ params, currentUserId }: RefundQueueProps) {
   const filters = parseRefundFilters(params);
   const router = useRouter();
@@ -59,7 +61,7 @@ export function RefundQueue({ params, currentUserId }: RefundQueueProps) {
       />
     );
   } else {
-    empty = <EmptyState title={filters.status === 'pending_manual' ? COPY.emptyToRecord : COPY.empty} />;
+    empty = <EmptyState title={filters.status === DEFAULT_REFUND_TAB ? COPY.emptyNeedsAction : COPY.empty} />;
   }
 
   return (
@@ -67,7 +69,7 @@ export function RefundQueue({ params, currentUserId }: RefundQueueProps) {
       <PageHeader title={COPY.refundsTitle} />
       <nav aria-label={COPY.tabsLabel}>
         <ul className="flex flex-wrap gap-2">
-          {TABS.map((status) => {
+          {REFUND_TABS.map((status) => {
             const current = status === filters.status;
             return (
               <li key={status}>

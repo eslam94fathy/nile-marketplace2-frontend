@@ -17,7 +17,7 @@ describe('dashboard: refunds and card payments (spec 03 AD-02, T-H10)', () => {
     expect(DASHBOARD_QUEUES.indexOf(AwaitingCardPaymentQueue)).toBe(4);
   });
 
-  it('refunds needing action: oldest first, linking to the order; "See all" to AD-16', async () => {
+  it('refunds needing action: oldest first, linking to AD-34; "See all" to AD-16', async () => {
     const queries: URLSearchParams[] = [];
     const refund = refundFactory();
     server.use(
@@ -34,7 +34,7 @@ describe('dashboard: refunds and card payments (spec 03 AD-02, T-H10)', () => {
     renderWithProviders(<RefundsToRecordQueue />);
     const card = await screen.findByRole('region', { name: 'Refunds needing action' });
     expect((await within(card).findByRole('link', { name: /100\.00/ })).getAttribute('href')).toBe(
-      `/orders/${refund.orderId}`,
+      `/refunds/${refund.id}`,
     );
     expect(within(card).getByText(/^Seller order cancelled, /)).toBeDefined();
     expect(

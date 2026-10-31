@@ -4,17 +4,17 @@ import {
   formatDate,
   formatDateTime,
   formatMoney,
+  REFUND_METHOD_LABELS,
   REFUND_REASON_LABELS,
   REFUND_STATUS_LABELS,
 } from '@nile/domain';
-import { Button, DataTable, REFUND_STATUS_TONES, StatusBadge, type DataTableColumn } from '@nile/ui';
+import { DataTable, REFUND_STATUS_TONES, StatusBadge, type DataTableColumn } from '@nile/ui';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useActorLabel } from '@/features/lookups';
-import { orderPath } from '@/lib/routes';
+import { orderPath, refundPath } from '@/lib/routes';
 import type { Refund } from '../api';
 import { PAYMENTS_COPY as COPY } from '../copy';
-import { RecordRefundDialog } from './record-refund-dialog';
 
 export interface RefundsTableProps {
   readonly caption: string;
@@ -30,7 +30,18 @@ export interface RefundsTableProps {
 
 const linkClass = 'font-medium text-primary underline-offset-4 hover:underline';
 
-/** Spec 03 AD-16 rows with "Record refund" on those still to record; also AD-15 and AD-17. */
+/** When a refund was settled: recorded by an admin, or refunded automatically. */
+function settled(row: Refund, actor: (id: string | null) => string): string {
+  if (row.recordedAt !== null)
+    return COPY.recordedBy(formatDateTime(row.recordedAt), actor(row.recordedByUserId));
+  if (row.succeededAt !== null) return formatDateTime(row.succeededAt);
+  return COPY.none;
+}
+
+/**
+ * Spec 03 AD-16 rows over every status; each opens AD-34, where a refund is recorded or retried (T-M8). Also the
+ * refunds blocks of AD-15 and AD-17.
+ */
 export function RefundsTable({
   caption,
   rows,
@@ -42,8 +53,8 @@ export function RefundsTable({
   onLoadMore = () => undefined,
   toolbar,
 }: RefundsTableProps) {
-  const [recording, setRecording] = useState<Refund | null>(null);
-  const actor = useActorLabel(currentUserId);
+  const actorLabel = useActorLabel(currentUserId);
+  const actor = (id: string | null) => actorLabel(id, 'admin');
 
   const columns: readonly DataTableColumn<Refund>[] = [
     { id: 'created', header: COPY.columns.created, cell: (row) => formatDate(row.createdAt) },
@@ -57,68 +68,45 @@ export function RefundsTable({
       ),
     },
     {
-      id: 'sellerOrder',
-      header: COPY.columns.sellerOrder,
-      cell: (row) => (row.sellerOrderId === null ? COPY.none : COPY.shortId(row.sellerOrderId)),
+      id: 'amount',
+      header: COPY.columns.amount,
+      align: 'end',
+      // The amount opens AD-34 (T-M8).
+      cell: (row) => (
+        <Link href={refundPath(row.id)} className={linkClass}>
+          {formatMoney(row.amount)}
+        </Link>
+      ),
     },
-    { id: 'amount', header: COPY.columns.amount, align: 'end', cell: (row) => formatMoney(row.amount) },
     { id: 'reason', header: COPY.columns.reason, cell: (row) => REFUND_REASON_LABELS[row.reason] },
+    { id: 'method', header: COPY.columns.method, cell: (row) => REFUND_METHOD_LABELS[row.method] },
     {
       id: 'status',
       header: COPY.columns.status,
       cell: (row) => (
-        <StatusBadge value={row.status} labels={REFUND_STATUS_LABELS} tones={REFUND_STATUS_TONES} />
+        <span className="flex flex-col gap-1">
+          <StatusBadge value={row.status} labels={REFUND_STATUS_LABELS} tones={REFUND_STATUS_TONES} />
+          {/* The API's redacted provider text (spec 10 N-2), for refunds the job handed back. */}
+          {row.lastError === null ? null : <span className="text-muted-foreground">{row.lastError}</span>}
+        </span>
       ),
     },
-    { id: 'reference', header: COPY.columns.reference, cell: (row) => row.providerRefundRef ?? COPY.none },
-    {
-      id: 'recorded',
-      header: COPY.columns.recorded,
-      cell: (row) =>
-        row.recordedAt === null
-          ? COPY.none
-          : COPY.recordedBy(formatDateTime(row.recordedAt), actor(row.recordedByUserId, 'admin')),
-    },
-    {
-      id: 'actions',
-      header: COPY.columns.actions,
-      cell: (row) =>
-        row.status === 'pending_manual' ? (
-          <Button
-            size="sm"
-            aria-label={COPY.recordFor(formatMoney(row.amount))}
-            onClick={() => {
-              setRecording(row);
-            }}
-          >
-            {COPY.record}
-          </Button>
-        ) : null,
-    },
+    { id: 'attempts', header: COPY.columns.attempts, align: 'end', cell: (row) => row.attemptCount },
+    { id: 'settled', header: COPY.columns.settled, cell: (row) => settled(row, actor) },
   ];
 
   return (
-    <>
-      <DataTable
-        caption={caption}
-        columns={columns}
-        rows={rows}
-        getRowId={(row) => row.id}
-        loading={loading}
-        hasMore={hasMore}
-        loadingMore={loadingMore}
-        onLoadMore={onLoadMore}
-        empty={empty}
-        {...(toolbar === undefined ? {} : { toolbar })}
-      />
-      {recording === null ? null : (
-        <RecordRefundDialog
-          refund={recording}
-          onClose={() => {
-            setRecording(null);
-          }}
-        />
-      )}
-    </>
+    <DataTable
+      caption={caption}
+      columns={columns}
+      rows={rows}
+      getRowId={(row) => row.id}
+      loading={loading}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={onLoadMore}
+      empty={empty}
+      {...(toolbar === undefined ? {} : { toolbar })}
+    />
   );
 }

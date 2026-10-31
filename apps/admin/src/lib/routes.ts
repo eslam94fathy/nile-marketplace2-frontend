@@ -105,6 +105,9 @@ export const customerOrdersPath = (customerId: string) =>
 export const orderShipmentsPath = (orderId: string) =>
   `${ROUTES.shipments}?status=all&order=${orderId}` as const;
 
+/** AD-34 Refund (T-M8). */
+export const refundPath = (refundId: string) => `${ROUTES.refunds}/${refundId}` as const;
+
 /** AD-17 Payment. */
 export const paymentPath = (paymentId: string) => `/payments/${paymentId}` as const;
 
@@ -114,6 +117,10 @@ export const paymentPath = (paymentId: string) => `/payments/${paymentId}` as co
  */
 export const sellerOrderLedgerPath = (sellerOrderId: string) =>
   `${ROUTES.referenceLookup}?referenceType=seller_order&referenceId=${sellerOrderId}` as const;
+
+/** AD-22 prefilled with a seller order's hold (AD-19 "seller earnings held / released" entries, T-M8). */
+export const sellerOrderHoldLedgerPath = (sellerOrderId: string) =>
+  `${ROUTES.referenceLookup}?referenceType=seller_order_hold&referenceId=${sellerOrderId}` as const;
 
 /**
  * AD-20 and AD-21 prefilled for one agent (AD-11 shortcuts). The parameter names are fixed here and honoured by

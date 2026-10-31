@@ -61,12 +61,15 @@ function entryTypeQuery(types: readonly LedgerEntryType[]) {
 
 // ---------------------------------------------------------------- AD-18 accounts
 
-/** Spec 03 AD-18 tabs, in order; the URL value is the tab key. */
+/** Spec 03 AD-18 tabs, in order (Release 2 adds seller pending, customer refunds, promotions); the URL value is the key. */
 export const ACCOUNT_TABS = {
   seller_payable: ['seller_payable'],
+  seller_pending: ['seller_pending'],
   agent_fee_payable: ['agent_fee_payable'],
   agent_cod_cash: ['agent_cod_cash'],
+  customer_refund_payable: ['customer_refund_payable'],
   platform: ['platform_commission_revenue', 'platform_delivery_revenue'],
+  platform_promotions: ['platform_promotions'],
   all: [],
 } as const satisfies Readonly<Record<string, readonly AccountType[]>>;
 

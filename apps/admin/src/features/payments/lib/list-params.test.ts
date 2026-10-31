@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseRefundFilters, refundApiQuery, refundFiltersQuery } from './list-params';
 
 describe('refund filters (spec 03 AD-16)', () => {
-  it('opens on To record, oldest first', () => {
+  it('opens on Needs action, oldest first', () => {
     const filters = parseRefundFilters({});
     expect(refundApiQuery(filters)).toEqual({ sort: 'createdAt', 'status[eq]': 'pending_manual' });
     expect(refundFiltersQuery(filters)).toBe('');
@@ -24,6 +24,18 @@ describe('refund filters (spec 03 AD-16)', () => {
     expect(parseRefundFilters(Object.fromEntries(new URLSearchParams(refundFiltersQuery(filters))))).toEqual(
       filters,
     );
+  });
+
+  it('every R2 status is a tab, newest first; All sends no status (T-M8)', () => {
+    expect(refundApiQuery(parseRefundFilters({ status: 'succeeded' }))).toEqual({
+      sort: '-createdAt',
+      'status[eq]': 'succeeded',
+    });
+    expect(refundApiQuery(parseRefundFilters({ status: 'all', reason: 'return' }))).toEqual({
+      sort: '-createdAt',
+      'reason[in]': 'return',
+    });
+    expect(refundFiltersQuery(parseRefundFilters({ status: 'all' }))).toBe('status=all');
   });
 
   it('drops invalid values', () => {

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import type { ErrorCode, Schema } from '@nile/api';
+import type { Schema } from '@nile/api';
 import { adminListItemFactory, adminPaymentFactory, mockApi, refundFactory } from '@nile/test-utils';
 import { renderWithProviders } from '@nile/test-utils/react';
 import { Toaster } from '@nile/ui';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BFF_BASE, setupMswServer } from '@/test/msw';
@@ -48,26 +48,6 @@ function serveRefunds(rows: () => Refund[]) {
   return queries;
 }
 
-type Answer = Refund | { readonly status: number; readonly code: ErrorCode };
-
-function serveRecord(answers: Answer[]) {
-  const calls: { key: string | null; body: unknown }[] = [];
-  server.use(
-    mockApi(
-      'post',
-      '/admin/payments/refunds/{refundId}/record',
-      async ({ request, reply }) => {
-        calls.push({ key: request.headers.get('Idempotency-Key'), body: await request.json() });
-        const answer = answers[Math.min(calls.length, answers.length) - 1] ?? answers[0];
-        if (answer === undefined) throw new Error('no answer');
-        return 'code' in answer ? reply.error(answer.status, answer.code) : reply.ok(answer);
-      },
-      { base: BFF_BASE },
-    ),
-  );
-  return calls;
-}
-
 const renderQueue = (params = {}) =>
   renderWithProviders(
     <>
@@ -76,32 +56,43 @@ const renderQueue = (params = {}) =>
     </>,
   );
 
-describe('refund queue (spec 03 AD-16)', { timeout: 15_000 }, () => {
-  it('opens on To record, oldest first; rows show amount, reason and order link', async () => {
+describe('refunds (spec 03 AD-16, T-M8)', { timeout: 15_000 }, () => {
+  it('opens on Needs action, oldest first; rows show amount (→ AD-34), reason, method, status and order', async () => {
     const queries = serveRefunds(() => [REFUND]);
     renderQueue();
     const table = await screen.findByRole('table', { name: 'Refunds' });
     expect(queries[0]).toEqual({ limit: '20', sort: 'createdAt', 'status[eq]': 'pending_manual' });
     expect(within(table).getByText('Seller order cancelled')).toBeDefined();
+    expect(within(table).getByText('Manual')).toBeDefined();
+    expect(
+      within(table)
+        .getByRole('link', { name: /^EGP\s?100\.00$/ })
+        .getAttribute('href'),
+    ).toBe(`/refunds/${REFUND.id}`);
     expect(
       within(table)
         .getByRole('link', { name: /^Order / })
         .getAttribute('href'),
     ).toBe(`/orders/${REFUND.orderId}`);
-    expect(screen.getByRole('link', { name: 'To record' }).getAttribute('aria-current')).toBe('page');
+    // Recording happens on AD-34 now.
+    expect(within(table).queryByRole('button')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Needs action' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Refunded automatically' }).getAttribute('href')).toBe(
+      '/refunds?status=succeeded',
+    );
   });
 
   it('a reason box adds it to the URL', async () => {
     const user = userEvent.setup();
     serveRefunds(() => []);
     renderQueue();
-    expect(await screen.findByText('Nothing to record.')).toBeDefined();
-    await user.click(screen.getByRole('checkbox', { name: 'Delivery failed (returned)' }));
-    expect(router.push).toHaveBeenCalledWith('/refunds?reason=delivery_failed');
+    expect(await screen.findByText('Nothing needs action.')).toBeDefined();
+    await user.click(screen.getByRole('checkbox', { name: 'Return' }));
+    expect(router.push).toHaveBeenCalledWith('/refunds?reason=return');
   });
 
-  it('recorded rows show the reference and who recorded it', async () => {
-    serveRefunds(() => [
+  it('recorded and automatic rows say when and by whom; a failed automatic one shows its last error', async () => {
+    const queries = serveRefunds(() => [
       {
         ...REFUND,
         status: 'recorded',
@@ -109,61 +100,26 @@ describe('refund queue (spec 03 AD-16)', { timeout: 15_000 }, () => {
         recordedByUserId: OPS.id,
         recordedAt: '2026-10-15T13:00:00.000Z',
       },
+      refundFactory({
+        method: 'kashier_auto',
+        status: 'succeeded',
+        attemptCount: 2,
+        succeededAt: '2026-10-15T14:00:00.000Z',
+      }),
+      refundFactory({
+        method: 'kashier_auto',
+        status: 'pending_manual',
+        attemptCount: 5,
+        lastError: 'Kashier answered 422',
+      }),
     ]);
-    renderQueue({ status: 'recorded' });
+    renderQueue({ status: 'all' });
     const table = await screen.findByRole('table', { name: 'Refunds' });
-    expect(within(table).getByText('KSH-R-9')).toBeDefined();
+    expect(queries[0]).toEqual({ limit: '20', sort: '-createdAt' });
     expect(await within(table).findByText(/by ops@example\.test$/)).toBeDefined();
-    expect(within(table).queryByRole('button', { name: /^Record refund/ })).toBeNull();
-  });
-
-  it('record: the Kashier instruction is shown; a failed try is retried with the same key, never twice', async () => {
-    const user = userEvent.setup();
-    let recorded = false;
-    serveRefunds(() => (recorded ? [] : [REFUND]));
-    const calls = serveRecord([
-      { status: 500, code: 'INTERNAL_ERROR' },
-      { ...REFUND, status: 'recorded', providerRefundRef: 'KSH-R-1' },
-    ]);
-    renderQueue();
-    await user.click(await screen.findByRole('button', { name: /^Record refund of / }));
-    const dialog = await screen.findByRole('dialog');
-    expect(
-      within(dialog).getByText(
-        /^Refund EGP\s?100\.00 in the Kashier dashboard first, then enter Kashier's refund reference here\.$/,
-      ),
-    ).toBeDefined();
-    await user.click(within(dialog).getByRole('button', { name: 'Record refund' }));
-    expect(calls).toEqual([]);
-    await user.type(within(dialog).getByLabelText(/^Kashier's refund reference/), ' KSH-R-1 ');
-    await user.click(within(dialog).getByRole('button', { name: 'Record refund' }));
-    expect(await within(dialog).findByRole('alert')).toBeDefined();
-    recorded = true;
-    await user.click(within(dialog).getByRole('button', { name: 'Record refund' }));
-    expect(await screen.findByText(/^Refund of EGP\s?100\.00 recorded\.$/)).toBeDefined();
-    expect(calls).toHaveLength(2);
-    expect(calls[0]?.body).toEqual({ providerRefundRef: 'KSH-R-1' });
-    expect(calls[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
-    expect(calls[1]?.key).toBe(calls[0]?.key);
-    expect(await screen.findByText('Nothing to record.')).toBeDefined();
-  });
-
-  it('REFUND_ALREADY_RECORDED closes, reloads and explains', async () => {
-    const user = userEvent.setup();
-    const queries = serveRefunds(() => [REFUND]);
-    serveRecord([{ status: 409, code: 'REFUND_ALREADY_RECORDED' }]);
-    renderQueue();
-    await user.click(await screen.findByRole('button', { name: /^Record refund of / }));
-    const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText(/^Kashier's refund reference/), 'KSH-R-2');
-    await user.click(within(dialog).getByRole('button', { name: 'Record refund' }));
-    expect(await screen.findByText('This refund was already recorded.')).toBeDefined();
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).toBeNull();
-    });
-    await waitFor(() => {
-      expect(queries.length).toBeGreaterThan(1);
-    });
+    expect(within(table).getByText('Refunded automatically')).toBeDefined();
+    expect(within(table).getByText('Kashier answered 422')).toBeDefined();
+    expect(within(table).getAllByText('Automatic (Kashier)')).toHaveLength(2);
   });
 });
 
@@ -200,7 +156,11 @@ describe('payment (spec 03 AD-17)', { timeout: 15_000 }, () => {
     expect(within(events).getByText('Invalid')).toBeDefined();
     expect(within(events).getByText('Not processed')).toBeDefined();
     const refunds = screen.getByRole('table', { name: 'Refunds of this payment' });
-    expect(within(refunds).getByRole('button', { name: /^Record refund of / })).toBeDefined();
+    expect(
+      within(refunds)
+        .getByRole('link', { name: /^EGP\s?100\.00$/ })
+        .getAttribute('href'),
+    ).toBe(`/refunds/${REFUND.id}`);
   });
 
   it('an unknown payment is "not found"', async () => {
