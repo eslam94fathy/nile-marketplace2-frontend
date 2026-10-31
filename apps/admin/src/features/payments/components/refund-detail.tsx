@@ -25,6 +25,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { useActorLabel } from '@/features/lookups';
 import { orderPath, paymentPath, returnPath, ROUTES } from '@/lib/routes';
 import {
@@ -116,6 +117,7 @@ function RefundContent({
     <div className="space-y-8">
       <PageHeader
         title={COPY.refundTitle(amount)}
+        actions={<HistoryLink targetType="payment_refund" targetId={refund.id} />}
         description={
           <StatusBadge value={refund.status} labels={REFUND_STATUS_LABELS} tones={REFUND_STATUS_TONES} />
         }

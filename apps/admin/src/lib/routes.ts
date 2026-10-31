@@ -25,6 +25,8 @@ export const ROUTES = {
   referenceLookup: '/finance/lookup',
   commission: '/settings/commission',
   admins: '/admins',
+  /** AD-38 Audit log (T-M10). */
+  audit: '/audit',
   security: '/security',
   /** AD-40 / AD-41 (spec 03 §7.2). */
   notifications: '/notifications',
@@ -149,3 +151,16 @@ export const STOREFRONT_PRODUCT_PATH = (slug: string) => `/p/${slug}` as const;
 
 /** The storefront's search filtered to one seller (spec 01: `/search?seller=`), for AD-05. */
 export const STOREFRONT_SELLER_SEARCH_PATH = (sellerId: string) => `/search?seller=${sellerId}` as const;
+
+/** AD-39 Audit entry (T-M10). */
+export const auditEntryPath = (entryId: string) => `${ROUTES.audit}/${entryId}` as const;
+
+/**
+ * AD-38 filtered to one target ("History" on AD-05, AD-11, AD-15, AD-27, AD-29, AD-31, AD-34; spec 03 AD-38). The
+ * parameter names are those of AD-38 itself.
+ */
+export const targetHistoryPath = (targetType: string, targetId: string) =>
+  `${ROUTES.audit}?target=${targetType}&targetId=${targetId}` as const;
+
+/** AD-07 with one category selected (`?category=`, design 01 R-45). */
+export const categoryPath = (categoryId: string) => `${ROUTES.categories}?category=${categoryId}` as const;

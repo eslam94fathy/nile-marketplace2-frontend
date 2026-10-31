@@ -39,6 +39,7 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { HistoryLink } from '@/features/audit';
 import { categoryPathLabel, categoryTreeQuery } from '@/features/catalog';
 import { useSellerNames } from '@/features/lookups';
 import { publicEnv } from '@/lib/env/public';
@@ -158,25 +159,28 @@ function ProductContent({ product }: { readonly product: AdminProduct }) {
           </span>
         }
         actions={
-          product.adminBlocked ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDialog('unblock');
-              }}
-            >
-              {COPY.unblock}
-            </Button>
-          ) : (
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setDialog('block');
-              }}
-            >
-              {COPY.block}
-            </Button>
-          )
+          <>
+            <HistoryLink targetType="product" targetId={product.id} />
+            {product.adminBlocked ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDialog('unblock');
+                }}
+              >
+                {COPY.unblock}
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setDialog('block');
+                }}
+              >
+                {COPY.block}
+              </Button>
+            )}
+          </>
         }
       />
       {product.adminBlocked && product.adminBlockReason !== null ? (

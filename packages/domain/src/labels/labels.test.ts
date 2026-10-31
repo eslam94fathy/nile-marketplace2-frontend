@@ -48,6 +48,7 @@ import {
   ACTOR_ROLE_LABELS,
   AGENT_STATUS_LABELS,
   ATTEMPT_FAILURE_REASON_LABELS,
+  AUDIT_ACTION_AREAS,
   AUDIT_ACTION_LABELS,
   AUDIT_ACTOR_TYPE_LABELS,
   AUDIT_TARGET_TYPE_LABELS,
@@ -183,5 +184,13 @@ describe('cartLineIssueMessage', () => {
       'Out of stock.',
       'Only 3 available.',
     ]);
+  });
+});
+
+describe('AUDIT_ACTION_AREAS', () => {
+  it('puts every audit action in exactly one area', () => {
+    const grouped = AUDIT_ACTION_AREAS.flatMap((group) => [...group.actions]);
+    expect([...grouped].sort()).toEqual([...AUDIT_ACTIONS].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
   });
 });

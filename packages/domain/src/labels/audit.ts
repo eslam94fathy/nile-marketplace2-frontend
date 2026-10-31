@@ -83,3 +83,77 @@ export const AUDIT_ACTION_LABELS = {
   'cod_remittance.recorded': 'COD remittance recorded',
   'payout.recorded': 'Payout recorded',
 } as const satisfies Labels<AuditAction>;
+
+/**
+ * Spec 03 AD-38: the action filter grouped by area, in the backend's spec 20 §2.3 module order. The spec names
+ * ten areas; returns (added to spec 20 by R2-P6) get their own (TM10-Q2). Every action is in exactly one area.
+ */
+export const AUDIT_ACTION_AREAS = [
+  {
+    area: 'identity',
+    label: 'Accounts',
+    actions: ['admin.invited', 'admin.seeded', 'user.invite_resent', 'user.suspended', 'user.reactivated'],
+  },
+  {
+    area: 'sellers',
+    label: 'Sellers',
+    actions: [
+      'seller.approved',
+      'seller.rejected',
+      'seller.suspended',
+      'seller.reinstated',
+      'seller.commission_changed',
+      'setting.default_commission_changed',
+    ],
+  },
+  {
+    area: 'catalog',
+    label: 'Catalog',
+    actions: [
+      'category.created',
+      'category.updated',
+      'category.image_set',
+      'category.image_removed',
+      'attribute.created',
+      'attribute.updated',
+      'attribute.deleted',
+      'option.created',
+      'option.updated',
+      'option.deleted',
+      'product.blocked',
+      'product.unblocked',
+    ],
+  },
+  {
+    area: 'delivery',
+    label: 'Delivery',
+    actions: [
+      'governorate.updated',
+      'setting.delivery_changed',
+      'delivery_agent.created',
+      'delivery_agent.updated',
+      'delivery_agent.deactivated',
+      'delivery_agent.activated',
+      'shipment.admin_assigned',
+    ],
+  },
+  { area: 'ordering', label: 'Orders', actions: ['seller_order.admin_cancelled', 'order.admin_cancelled'] },
+  { area: 'returns', label: 'Returns', actions: ['return.admin_decided', 'return.dispute_resolved'] },
+  { area: 'payments', label: 'Refunds', actions: ['payment_refund.recorded', 'payment_refund.retried'] },
+  { area: 'finance', label: 'Finance', actions: ['cod_remittance.recorded', 'payout.recorded'] },
+  {
+    area: 'support',
+    label: 'Support',
+    actions: ['support_ticket.assigned', 'support_ticket.resolved', 'support_ticket.closed'],
+  },
+  {
+    area: 'reviews',
+    label: 'Reviews',
+    actions: ['review.hidden', 'review.unhidden', 'review_reply.hidden', 'review_reply.unhidden'],
+  },
+  {
+    area: 'promotions',
+    label: 'Coupons',
+    actions: ['coupon.created', 'coupon.updated', 'coupon.blocked', 'coupon.unblocked'],
+  },
+] as const satisfies readonly { area: string; label: string; actions: readonly AuditAction[] }[];

@@ -24,6 +24,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { useActorLabel, useGovernorateName } from '@/features/lookups';
 import { StoreProducts } from '@/features/products';
 import { publicEnv } from '@/lib/env/public';
@@ -138,6 +139,7 @@ function SellerContent({
     <div className="space-y-8">
       <PageHeader
         title={seller.businessName}
+        actions={<HistoryLink targetType="seller" targetId={seller.id} />}
         description={
           <span className="flex flex-wrap items-center gap-2">
             <StatusBadge value={seller.status} labels={SELLER_STATUS_LABELS} tones={SELLER_STATUS_TONES} />

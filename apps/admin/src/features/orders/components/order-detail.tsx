@@ -35,6 +35,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { useActorLabel } from '@/features/lookups';
 import { OrderPaymentSummary } from '@/features/payments';
 import {
@@ -160,17 +161,20 @@ function OrderContent({
           </span>
         }
         actions={
-          anyCancellable ? (
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setBlocked(null);
-                setCancelling({ kind: 'order', orderId: order.id });
-              }}
-            >
-              {COPY.cancelOrder}
-            </Button>
-          ) : null
+          <>
+            <HistoryLink targetType="order" targetId={order.id} />
+            {anyCancellable ? (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setBlocked(null);
+                  setCancelling({ kind: 'order', orderId: order.id });
+                }}
+              >
+                {COPY.cancelOrder}
+              </Button>
+            ) : null}
+          </>
         }
       />
       {blocked === null ? null : <FormAlert>{blocked}</FormAlert>}

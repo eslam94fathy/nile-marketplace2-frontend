@@ -812,6 +812,7 @@ T-J1 (2026-10-23): `packages/api/src/error-codes.ts` holds all 171 backend codes
 | OA-R2-8 | `AssignTicketDto.adminUserId` is required (an admin or `null` to unassign) but documented optional [VERIFIED T-J1] | OA-6 rule generalised to `REQUIRED_REQUEST_FIELDS` |
 | OA-R2-9 | `AuthTokensDto.refreshToken` is now `string | null` (null only with the web cookie transport) [VERIFIED T-J1] | `@nile/auth` `bodyTokens()` fails closed on null; the BFF never selects the cookie transport |
 | OA-R2-10 | `UploadFormDto.fields` is documented `{ type: object }` without keys, so it generates `Record<string, never>` (and a closed contract validator); the backend sends the presigned form fields as strings [SPEC 14 §4, VERIFIED T-J4] | `openapi-fix.ts` `STRING_MAP_FIELDS`: `additionalProperties: { type: string }` |
+| OA-R2-11 | `AuditChangesDto.before` / `.after` are documented `{ type: object }` without keys (same defect as OA-R2-10); the backend sends the allow-listed fields of the action, each `string \| number \| boolean \| null` [SPEC 20 §2.2, VERIFIED backend `AuditValues`, T-M10] | `openapi-fix.ts` `SCALAR_MAP_FIELDS`: `additionalProperties: { type: [string, number, boolean, null] }` |
 
 ### 11.8 Gaps and questions (Release 2)
 

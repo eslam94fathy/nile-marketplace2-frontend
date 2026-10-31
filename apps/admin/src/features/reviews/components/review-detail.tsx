@@ -32,6 +32,7 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { HistoryLink } from '@/features/audit';
 import { useSellerNames } from '@/features/lookups';
 import { useProductNames } from '@/features/products';
 import { customerPath, productPath, ROUTES, sellerPath } from '@/lib/routes';
@@ -103,6 +104,7 @@ function ReviewContent({ review }: { readonly review: AdminReview }) {
     <div className="space-y-8">
       <PageHeader
         title={review.title ?? COPY.reviewTitle}
+        actions={<HistoryLink targetType="review" targetId={review.id} />}
         description={
           <span className="flex flex-wrap items-center gap-3">
             <StatusBadge

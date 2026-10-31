@@ -11055,8 +11055,12 @@ export interface components {
             email: string | null;
         };
         AuditChangesDto: {
-            before: Record<string, never>;
-            after: Record<string, never>;
+            before: {
+                [key: string]: string | number | boolean | null;
+            };
+            after: {
+                [key: string]: string | number | boolean | null;
+            };
         };
         AuditEntryDto: {
             /** Format: uuid */

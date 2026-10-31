@@ -38,6 +38,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { HistoryLink } from '@/features/audit';
 import { dashboardKeys } from '@/features/dashboard';
 import { adminDirectoryQuery, lookupKeys } from '@/features/lookups';
 import { orderPath, ROUTES } from '@/lib/routes';
@@ -188,11 +189,14 @@ function TicketContent({
         title={ticket.subject}
         description={`${COPY.ticket(ticket.ticketNumber)} · ${TICKET_CATEGORY_LABELS[ticket.category]}`}
         actions={
-          <StatusBadge
-            value={ticket.status}
-            labels={TICKET_STATUS_LABELS.admin}
-            tones={TICKET_STATUS_TONES}
-          />
+          <>
+            <StatusBadge
+              value={ticket.status}
+              labels={TICKET_STATUS_LABELS.admin}
+              tones={TICKET_STATUS_TONES}
+            />
+            <HistoryLink targetType="support_ticket" targetId={ticket.id} />
+          </>
         }
       />
       <dl aria-label={COPY.detailsLabel} className="grid gap-2 text-sm sm:grid-cols-[10rem_1fr]">

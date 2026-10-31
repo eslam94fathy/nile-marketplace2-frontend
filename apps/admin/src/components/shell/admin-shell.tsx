@@ -67,6 +67,7 @@ const NAV_GROUPS = [
     items: [
       { href: ROUTES.commission, label: 'Commission' },
       { href: ROUTES.admins, label: 'Admins' },
+      { href: ROUTES.audit, label: 'Audit log' },
     ],
   },
 ] as const;
