@@ -8,7 +8,7 @@ import {
   type RealtimeStatus,
   type RefreshOutcome,
 } from './connection';
-import { fakeSockets, flush } from './test/fake-socket';
+import { FakeSocket, fakeSockets, flush } from './test/fake-socket';
 
 /** Manual timers: `run()` fires everything due, in order. */
 function manualTimers() {
@@ -243,5 +243,73 @@ describe('realtime connection (design 01 §15.3)', () => {
       ok: true,
     });
     expect(current().emitted.map((entry) => entry.event)).toEqual(['support.typing', 'ticket.subscribe']);
+  });
+
+  describe('the client loaded on first connect (T-O3)', () => {
+    /** A createSocket that resolves only when the test says so, like the lazy import of socket.io-client. */
+    function deferredSockets() {
+      const made: FakeSocket[] = [];
+      const pending: { resolve: () => void; reject: () => void }[] = [];
+      const createSocket = vi.fn(
+        (url: string, socketOptions: ConstructorParameters<typeof FakeSocket>[1]) =>
+          new Promise<FakeSocket>((resolve, reject) => {
+            pending.push({
+              resolve: () => {
+                const socket = new FakeSocket(url, socketOptions);
+                made.push(socket);
+                resolve(socket);
+              },
+              reject: () => {
+                reject(new Error('chunk failed to load'));
+              },
+            });
+          }),
+      );
+      return { made, pending, createSocket };
+    }
+
+    it('connects once the client has loaded, creating it only once', async () => {
+      const lazy = deferredSockets();
+      const { connection, statuses } = setup({ createSocket: lazy.createSocket });
+      connection.start();
+      connection.stop();
+      connection.start();
+      expect(statuses).toContain('connecting');
+      expect(lazy.createSocket).toHaveBeenCalledTimes(1);
+      lazy.pending[0]?.resolve();
+      await flush();
+      expect(lazy.made[0]?.connectCalls).toBe(1);
+      lazy.made[0]?.accept();
+      expect(connection.status()).toBe('connected');
+    });
+
+    it('stopped while loading: the loaded socket is kept but never connected', async () => {
+      const lazy = deferredSockets();
+      const { connection } = setup({ createSocket: lazy.createSocket });
+      connection.start();
+      connection.stop();
+      lazy.pending[0]?.resolve();
+      await flush();
+      expect(lazy.made[0]?.connectCalls).toBe(0);
+      expect(connection.status()).toBe('idle');
+      connection.start();
+      expect(lazy.createSocket).toHaveBeenCalledTimes(1);
+      expect(lazy.made[0]?.connectCalls).toBe(1);
+    });
+
+    it('a failed load is retried after the back-off', async () => {
+      const lazy = deferredSockets();
+      const { connection, timers } = setup({ createSocket: lazy.createSocket });
+      connection.start();
+      lazy.pending[0]?.reject();
+      await flush();
+      expect(connection.status()).toBe('disconnected');
+      expect(timers.delays()).toHaveLength(1);
+      timers.run();
+      expect(lazy.createSocket).toHaveBeenCalledTimes(2);
+      lazy.pending[1]?.resolve();
+      await flush();
+      expect(lazy.made[0]?.connectCalls).toBe(1);
+    });
   });
 });

@@ -91,15 +91,23 @@ Radix share per page, and React/Next.js settings for hydration.
 Polling runs only while a tab is visible (TanStack pauses intervals in the background); queries also refetch
 on window focus (default) and when stale.
 
-| App / screen | Requests while open | Source |
+From Release 2 a realtime message refreshes what a screen shows, and the timed polls below run **only while the
+tab has no socket** (CLAUDE.md §5, design 01 R-59); with a socket the steady cost is 0 requests per minute plus one
+refetch per relevant message. Release 2 values (T-O3, from the code):
+
+| App / screen | Requests while open, without a socket | Source |
 |---|---|---|
-| Admin dashboard | 5 per minute (5 queues, 60 s) | spec 03 AD-02 |
-| Seller orders list / overview | 1 per minute each (60 s) | spec 02 SE-14 |
+| Admin dashboard | none: figures stale after 60 s, "Refresh" by hand; refreshed by `support.ticket_updated` / `return.updated` | spec 03 AD-02 (AD-Q-16) |
+| Seller orders list / overview queues, return queues | 1 per minute each (60 s) | spec 02 SE-06, SE-14, SE-18 |
 | Seller order detail (not final) | 1 per minute | spec 02 SE-15 |
 | Agent active shipments | 2 per minute (30 s) | spec 04 AG-04 |
 | Customer order awaiting card payment | 2 per minute (30 s) | spec 01 SF-18 |
-| Card payment return | 20 per minute (3 s), ends at a final state or 2 min after the window | spec 01 SF-09 |
+| Card payment return | waits 30 s for `payment.updated`, then 12 per minute (5 s); ends at a final state or 2 min after the window | spec 01 SF-09 (v1.2) |
+| Notification unread count (every signed-in page) | 1 per minute (60 s) | design 02 §5 (`notifications.unreadCount`) |
+| Open support thread | 6 per minute (10 s) | design 02 §5 (`support.messages`) |
+| Image being processed (per upload) | 1 s, doubling to 30 s, until ready or failed (visible tab only) | design 01 §15.4 |
 | Session refresh | 1 per access-token lifetime (15 min) per signed-in tab group | design 01 §5 |
+| Socket handshake | 1 `POST /api/auth/realtime-token` per connect (open, reconnect, `token_expired`); closed after 5 min hidden | design 01 §15.3 |
 
 Backend limits (development defaults; production values are set by operations), keyed as shown [VERIFIED backend
 `rate-limit.ts` and routes]:
@@ -116,3 +124,51 @@ browser request's general, refresh and sign-in IP counters against the **BFF ser
 the current keying, a handful of users exhausts the strict-auth and refresh limits. No frontend change fixes
 this; OQ-1's recommendation (a trusted client-IP header with a shared secret, honoured by the backend for rate-limit
 keys only) remains the requirement before launch.
+
+## 5. Release 2 (T-O3)
+
+### 5.1 Socket client off the critical path
+
+`socket.io-client` was imported statically by `@nile/realtime`, so every page that mounts the realtime provider
+(all of them, in every app) loaded it with the first paint, also for signed-out visitors who never connect.
+`createRealtimeConnection` now imports it on the first connect (`import('socket.io-client')` in the default
+`createSocket`); Turbopack puts it in its own chunk, which no page lists up front. A failed load of that chunk is
+retried with the reconnect back-off; `stop()` while it loads never connects. Tests: `connection.test.ts`
+("the client loaded on first connect").
+
+Storefront production build, gzipped JavaScript the page lists up front (build manifest root files plus the page's
+client reference manifest; this over-counts against Lighthouse's "transferred" because the manifest lists every
+client module of the route segment, so compare the two columns, not with §3):
+
+| Page | Static import | Loaded on first connect | Difference |
+|---|---|---|---|
+| `/`, `/p/[idOrSlug]`, `/cart` | 399.3 KB | 387.1 KB | −12.2 KB |
+| `/login` | 406.0 KB | 393.8 KB | −12.2 KB |
+
+The client chunk itself: 41.2 KB raw, 12.7 KB gzipped, downloaded once per tab when a signed-in user connects.
+
+### 5.2 The LCP image
+
+| Page | Image loaded eagerly with `fetchpriority=high` | Test |
+|---|---|---|
+| Product (`/p/…`) | the main photo | `product-view.test.tsx` |
+| Category and search listings | the first row (`FIRST_ROW_CARDS` = 3) | `product-browser.test.tsx` |
+| Home | the first phone row of "Shop by category" (`PRIORITY_TILES` = 2; was lazy before T-O3) | `catalog-navigation.test.tsx` |
+| Cart | none: thumbnails are small; the LCP element is text | — |
+
+Every other image is `loading="lazy"`; every `NileImage` has intrinsic `width` / `height`, so images can't
+shift the layout (CLS).
+
+### 5.3 Budgets with real images
+
+To run in the phase o lab session (CLAUDE.md §14.1bz TO-Q1): `npm run perf` against the local backend with
+the realistic seed (seller product images and category images uploaded to MinIO). Acceptance (TO-Q3): CLS < 0.1
+with images, the LCP image prioritised (5.2), JavaScript on the budgeted pages not above R1's 341 KB
+transferred; LCP and TBT recorded against their budgets, not blocking.
+
+| Page | FCP | LCP (simulated) | TBT | CLS | JS transferred |
+|---|---|---|---|---|---|
+| `/` | | | | | |
+| `/c/[slug]` | | | | | |
+| `/p/[slug]` | | | | | |
+| `/cart` (signed in) | | | | | |
