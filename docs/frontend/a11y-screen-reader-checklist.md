@@ -86,6 +86,24 @@ Tick each cell with ✓ (fine), ✗ (problem: add a note below) or – (not chec
 | Delivered sheet (amount, tick box), failed-attempt sheet (radios, consequence) | | | |
 | History, finance tabs, Me | | | |
 
+### Release 2 (T-O2)
+
+Live regions announce politely and never move focus; check that each is heard once, in words, at the right moment.
+
+| Screen / widget | NVDA | VoiceOver | Notes |
+|---|---|---|---|
+| Notification bell: name with the unread count ("Notifications, 3 unread"), panel opens with focus inside, Escape returns to the bell, unread items say "Unread" | | | |
+| Photo uploader (review, return, ticket, seller product, category image): the file input announced as "Add photos" / "Add images" with its limit hint ("JPEG, PNG or WebP, up to 5 MB each, at least 200 × 200 px."); "Checking…", progress "Upload of {file}" at "Uploading {n} %", "Processing…", "Ready"; a failure "Photo {n} of {total} failed. {reason}" read once | | | |
+| Star rating input (write / edit a review): one radio group "Rating", arrows move between "1 star" … "5 stars", the choice read back; the "Choose a rating." error read with the group | | | |
+| Product and review photo lightbox: dialog title, "Photo {n} of {total}" on every arrow press, "Previous photo" / "Next photo" buttons, focus back on the thumbnail after Escape | | | |
+| Support thread (storefront, seller, admin): "New message." / "{n} new messages." when messages arrive, "Nile Support is typing…" (storefront, seller) or the user typing (admin) without repeats, "Your message wasn't sent." with Retry, "Reconnecting…" | | | |
+| Admin ticket: Reply / Internal note tabs (selected state), "Internal note · {sender}" on notes, "Replying assigns this ticket to you." | | | |
+| Seller product images: "Actions for image {n} of {total}" menu, "Image moved to position {n} of {total}." after a move, "Main image" on the first | | | |
+| Checkout payment return: "Confirming your payment…" then the result, read once whether the socket or polling brings it | | | |
+| Agent Shipments: "New pickup assigned." / "A shipment was reassigned." (screen-reader only), return pickup badge "Return pickup", "Pickup attempt {n} of 3" | | | |
+| Admin dashboard "Today": "Figures from {date time}", "Refresh the figures"; the sales table caption, bars hidden from readers | | | |
+| Returns (storefront SF-26…28, seller SE-18/19, admin AD-32/33): deadlines read as dates, the next-step sentence, the decision dialogs' two steps | | | |
+
 ## Findings
 
 | # | App / screen | Reader | What was heard | Expected | Fixed in |

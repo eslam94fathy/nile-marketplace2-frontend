@@ -4,8 +4,10 @@
 import { randomUUID } from 'node:crypto';
 import type { Schema } from '@nile/api';
 import { expectData } from '@nile/test-utils/e2e';
-import { expect, test } from '../fixtures';
-import { chooseFirst, press, type } from '../fixtures/keyboard';
+import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
+import { publishedProduct } from '../fixtures/catalog';
+import { solidPng } from '../fixtures/images';
+import { chooseFirst, menu, pickFile, press, type } from '../fixtures/keyboard';
 import { placeCodOrder } from '../fixtures/orders';
 
 test('seller journey by keyboard only', async ({ page, accounts, seller, customer }) => {
@@ -63,4 +65,38 @@ test('seller journey by keyboard only', async ({ page, accounts, seller, custome
   await expect(ready).toBeVisible();
   await press(page, ready.getByRole('button', { name: 'Mark ready for pickup' }));
   await expect(page.getByText('Marked ready for pickup.', { exact: true })).toBeVisible();
+});
+
+// T-O2: product images by keyboard only (S-7): the uploader's native picker and the reorder menu (TL1: reorder
+// by menu, no drag and drop). The product is created through the API.
+test('product images by keyboard only', async ({ page, signIn, accounts }) => {
+  test.slow();
+  const seller = await signIn('seller');
+  const { productId } = await publishedProduct(
+    accounts.backend,
+    seller.accessToken,
+    randomUUID().slice(0, 8),
+  );
+
+  await page.goto(`/products/${productId}`);
+  const add = page.getByLabel('Add images');
+  await pickFile(page, add, { name: 'first.png', mimeType: 'image/png', buffer: solidPng() });
+  await expect(page.getByRole('button', { name: 'Actions for image 1 of 1' })).toBeVisible({
+    timeout: 30_000,
+  });
+  await pickFile(page, add, {
+    name: 'second.png',
+    mimeType: 'image/png',
+    buffer: solidPng(400, 400, [14, 42, 59]),
+  });
+  const second = page.getByRole('button', { name: 'Actions for image 2 of 2' });
+  await expect(second).toBeVisible({ timeout: 30_000 });
+  await expectNoBlockingA11yViolations(page);
+
+  // Move the second image first; the move is announced and focus stays on the moved image's menu button.
+  await menu(page, second, 'Move earlier');
+  await expect(page.getByText('Image moved to position 1 of 2.')).toBeAttached();
+  await expect(page.getByRole('list', { name: 'Product images' }).getByText('Main image')).toHaveCount(1);
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
 });

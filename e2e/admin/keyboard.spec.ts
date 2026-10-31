@@ -2,8 +2,9 @@
 // against the real backend: sign in, approve a seller and set their commission, set a delivery fee, create
 // a delivery agent. The pending seller is registered through the API.
 import { randomUUID } from 'node:crypto';
-import { expect, test } from '../fixtures';
-import { choose, press, type } from '../fixtures/keyboard';
+import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
+import { choose, press, tabTo, type } from '../fixtures/keyboard';
+import { openTicket } from '../fixtures/returns';
 
 test('admin journey by keyboard only', async ({ page, accounts, admin }) => {
   test.slow();
@@ -45,4 +46,32 @@ test('admin journey by keyboard only', async ({ page, accounts, admin }) => {
   await choose(page, page.getByRole('combobox', { name: /^Home governorate/ }), 'Cairo');
   await press(page, page.getByRole('button', { name: 'Create agent and send invitation' }));
   await expect(page.getByRole('heading', { level: 1, name: `Keyboard Agent ${suffix}` })).toBeVisible();
+});
+
+// T-O2: the support console by keyboard only (AD-29): a reply, then the Internal note tab by arrows and a note.
+// The customer's ticket is opened through the API.
+test('support reply and internal note by keyboard only', async ({ page, signIn, accounts, customer }) => {
+  await signIn('admin');
+  const ticket = await openTicket(
+    accounts.backend,
+    customer.accessToken,
+    `Keyboard ${randomUUID().slice(0, 8)}`,
+  );
+
+  await page.goto(`/support/${ticket.id}`);
+  const messages = page.getByRole('region', { name: 'Messages' });
+  await type(page, page.getByRole('textbox', { name: /^Reply to the user/ }), 'Looking into it');
+  await press(page, page.getByRole('button', { name: 'Send' }));
+  await expect(messages.getByText('Looking into it')).toBeVisible();
+
+  // Tabs: only the selected tab is in the tab order; the arrow moves to the other one and selects it.
+  await tabTo(page, page.getByRole('tab', { name: 'Reply' }));
+  await page.keyboard.press('ArrowRight');
+  const note = page.getByRole('tab', { name: 'Internal note' });
+  await expect(note).toBeFocused();
+  await expect(note).toHaveAttribute('aria-selected', 'true');
+  await type(page, page.getByRole('textbox', { name: /^Internal note/ }), 'Check the courier log');
+  await press(page, page.getByRole('button', { name: 'Add note' }));
+  await expect(messages.getByText('Check the courier log')).toBeVisible();
+  await expectNoBlockingA11yViolations(page);
 });

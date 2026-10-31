@@ -75,7 +75,7 @@ export async function publishedProduct(
   backend: Accounts['backend'],
   token: string,
   suffix: string,
-): Promise<{ readonly variantId: string; readonly slug: string }> {
+): Promise<{ readonly variantId: string; readonly slug: string; readonly productId: string }> {
   const tree = expectData(
     await backend.request('GET', '/api/v1/categories'),
     200,
@@ -111,5 +111,5 @@ export async function publishedProduct(
     201,
   ) as Schema<'SellerVariantDto'>;
   expectData(await backend.request('POST', `/api/v1/seller/products/${product.id}/activate`, { token }), 200);
-  return { variantId: variant.id, slug: product.slug };
+  return { variantId: variant.id, slug: product.slug, productId: product.id };
 }

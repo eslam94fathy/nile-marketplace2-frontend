@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { expectData } from '@nile/test-utils/e2e';
 import { SELLER_ORDER_STATUS_LABELS } from '@nile/domain';
-import { expect, test } from '../fixtures';
+import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
 import { placeCodOrder, signInThroughForm } from '../fixtures/orders';
 
@@ -52,4 +52,5 @@ test("the seller's confirmation shows on the customer's open order page without 
 
   await expect(block).toContainText(SELLER_ORDER_STATUS_LABELS.customer.accepted, { timeout: 15_000 });
   expect(navigations).toBe(0);
+  await expectNoBlockingA11yViolations(page);
 });

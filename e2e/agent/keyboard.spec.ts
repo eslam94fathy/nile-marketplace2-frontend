@@ -4,9 +4,10 @@
 import { randomUUID } from 'node:crypto';
 import type { Schema } from '@nile/api';
 import { expectData } from '@nile/test-utils/e2e';
-import { expect, test } from '../fixtures';
+import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedVariant } from '../fixtures/catalog';
 import { press, toggle } from '../fixtures/keyboard';
+import { assignedReturnPickup } from '../fixtures/returns';
 import { placeCodOrder, shipmentOfOrder } from '../fixtures/orders';
 
 test('agent delivery by keyboard only', async ({ page, signIn, accounts, admin, seller, customer }) => {
@@ -73,4 +74,43 @@ test('agent delivery by keyboard only', async ({ page, signIn, accounts, admin, 
   await expect(page.getByText(`Order ${order.orderNumber} is delivered.`, { exact: true })).toBeVisible();
   await press(page, page.getByRole('link', { name: 'Back to shipments' }));
   await expect(page.getByRole('heading', { level: 1, name: 'Shipments' })).toBeVisible();
+});
+
+// T-O2: a return pickup by keyboard only at phone width (T-N1 R1, R3): collected from the customer, then handed
+// to the seller, each confirmed in its dialog. The delivered order, the return and its assignment come from the API.
+test('return pickup by keyboard only', async ({ page, signIn, accounts, admin, seller, customer }) => {
+  test.slow();
+  await page.setViewportSize({ width: 360, height: 780 });
+  const { backend } = accounts;
+  const agent = await signIn('agent');
+  const profile = expectData(
+    await backend.request('GET', '/api/v1/agent/profile', { token: agent.accessToken }),
+    200,
+  ) as Schema<'AgentProfileDto'>;
+  const variantId = await publishedVariant(backend, seller.accessToken, randomUUID().slice(0, 8));
+  const { shipmentId } = await assignedReturnPickup(
+    backend,
+    {
+      customer: customer.accessToken,
+      seller: seller.accessToken,
+      admin: admin.accessToken,
+      agent: agent.accessToken,
+    },
+    profile.id,
+    variantId,
+  );
+
+  await page.goto(`/shipments/${shipmentId}`);
+  await press(page, page.getByRole('button', { name: 'Collected from the customer' }));
+  const collected = page.getByRole('dialog', { name: 'Collected the items?' });
+  await expect(collected).toBeVisible();
+  await press(page, collected.getByRole('button', { name: 'Collected from the customer' }));
+  await expect(page.getByText('Marked as collected.').first()).toBeVisible();
+
+  await press(page, page.getByRole('button', { name: 'Handed to the seller' }));
+  const handOver = page.getByRole('dialog', { name: 'Hand the items over?' });
+  await expect(handOver).toBeVisible();
+  await press(page, handOver.getByRole('button', { name: 'Handed to the seller' }));
+  await expect(page.getByText('Handed to the seller.').first()).toBeVisible();
+  await expectNoBlockingA11yViolations(page);
 });

@@ -6,7 +6,10 @@ import type { Schema } from '@nile/api';
 import { expectData } from '@nile/test-utils/e2e';
 import { expect, expectNoBlockingA11yViolations, test } from '../fixtures';
 import { publishedProduct } from '../fixtures/catalog';
-import { check, press, type } from '../fixtures/keyboard';
+import { solidPng } from '../fixtures/images';
+import { check, pickFile, press, tabTo, type } from '../fixtures/keyboard';
+import { deliveredCodOrder } from '../fixtures/orders';
+import { openTicket } from '../fixtures/returns';
 
 test('customer journey by keyboard only', async ({ page, accounts, seller, customer }) => {
   test.slow();
@@ -82,4 +85,106 @@ test('customer journey by keyboard only', async ({ page, accounts, seller, custo
   // Focus is never lost to the page body after the dialog closes.
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
+});
+
+// T-O2: the Release 2 widgets by keyboard only (star rating, photo uploader, review photo lightbox, notification
+// bell, support thread). Set-up through the API.
+
+test('review with photos, its lightbox and the notification bell by keyboard only', async ({
+  page,
+  signIn,
+  accounts,
+  admin,
+  seller,
+  agent,
+}) => {
+  test.slow();
+  const customer = await signIn('storefront');
+  const { backend } = accounts;
+  const suffix = randomUUID().slice(0, 8);
+  const { variantId, slug } = await publishedProduct(backend, seller.accessToken, suffix);
+  const order = await deliveredCodOrder(
+    backend,
+    {
+      customer: customer.accessToken,
+      seller: seller.accessToken,
+      admin: admin.accessToken,
+      agent: agent.accessToken,
+    },
+    agent.agentId,
+    variantId,
+  );
+  const item = order.sellerOrders[0]?.items[0];
+  if (item === undefined) throw new Error('order without items');
+
+  // C-11 write a review: rating by arrows, two photos through the native picker.
+  await page.goto(`/account/orders/${order.id}`);
+  await press(page, page.getByRole('link', { name: `Write a review of ${item.productName}` }));
+  await expect(page.getByRole('heading', { level: 1, name: 'Write a review' })).toBeVisible();
+  await check(
+    page,
+    page.getByRole('group', { name: /^Rating/ }),
+    page.getByRole('radio', { name: '4 stars' }),
+  );
+  await type(page, page.getByRole('textbox', { name: 'Title' }), `Keyboard ${suffix}`);
+  await type(page, page.getByRole('textbox', { name: /^Review/ }), 'Written without a mouse.');
+  const photos = page.getByLabel('Photos');
+  await pickFile(page, photos, { name: 'one.png', mimeType: 'image/png', buffer: solidPng() });
+  await pickFile(page, photos, {
+    name: 'two.png',
+    mimeType: 'image/png',
+    buffer: solidPng(400, 400, [14, 42, 59]),
+  });
+  await expect(page.getByText('Ready', { exact: true })).toHaveCount(2, { timeout: 30_000 });
+  await expectNoBlockingA11yViolations(page);
+  await press(page, page.getByRole('button', { name: 'Publish review' }));
+  await expect(page.getByText('Thanks, your review is published.')).toBeVisible();
+
+  // Review photos open in the lightbox: arrows move, Escape closes, focus returns to the photo.
+  await page.goto(`/p/${slug}`);
+  const section = page.getByRole('region', { name: 'Reviews' });
+  const first = section.getByRole('button', { name: 'Show photo 1 of 2' });
+  await press(page, first);
+  const lightbox = page.getByRole('dialog');
+  await expect(lightbox.getByRole('status')).toHaveText('Photo 1 of 2');
+  await page.keyboard.press('ArrowRight');
+  await expect(lightbox.getByRole('status')).toHaveText('Photo 2 of 2');
+  await expectNoBlockingA11yViolations(page);
+  await page.keyboard.press('Escape');
+  await expect(lightbox).toBeHidden();
+  await expect(first).toBeFocused();
+
+  // X-2 the bell: Enter opens the panel (the delivery left notifications), Escape gives focus back, and its
+  // settings link works from the keyboard.
+  const bell = page.getByRole('button', { name: /^Notifications/ });
+  await press(page, bell);
+  const panel = page.getByRole('dialog', { name: 'Notifications' });
+  await expect(panel.getByRole('listitem').first()).toBeVisible();
+  await expectNoBlockingA11yViolations(page);
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(bell).toBeFocused();
+  await press(page, bell);
+  await press(page, panel.getByRole('link', { name: 'Notification settings' }));
+  await expect(page).toHaveURL(/\/account\/notifications\/settings$/);
+});
+
+test('support thread by keyboard only', async ({ page, signIn, accounts }) => {
+  const customer = await signIn('storefront');
+  const subject = `Keyboard ticket ${randomUUID().slice(0, 8)}`;
+  const ticket = await openTicket(accounts.backend, customer.accessToken, subject);
+
+  // X-4 reply in the thread: Ctrl+Enter sends, the box empties, focus stays in it.
+  await page.goto(`/account/support/${ticket.id}`);
+  const box = page.getByRole('textbox', { name: /^Your message/ });
+  await type(page, box, 'Sent from the keyboard');
+  await page.keyboard.press('ControlOrMeta+Enter');
+  await expect(
+    page.getByRole('region', { name: 'Messages' }).getByText('Sent from the keyboard'),
+  ).toBeVisible();
+  await expect(box).toHaveValue('');
+  await expect(box).toBeFocused();
+  await expectNoBlockingA11yViolations(page);
+  // The send button is reachable too.
+  await tabTo(page, page.getByRole('button', { name: 'Send' }));
 });
